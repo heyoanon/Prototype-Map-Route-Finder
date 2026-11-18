@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Map Search</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Search places and explore map services.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/app-icon-192.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <style>
     * { box-sizing: border-box; }
     :root { color-scheme: light; }
@@ -375,9 +380,9 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://openingh.openstreetmap.de/build/opening_hours+deps.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/opening-hours/opening_hours+deps.min.js"></script>
+  <script src="vendor/supabase/supabase.min.js"></script>
   <script src="supabase-config.js"></script>
   <script>
     const themeStorageKey = 'osm-map-theme';
@@ -2045,6 +2050,14 @@
     });
     initializeAccount();
     loadServices();
+
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+          console.error('Could not register the offline app shell:', error);
+        });
+      });
+    }
   </script>
 </body>
 </html>
