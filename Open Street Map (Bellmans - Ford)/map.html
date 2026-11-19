@@ -995,7 +995,14 @@
         findFastestEmergencyService(button.dataset.emergencyType);
       });
     });
-    emergencyOpenButton.addEventListener('click', showNearbyEmergencyServices);
+    emergencyOpenButton.addEventListener('click', function () {
+      if (emergencyAssistance.hidden) {
+        showNearbyEmergencyServices();
+      } else {
+        emergencyAssistance.hidden = true;
+        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+      }
+    });
 
     function setAccountStatus(message) {
       accountStatus.textContent = message;
