@@ -102,16 +102,15 @@
     #search-button:disabled { color: #999; cursor: wait; }
     #emergency-open {
       display: grid; flex: 0 0 42px; place-items: center; width: 42px; height: 42px; margin: 0;
-      padding: 0; border: 0; border-radius: 50%; background: transparent;
+      padding: 0; border: 0; border-radius: 50%; background: #fff;
       color: #b3261e; cursor: pointer;
     }
     #emergency-open[hidden] { display: none; }
-    #emergency-open:hover { background: #fce8e6; }
+    #emergency-open:hover { background: #f1f3f4; }
     #emergency-open:focus-visible { outline: 2px solid #d93025; outline-offset: 2px; }
     #emergency-open svg {
       width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2;
       stroke-linecap: round; stroke-linejoin: round;
-      filter: drop-shadow(0 0 1px #fff) drop-shadow(0 1px 2px #202124);
     }
     #status { display: none; margin: 4px 8px 2px; color: #555; font-size: 13px; line-height: 1.4; }
     #status.visible { display: block; }
@@ -270,7 +269,7 @@
       border-color: #5f6368; background: #202124; color: #f28b82;
     }
     :root[data-theme="dark"] #emergency-open {
-      background: transparent; color: #f28b82;
+      color: #f28b82;
     }
     :root[data-theme="dark"] #emergency-assistance { border-top-color: #5f6368; }
     :root[data-theme="dark"] .service-details-action:disabled {
@@ -319,6 +318,7 @@
     :root[data-theme="dark"] .map-category-expand { color: #e8eaed; }
     :root[data-theme="dark"] .map-category-expand:hover,
     :root[data-theme="dark"] .map-tool-button:hover,
+    :root[data-theme="dark"] #emergency-open:hover,
     :root[data-theme="dark"] #search-button:hover,
     :root[data-theme="dark"] .service-details-action:hover {
       background: #303134;
