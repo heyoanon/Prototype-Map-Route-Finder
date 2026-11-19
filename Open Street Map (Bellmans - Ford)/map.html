@@ -465,13 +465,13 @@
       document.documentElement.dataset.theme = selectedTheme === 'system'
         ? (systemThemePreference.matches ? 'dark' : 'light')
         : selectedTheme;
-      setBaseLayer('Street Map');
+      setBaseLayer(activeBaseLayerName);
     }
 
     function handleSystemThemeChange() {
       if (selectedTheme === 'system') {
         applyTheme();
-        recordActivity('map_style', { style: 'Street Map', theme: 'system' });
+        recordActivity('map_style', { style: activeBaseLayerName, theme: 'system' });
       }
     }
 
@@ -489,7 +489,7 @@
       themeSelect.addEventListener('change', function () {
         selectedTheme = themeSelect.value;
         applyTheme();
-        recordActivity('map_style', { style: 'Street Map', theme: selectedTheme });
+        recordActivity('map_style', { style: activeBaseLayerName, theme: selectedTheme });
         try {
           window.localStorage.setItem(themeStorageKey, selectedTheme);
         } catch (error) {
