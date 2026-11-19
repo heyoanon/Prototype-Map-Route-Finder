@@ -17,6 +17,13 @@
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
     body { color: #202124; background: #fff; }
     #map { width: 100%; height: 100%; }
+    #offline-banner {
+      position: fixed; z-index: 2000; left: 50%; bottom: 18px; transform: translateX(-50%);
+      max-width: calc(100vw - 32px); padding: 9px 14px; border-radius: 999px;
+      background: #202124; color: #fff; box-shadow: 0 2px 10px #0005;
+      font-size: 13px; text-align: center;
+    }
+    #offline-banner[hidden] { display: none; }
     .search-panel {
       position: absolute; z-index: 1000; top: 14px; left: 20px; width: min(250px, calc(100vw - 32px));
       max-height: calc(100vh - 32px); overflow-y: auto; padding: 0;
@@ -171,13 +178,15 @@
     }
     .service-name {
       display: none; overflow: hidden; max-width: 210px; padding: 3px 5px;
-      border: 1px solid transparent; border-radius: 4px;
+      border: 0;
       background: transparent; color: #202124; font-size: 12px; font-weight: 600;
       text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px #fff, 0 0 5px #fff;
       cursor: pointer;
     }
     .service-pin.expanded .service-name {
-      display: inline-block; border-color: var(--service-color);
+      display: inline-block;
+      -webkit-text-stroke: 0.45px var(--service-color);
+      paint-order: stroke fill;
     }
     #service-details {
       margin-top: 8px; padding: 10px; border: 1px solid #dadce0;
@@ -300,6 +309,9 @@
 </head>
 <body>
   <div id="map" aria-label="Map"></div>
+  <div id="offline-banner" role="status" aria-live="polite" hidden>
+    Offline mode: previously loaded map areas and data are available.
+  </div>
   <section class="search-panel" aria-label="Map search">
     <form id="search-form">
       <input id="destination" type="search" placeholder="Search places or coordinates" aria-label="Search places or coordinates" required>
@@ -384,6 +396,7 @@
   <script src="vendor/opening-hours/opening_hours+deps.min.js"></script>
   <script src="vendor/supabase/supabase.min.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="routing-config.js"></script>
   <script>
     const themeStorageKey = 'osm-map-theme';
     const systemThemePreference = window.matchMedia('(prefers-color-scheme: dark)');
@@ -431,9 +444,15 @@
       applyTheme();
     }
 
-    const esriTrafficApiKey = ''; // Set locally to enable the Esri live traffic overlay.
+    const routingConfig = window.OSM_MAP_ROUTING_CONFIG || {};
+    const esriTrafficApiKey = typeof routingConfig.esriApiKey === 'string'
+      ? routingConfig.esriApiKey.trim()
+      : '';
     const map = L.map('map', { zoomControl: false }).setView([10.6896476, 122.4824483], 14);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+    map.createPane('routePane');
+    map.getPane('routePane').style.zIndex = '650';
+    map.getPane('routePane').style.pointerEvents = 'auto';
     const initialCenter = [map.getCenter().lng, map.getCenter().lat];
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
@@ -859,6 +878,24 @@
     let supabaseClient = null;
     let currentUser = null;
     let isSignUpMode = false;
+    const OFFLINE_CACHE_PREFIX = 'osm-map-offline-v1:';
+
+    function readOfflineCache(key, fallback) {
+      try {
+        const value = window.localStorage.getItem(OFFLINE_CACHE_PREFIX + key);
+        return value === null ? fallback : JSON.parse(value);
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function writeOfflineCache(key, value) {
+      try {
+        window.localStorage.setItem(OFFLINE_CACHE_PREFIX + key, JSON.stringify(value));
+      } catch (error) {
+        console.warn('Could not save offline map data:', error);
+      }
+    }
     accountToggle.addEventListener('click', function () {
       const willOpen = accountContent.hidden;
       accountContent.hidden = !willOpen;
@@ -979,10 +1016,20 @@
           .order('created_at', { ascending: false })
           .limit(100);
         if (result.error) throw result.error;
-        if (currentUser && currentUser.id === userId) renderActivityHistory(result.data || []);
+        const entries = result.data || [];
+        if (currentUser && currentUser.id === userId) {
+          writeOfflineCache('account-history:' + userId, entries);
+          renderActivityHistory(entries);
+        }
       } catch (error) {
         console.error('Could not load saved map activity:', error);
-        setAccountStatus('Could not load saved history: ' + error.message);
+        const entries = readOfflineCache('account-history:' + userId, null);
+        if (entries) {
+          renderActivityHistory(entries);
+          setAccountStatus('Showing saved account history offline.');
+        } else {
+          setAccountStatus('Could not load saved history: ' + error.message);
+        }
       }
     }
 
@@ -996,18 +1043,32 @@
           .maybeSingle();
         if (result.error) throw result.error;
         if (!currentUser || currentUser.id !== userId) return;
-        profileNameInput.value = result.data
+        const displayName = result.data
           ? result.data.display_name
           : currentUser.user_metadata && currentUser.user_metadata.display_name || '';
+        profileNameInput.value = displayName;
+        writeOfflineCache('account-profile:' + userId, { display_name: displayName });
         await loadActivityHistory(userId);
       } catch (error) {
         console.error('Could not load the account profile:', error);
-        setAccountStatus('Could not load profile details: ' + error.message);
+        const cachedProfile = readOfflineCache('account-profile:' + userId, null);
+        if (cachedProfile) {
+          profileNameInput.value = cachedProfile.display_name || '';
+          setAccountStatus('Showing saved account profile offline.');
+        } else {
+          setAccountStatus('Could not load profile details: ' + error.message);
+        }
+        await loadActivityHistory(userId);
       }
     }
 
     function showAccountSession(session) {
       currentUser = session && session.user ? session.user : null;
+      if (currentUser) {
+        writeOfflineCache('account-session:' + currentUser.id, session);
+        writeOfflineCache('account-session-last', session);
+        writeOfflineCache('account-last-email', currentUser.email || '');
+      }
       const isSignedIn = Boolean(currentUser);
       accountLoggedOut.hidden = isSignedIn;
       accountLoggedIn.hidden = !isSignedIn;
@@ -1032,6 +1093,14 @@
     async function recordActivity(activityType, payload, eventUserId) {
       const userId = eventUserId || (currentUser && currentUser.id);
       if (!supabaseClient || !userId) return;
+      const cachedEntries = readOfflineCache('account-history:' + userId, []);
+      cachedEntries.unshift({
+        activity_type: activityType,
+        payload: payload,
+        created_at: new Date().toISOString()
+      });
+      writeOfflineCache('account-history:' + userId, cachedEntries.slice(0, 100));
+      renderActivityHistory(cachedEntries.slice(0, 100));
       try {
         const result = await supabaseClient.from('map_activity').insert({
           user_id: userId,
@@ -1056,8 +1125,22 @@
         return;
       }
       if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-        accountOpenForm.disabled = true;
-        setAccountStatus('Supabase could not be loaded. Check your connection and reload.');
+        const cachedSession = readOfflineCache('account-session-last', null);
+        if (!navigator.onLine && cachedSession && cachedSession.user) {
+          currentUser = cachedSession.user;
+          accountLoggedOut.hidden = true;
+          accountLoggedIn.hidden = false;
+          historyLoggedOut.hidden = true;
+          historyLoggedIn.hidden = false;
+          accountIdentity.textContent = 'Signed in as ' + (currentUser.email || 'user');
+          setAccountStatus('Showing saved account data offline.');
+          const cachedProfile = readOfflineCache('account-profile:' + currentUser.id, null);
+          if (cachedProfile) profileNameInput.value = cachedProfile.display_name || '';
+          renderActivityHistory(readOfflineCache('account-history:' + currentUser.id, []));
+        } else {
+          accountOpenForm.disabled = true;
+          setAccountStatus('Supabase could not be loaded. Check your connection and reload.');
+        }
         return;
       }
 
@@ -1071,8 +1154,14 @@
         });
       } catch (error) {
         console.error('Could not initialize Supabase account support:', error);
-        accountOpenForm.disabled = true;
-        setAccountStatus('Could not connect to account storage: ' + error.message);
+        const cachedSession = readOfflineCache('account-session-last', null);
+        if (!navigator.onLine && cachedSession && cachedSession.user) {
+          showAccountSession(cachedSession);
+          setAccountStatus('Signed in using saved account data offline.');
+        } else {
+          accountOpenForm.disabled = true;
+          setAccountStatus('Could not connect to account storage: ' + error.message);
+        }
       }
     }
 
@@ -1098,9 +1187,9 @@
     accountForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       if (!supabaseClient) return;
+      const email = accountEmailInput.value.trim();
       accountSubmit.disabled = true;
       try {
-        const email = accountEmailInput.value.trim();
         const password = accountPasswordInput.value;
         if (isSignUpMode) {
           const displayName = signupNameInput.value.trim();
@@ -1127,7 +1216,19 @@
           setAccountStatus('Signed in.');
         }
       } catch (error) {
-        setAccountStatus(error.message || 'Account request failed.');
+        if (!navigator.onLine) {
+          const cachedSession = readOfflineCache('account-session-last', null);
+          const cachedEmail = readOfflineCache('account-last-email', '');
+          if (cachedSession && cachedSession.user &&
+              String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
+            showAccountSession(cachedSession);
+            setAccountStatus('Signed in using saved account data offline.');
+          } else {
+            setAccountStatus('Offline sign-in is available only for an account previously used on this device.');
+          }
+        } else {
+          setAccountStatus(error.message || 'Account request failed.');
+        }
       } finally {
         accountSubmit.disabled = false;
       }
@@ -1150,7 +1251,8 @@
         if (result.error) throw result.error;
         setAccountStatus('Profile saved.');
       } catch (error) {
-        setAccountStatus('Could not save profile: ' + error.message);
+        writeOfflineCache('account-profile:' + currentUser.id, { display_name: displayName });
+        setAccountStatus('Profile saved locally for offline use.');
       } finally {
         button.disabled = false;
       }
@@ -1185,6 +1287,19 @@
         clearHistoryButton.disabled = false;
       }
     });
+
+    const offlineBanner = document.getElementById('offline-banner');
+    function updateNetworkStatus() {
+      offlineBanner.hidden = navigator.onLine;
+      if (!navigator.onLine) {
+        setStatus('Offline mode: using previously saved searches, routes, map areas, and account data.');
+      } else if (offlineBanner.hidden) {
+        offlineBanner.hidden = true;
+      }
+    }
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
 
     function setStatus(message) {
       status.textContent = message;
@@ -1577,12 +1692,24 @@
     async function findLocation(value) {
       const coordinates = parseCoordinates(value);
       if (coordinates) return coordinates;
-      const response = await fetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(value));
-      if (!response.ok) throw new Error('Location search failed. Please try again.');
-      const data = await response.json();
-      const feature = data.features && data.features[0];
-      if (!feature) throw new Error('Could not find "' + value + '". Try a more specific location.');
-      return feature.geometry.coordinates;
+      const cacheKey = 'search:' + value.trim().toLowerCase();
+      try {
+        const response = await fetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(value));
+        if (!response.ok) throw new Error('Location search failed. Please try again.');
+        const data = await response.json();
+        const feature = data.features && data.features[0];
+        if (!feature) throw new Error('Could not find "' + value + '". Try a more specific location.');
+        writeOfflineCache(cacheKey, feature.geometry.coordinates);
+        writeOfflineCache('search-data:' + cacheKey, data);
+        return feature.geometry.coordinates;
+      } catch (error) {
+        const cached = readOfflineCache(cacheKey, null);
+        if (cached) {
+          setStatus('Showing a previously saved offline search result.');
+          return cached;
+        }
+        throw error;
+      }
     }
 
     function formatDistance(meters) {
@@ -1598,6 +1725,7 @@
     }
 
     function formatInstruction(step) {
+      if (step.instruction) return step.instruction;
       const maneuver = step.maneuver || {};
       const modifier = maneuver.modifier ? maneuver.modifier.replace(/_/g, ' ') : '';
       const roadName = step.name || step.ref;
@@ -1637,14 +1765,16 @@
       }
     }
 
-    function addRouteCard(route, index, layer) {
+    function addRouteCard(route, index, layer, usesLiveTraffic) {
       const card = document.createElement('details');
       card.className = 'route-card' + (index === 0 ? ' shortest selected' : '');
 
       const summary = document.createElement('summary');
       const title = document.createElement('span');
       title.className = 'route-name';
-      title.textContent = index === 0 ? 'Shortest route' : 'Alternative route ' + (index + 1);
+      title.textContent = usesLiveTraffic
+        ? 'Fastest route (traffic-aware)'
+        : index === 0 ? 'Shortest route' : 'Alternative route ' + (index + 1);
       const metadata = document.createElement('span');
       metadata.className = 'route-meta';
       metadata.textContent = formatDistance(route.distance) + ' · ' + formatDuration(route.duration);
@@ -1689,6 +1819,97 @@
         });
       });
       routesElement.appendChild(card);
+    }
+
+    async function findEsriRoute(start, end) {
+      const request = new URLSearchParams({
+        f: 'json',
+        token: esriTrafficApiKey,
+        stops: start.join(',') + ';' + end.join(','),
+        impedanceAttributeName: 'TravelTime',
+        accumulateAttributeNames: 'Kilometers',
+        startTime: 'now',
+        returnDirections: 'true',
+        directionsTimeAttributeName: 'TravelTime',
+        directionsLengthUnits: 'esriNAUKilometers',
+        returnRoutes: 'true',
+        outputLines: 'esriNAOutputLineTrueShape',
+        outSR: '4326'
+      });
+      const response = await fetch(
+        'https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World/solve',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: request.toString()
+        }
+      );
+      if (!response.ok) throw new Error('Traffic-aware route service is unavailable. Please try again.');
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message || 'Traffic-aware route service returned an error.');
+      }
+
+      const feature = data.routes && data.routes.features && data.routes.features[0];
+      const geometry = feature && feature.geometry;
+      const path = geometry && geometry.paths && geometry.paths[0];
+      if (!feature || !path || path.length === 0) {
+        throw new Error('No traffic-aware driving route was found for those locations.');
+      }
+
+      const attributes = feature.attributes || {};
+      const distanceKilometers = Number(attributes.Total_Kilometers);
+      const durationMinutes = Number(attributes.Total_TravelTime);
+      if (!Number.isFinite(distanceKilometers) || !Number.isFinite(durationMinutes)) {
+        throw new Error('Traffic-aware route service returned incomplete route details.');
+      }
+
+      const directionFeatures = data.directions && data.directions[0] &&
+        data.directions[0].features || [];
+      const routes = [{
+        distance: distanceKilometers * 1000,
+        duration: durationMinutes * 60,
+        geometry: {
+          type: 'LineString',
+          coordinates: path.map(function (coordinate) {
+            return [coordinate[0], coordinate[1]];
+          })
+        },
+        legs: [{
+          steps: directionFeatures.map(function (direction) {
+            const directionAttributes = direction.attributes || {};
+            return {
+              distance: Number(directionAttributes.length || 0) * 1000,
+              instruction: directionAttributes.text || 'Continue along the route'
+            };
+          })
+        }]
+      }];
+      writeOfflineCache('route:esri:' + start.join(',') + ':' + end.join(','), routes);
+      return routes;
+    }
+
+    async function findStandardRoutes(start, end) {
+      const coordinates = [start, end].map(function (point) { return point.join(','); }).join(';');
+      const routeKey = 'route:standard:' + start.join(',') + ':' + end.join(',');
+      try {
+        const response = await fetch(
+          'https://router.project-osrm.org/route/v1/driving/' + coordinates +
+          '?alternatives=3&steps=true&overview=full&geometries=geojson'
+        );
+        if (!response.ok) throw new Error('Route service is unavailable. Please try again.');
+        const data = await response.json();
+        if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+          throw new Error('No driving routes were found for those locations.');
+        }
+        const routes = data.routes.slice().sort(function (a, b) { return a.distance - b.distance; });
+        writeOfflineCache(routeKey, routes);
+        return routes;
+      } catch (error) {
+        const cached = readOfflineCache(routeKey, null);
+        if (cached) return cached;
+        throw error;
+      }
     }
 
     function scheduleServiceRefresh() {
@@ -1763,6 +1984,8 @@
         const data = await response.json();
         if (requestId !== serviceRequestId) return;
         if (!Array.isArray(data.features)) throw new Error('Service search returned invalid data.');
+        writeOfflineCache('nearby-services:' + bbox + ':' +
+          (isAssistanceSearch ? 'emergency' : 'standard'), data.features);
 
         serviceMarkerGroups.forEach(function (group) { group.clearLayers(); });
         let addedCount = 0;
@@ -1984,21 +2207,23 @@
         popupContent.textContent = 'Destination: ' + destination;
         destinationMarker = L.marker([end[1], end[0]]).addTo(map).bindPopup(popupContent);
         const start = routeOrigin;
-        const coordinates = [start, end].map(function (point) { return point.join(','); }).join(';');
-        const response = await fetch(
-          'https://router.project-osrm.org/route/v1/driving/' + coordinates +
-          '?alternatives=3&steps=true&overview=full&geometries=geojson'
-        );
-        if (!response.ok) throw new Error('Route service is unavailable. Please try again.');
-        const data = await response.json();
-        if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-          throw new Error('No driving routes were found for those locations.');
+        let usesLiveTraffic = Boolean(esriTrafficApiKey);
+        let routes;
+        if (usesLiveTraffic) {
+          try {
+            routes = await findEsriRoute(start, end);
+          } catch (trafficError) {
+            console.warn('Traffic route unavailable; using standard routing:', trafficError);
+            usesLiveTraffic = false;
+            routes = await findStandardRoutes(start, end);
+          }
+        } else {
+          routes = await findStandardRoutes(start, end);
         }
-
-        const routes = data.routes.slice().sort(function (a, b) { return a.distance - b.distance; });
         routes.forEach(function (route, index) {
           const color = ['#1684ff', '#ffb300', '#e04f9b'][index % 3];
           const layer = L.geoJSON(route.geometry, {
+            pane: 'routePane',
             style: {
               color: color,
               weight: index === 0 ? 8 : 5,
@@ -2006,16 +2231,55 @@
             },
             bubblingMouseEvents: false
           }).addTo(routeLayers);
-          addRouteCard(route, index, layer);
+          addRouteCard(route, index, layer, usesLiveTraffic);
         });
 
         map.fitBounds(routeLayers.getBounds(), {
           paddingTopLeft: [32, 96],
           paddingBottomRight: [32, 32]
         });
-        setStatus(routes.length + ' route' + (routes.length === 1 ? '' : 's') + ' found. Shortest route highlighted.');
+        setStatus(usesLiveTraffic
+          ? 'Traffic-aware route found. Live traffic and incident data are used where available; road-condition coverage may vary.'
+          : routes.length + ' route' + (routes.length === 1 ? '' : 's') +
+            ' found. Traffic and road incidents are not included. Add an Esri API key in routing-config.js for traffic-aware routing.');
       } catch (error) {
-        setStatus(error.message || 'Could not find routes. Please try again.');
+        const start = routeOrigin;
+        let end = knownCoordinates;
+        if (!end) {
+          try { end = parseCoordinates(destination); } catch (coordinateError) { end = null; }
+        }
+        if (!end) {
+          end = readOfflineCache('search:' + destination.trim().toLowerCase(), null);
+        }
+        let cachedRoutes = null;
+        if (end) {
+          const routeType = esriTrafficApiKey ? 'esri' : 'standard';
+          cachedRoutes = readOfflineCache(
+            'route:' + routeType + ':' + start.join(',') + ':' + end.join(','),
+            null
+          );
+        }
+        if (cachedRoutes) {
+          routesElement.replaceChildren();
+          routeLayers.clearLayers();
+          cachedRoutes.forEach(function (route, index) {
+            const color = ['#1684ff', '#ffb300', '#e04f9b'][index % 3];
+            const layer = L.geoJSON(route.geometry, {
+              pane: 'routePane',
+              style: { color: color, weight: index === 0 ? 8 : 5,
+                opacity: index === 0 ? 0.98 : 0.85 },
+              bubblingMouseEvents: false
+            }).addTo(routeLayers);
+            addRouteCard(route, index, layer, false);
+          });
+          map.fitBounds(routeLayers.getBounds(), {
+            paddingTopLeft: [32, 96],
+            paddingBottomRight: [32, 32]
+          });
+          setStatus('Showing a previously saved offline route.');
+        } else {
+          setStatus(error.message || 'Could not find routes. Please try again.');
+        }
       } finally {
         searchButton.disabled = false;
         isSearching = false;
