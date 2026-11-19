@@ -6,3 +6,5 @@ Prototype Shortest Route Emergency Map Finder
 - To run in other algorithms, just change the python code in (Bellmans - Ford) folder. (Example: using A* algorithm instead of Bellman - Ford)
 
 - Changes are also implemented as of this moment.
+
+- Link for the Project Interface: http://127.0.0.1:8000/map.html
