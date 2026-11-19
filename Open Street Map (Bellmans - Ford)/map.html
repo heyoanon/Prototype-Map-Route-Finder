@@ -98,7 +98,7 @@
     #search-button:hover { background: #f1f3f4; }
     #search-button:disabled { color: #999; cursor: wait; }
     #emergency-open {
-      display: grid; place-items: center; width: 42px; height: 42px; margin: 6px 4px 2px;
+      display: grid; place-items: center; width: 42px; height: 42px; margin: 12px 4px 2px;
       padding: 0; border: 1px solid #d93025; border-radius: 50%; background: #fff;
       color: #b3261e; cursor: pointer;
     }
@@ -1704,6 +1704,7 @@
         serviceDetails.appendChild(noticeRow);
       }
       serviceDetails.hidden = false;
+      emergencyOpenButton.hidden = true;
     }
 
     async function loadOpenStreetMapDetails(
