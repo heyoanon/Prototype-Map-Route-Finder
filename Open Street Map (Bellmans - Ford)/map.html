@@ -1382,6 +1382,7 @@
       serviceDetailsRequestId += 1;
       status.classList.remove('visible');
       locationStatus.classList.remove('visible');
+      form.hidden = false;
       serviceDetails.hidden = true;
       emergencyAssistance.hidden = true;
       emergencyOpenButton.setAttribute('aria-expanded', 'false');
@@ -1985,6 +1986,7 @@
     function showNearbyEmergencyServices() {
       expandSidebar();
       isAssistanceSearch = true;
+      form.hidden = true;
       emergencyAssistance.hidden = false;
       emergencyOpenButton.setAttribute('aria-expanded', 'true');
       Object.keys(serviceGroups).forEach(function (groupName) {
