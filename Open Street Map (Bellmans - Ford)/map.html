@@ -98,8 +98,8 @@
     #search-button:hover { background: #f1f3f4; }
     #search-button:disabled { color: #999; cursor: wait; }
     #emergency-open {
-      display: grid; place-items: center; width: 42px; height: 42px; margin: 12px 4px 2px;
-      padding: 0; border: 1px solid #d93025; border-radius: 50%; background: #fff;
+      display: grid; place-items: center; width: 42px; height: 42px; margin: 12px 0 0;
+      padding: 0; border: 0; border-radius: 50%; background: transparent;
       color: #b3261e; cursor: pointer;
     }
     #emergency-open[hidden] { display: none; }
@@ -118,21 +118,7 @@
       border-top: 1px solid #f1c7c5; background: transparent; color: #202124;
     }
     #emergency-assistance[hidden] { display: none; }
-    .emergency-assistance-heading {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    }
     .emergency-assistance-title { margin: 0; font-size: 13px; }
-    #emergency-close {
-      display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px;
-      padding: 0; border: 1px solid #dadce0; border-radius: 50%;
-      background: transparent; color: #5f6368; cursor: pointer;
-    }
-    #emergency-close:hover { background: #f1f3f4; }
-    #emergency-close:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
-    #emergency-close svg {
-      width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;
-      stroke-linecap: round;
-    }
     .emergency-assistance-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .emergency-assistance-buttons button {
       min-height: 34px; padding: 0 9px; border: 1px solid #dadce0; border-radius: 5px;
@@ -280,12 +266,8 @@
       border-color: #5f6368; background: #202124; color: #f28b82;
     }
     :root[data-theme="dark"] #emergency-open {
-      border-color: #f28b82; background: #202124; color: #f28b82;
+      background: transparent; color: #f28b82;
     }
-    :root[data-theme="dark"] #emergency-close {
-      border-color: #5f6368; color: #bdc1c6;
-    }
-    :root[data-theme="dark"] #emergency-close:hover { background: #303134; }
     :root[data-theme="dark"] #emergency-assistance { border-top-color: #5f6368; }
     :root[data-theme="dark"] .service-details-action:disabled {
       background: #303134; color: #9aa0a6;
@@ -384,15 +366,7 @@
     <div id="location-status" role="status" aria-live="polite">Finding device location...</div>
     <div id="status" role="status" aria-live="polite"></div>
     <section id="emergency-assistance" aria-label="Find emergency service" hidden>
-      <div class="emergency-assistance-heading">
-        <p class="emergency-assistance-title"><strong>Find a nearby emergency service</strong></p>
-        <button id="emergency-close" type="button" aria-label="Close emergency services"
-          title="Close emergency services">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="m6 6 12 12M18 6 6 18"></path>
-          </svg>
-        </button>
-      </div>
+      <p class="emergency-assistance-title"><strong>Find a nearby emergency service</strong></p>
       <div class="emergency-assistance-buttons">
         <button type="button" data-emergency-type="ambulance">Ambulance</button>
         <button type="button" data-emergency-type="responder">Rescue / responder</button>
@@ -910,8 +884,8 @@
     const destinationInput = document.getElementById('destination');
     const status = document.getElementById('status');
     const locationStatus = document.getElementById('location-status');
+    const searchPanel = document.querySelector('.search-panel');
     const emergencyOpenButton = document.getElementById('emergency-open');
-    const emergencyCloseButton = document.getElementById('emergency-close');
     const emergencyAssistance = document.getElementById('emergency-assistance');
     const serviceDetails = document.getElementById('service-details');
     const routesElement = document.getElementById('routes');
@@ -979,6 +953,10 @@
       const target = event.target;
       if (!(target instanceof Node)) return;
 
+      if (!emergencyAssistance.hidden && !searchPanel.contains(target)) {
+        collapseSidebar();
+      }
+
       const accountPanel = document.getElementById('account-panel');
       const historyPanel = document.getElementById('history-panel');
       const layersControl = document.querySelector('.map-categories-control');
@@ -1029,7 +1007,11 @@
         collapseSidebar();
       }
     });
-    emergencyCloseButton.addEventListener('click', collapseSidebar);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !emergencyAssistance.hidden) {
+        collapseSidebar();
+      }
+    });
 
     function setAccountStatus(message) {
       accountStatus.textContent = message;
