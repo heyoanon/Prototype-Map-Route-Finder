@@ -1,8 +1,9 @@
-const CACHE_NAME = 'map-search-shell-v1';
+const CACHE_NAME = 'map-search-shell-v2';
 const APP_SHELL = [
   './map.html',
   './manifest.webmanifest',
   './supabase-config.js',
+  './routing-config.js',
   './icons/app-icon-192.png',
   './icons/app-icon-512.png',
   './icons/app-icon.svg',
