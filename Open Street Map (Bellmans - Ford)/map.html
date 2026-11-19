@@ -987,6 +987,7 @@
     let emergencySearchType = null;
     let destinationMarker = null;
     let isSearching = false;
+    let searchRequestId = 0;
     let serviceRefreshTimer = null;
     let serviceRequestId = 0;
     let serviceRequestController = null;
@@ -999,8 +1000,7 @@
       if (emergencyAssistance.hidden) {
         showNearbyEmergencyServices();
       } else {
-        emergencyAssistance.hidden = true;
-        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        collapseSidebar();
       }
     });
 
@@ -1369,6 +1369,16 @@
 
     function collapseSidebar() {
       isSidebarExpanded = false;
+      isAssistanceSearch = false;
+      emergencySearchType = null;
+      serviceRequestId += 1;
+      if (serviceRequestController) {
+        serviceRequestController.abort();
+        serviceRequestController = null;
+      }
+      searchRequestId += 1;
+      isSearching = false;
+      searchButton.disabled = false;
       serviceDetailsRequestId += 1;
       status.classList.remove('visible');
       locationStatus.classList.remove('visible');
@@ -2382,6 +2392,7 @@
 
     async function searchDestination(destination, knownCoordinates, routePurpose) {
       if (isSearching) return;
+      const requestId = ++searchRequestId;
       markUserInteracted();
       expandSidebar();
       recordActivity('search', { query: destination });
@@ -2397,6 +2408,7 @@
 
       try {
         const end = knownCoordinates || await findLocation(destination);
+        if (requestId !== searchRequestId) return;
         const popupContent = document.createElement('span');
         popupContent.textContent = 'Destination: ' + destination;
         destinationMarker = L.marker([end[1], end[0]]).addTo(map).bindPopup(popupContent);
@@ -2407,6 +2419,7 @@
           try {
             routes = await findEsriRoute(start, end);
           } catch (trafficError) {
+            if (requestId !== searchRequestId) return;
             console.warn('Traffic route unavailable; using standard routing:', trafficError);
             usesLiveTraffic = false;
             routes = await findStandardRoutes(start, end);
@@ -2414,6 +2427,7 @@
         } else {
           routes = await findStandardRoutes(start, end);
         }
+        if (requestId !== searchRequestId) return;
         if (routePurpose && routePurpose.emergencyType) {
           routes = routes.slice().sort(function (a, b) { return a.duration - b.duration; });
         }
@@ -2444,6 +2458,7 @@
             : routes.length + ' route' + (routes.length === 1 ? '' : 's') +
               ' found. Traffic and road incidents are not included. Add an Esri API key in routing-config.js for traffic-aware routing.');
       } catch (error) {
+        if (requestId !== searchRequestId) return;
         const start = routeOrigin;
         let end = knownCoordinates;
         if (!end) {
@@ -2482,8 +2497,10 @@
           setStatus(error.message || 'Could not find routes. Please try again.');
         }
       } finally {
-        searchButton.disabled = false;
-        isSearching = false;
+        if (requestId === searchRequestId) {
+          searchButton.disabled = false;
+          isSearching = false;
+        }
       }
     }
 
