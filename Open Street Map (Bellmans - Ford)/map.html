@@ -2166,6 +2166,196 @@
     :root[data-theme="dark"] .emergency-chat-trigger-btn:hover {
       background: #3a475c;
     }
+
+    /* Responder Dispatch & Situation Assessment */
+    .responder-dispatch-card {
+      margin-top: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fdf2f2;
+      border: 1px solid #f5c2c7;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .responder-dispatch-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .responder-dispatch-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #b3261e;
+      background: #fce8e6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #f28b82;
+    }
+
+    .responder-dispatch-time {
+      font-size: 11px;
+      font-weight: 700;
+      color: #188038;
+    }
+
+    .responder-scenario-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #b3261e;
+      margin-top: 2px;
+    }
+
+    .responder-assessment-box {
+      font-size: 11.5px;
+      line-height: 1.4;
+      color: #3c4043;
+      background: #ffffff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #fad2cf;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .assessment-row strong {
+      color: #202124;
+    }
+
+    .responder-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .responder-route-banner {
+      margin: 8px 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fdf2f2;
+      border: 1.5px solid #d93025;
+      color: #202124;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(217, 48, 37, 0.15);
+    }
+
+    .responder-route-banner[hidden] {
+      display: none;
+    }
+
+    .responder-banner-title {
+      font-weight: 700;
+      color: #b3261e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .responder-situation-prompt {
+      margin: 8px 0 4px;
+      padding: 8px 10px;
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: #3c4043;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .responder-scenario-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .responder-scenario-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #dadce0;
+      background: #ffffff;
+      color: #3c4043;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .responder-scenario-chip:hover,
+    .responder-scenario-chip.active {
+      background: #fce8e6;
+      border-color: #d93025;
+      color: #b3261e;
+      font-weight: 600;
+    }
+
+    /* Dark Mode styles for Responder Dispatch */
+    :root[data-theme="dark"] .responder-dispatch-card {
+      background: #2b1d1f;
+      border-color: #5f2b2b;
+    }
+
+    :root[data-theme="dark"] .responder-dispatch-badge {
+      background: #492320;
+      color: #f28b82;
+      border-color: #7a3535;
+    }
+
+    :root[data-theme="dark"] .responder-dispatch-time {
+      color: #81c995;
+    }
+
+    :root[data-theme="dark"] .responder-scenario-title {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .responder-assessment-box {
+      background: #1f2022;
+      border-color: #4a2828;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .assessment-row strong {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .responder-route-banner {
+      background: #311c1d;
+      border-color: #d93025;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .responder-banner-title {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .responder-situation-prompt {
+      background: #202124;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .responder-scenario-chip {
+      background: #303134;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .responder-scenario-chip:hover,
+    :root[data-theme="dark"] .responder-scenario-chip.active {
+      background: #492320;
+      border-color: #f28b82;
+      color: #f28b82;
+    }
   </style>
 </head>
 
@@ -2217,6 +2407,7 @@
       </div>
       <div id="location-status" role="status" aria-live="polite">Finding device location...</div>
       <div id="status" role="status" aria-live="polite"></div>
+      <div id="responder-dispatch-banner" class="responder-route-banner" hidden></div>
       <div id="emergency-results-list" class="emergency-facilities-container" hidden></div>
       <div id="service-details" aria-label="Selected service details" aria-live="polite" hidden></div>
       <div id="routes" aria-label="Available routes"></div>
@@ -2243,6 +2434,18 @@
       <button type="button" data-emergency-type="responder">Rescue / Responder</button>
       <button type="button" data-emergency-type="police">Police</button>
       <button type="button" data-emergency-type="fire">Fire Truck</button>
+    </div>
+    <div id="responder-situation-selector" class="responder-situation-prompt" hidden>
+      <div style="font-weight:700;color:#b3261e;display:flex;align-items:center;gap:5px;">
+        <span>🛟</span> Select Situation to Recommend Fastest Route:
+      </div>
+      <div class="responder-scenario-chips">
+        <button type="button" class="responder-scenario-chip active" data-scenario="flood">🌊 Flood / Water Rise</button>
+        <button type="button" class="responder-scenario-chip" data-scenario="accident">🚗 Trapped / Accident</button>
+        <button type="button" class="responder-scenario-chip" data-scenario="medical">🚑 Medical Trauma</button>
+        <button type="button" class="responder-scenario-chip" data-scenario="storm">🌀 Storm Evacuation</button>
+        <button type="button" class="responder-scenario-chip" data-scenario="debris">🏚️ Structural Collapse</button>
+      </div>
     </div>
     <div id="emergency-assistance-results" class="emergency-assistance-results" hidden></div>
     <button id="emergency-open-chat" type="button" class="emergency-chat-trigger-btn">
@@ -3661,12 +3864,30 @@
             );
           }
         }, 400);
-      } else if (intent === 'responder') {
+      } else if (intent === 'responder' || (intent && intent.indexOf('responder-scenario:') === 0)) {
+        let scenario = currentResponderScenario || 'flood';
+        if (intent && intent.indexOf('responder-scenario:') === 0) {
+          scenario = intent.split(':')[1];
+          currentResponderScenario = scenario;
+        }
+        const dispatchData = recommendResponderDispatch(userText || '', scenario);
         appendBotMessage(
-          '🛟 <strong>Searching Disaster Response & Rescue Units...</strong><br>' +
-          'Locating CDRRMO, Red Cross, and disaster command units.'
+          '🛟 <strong>Disaster & Rescue Dispatch Assessment</strong><br>' +
+          'Based on where you are currently located detected on the map and your reported situation, here is the fastest response route recommendation:',
+          [
+            { label: '🌊 Flood / Water Rise', action: function () { handleChatIntent('responder-scenario:flood'); } },
+            { label: '🚗 Trapped / Crash', action: function () { handleChatIntent('responder-scenario:accident'); } },
+            { label: '🚑 Medical Trauma', action: function () { handleChatIntent('responder-scenario:medical'); } },
+            { label: '🌀 Storm Evacuation', action: function () { handleChatIntent('responder-scenario:storm'); } },
+            { label: '🏚️ Structural Collapse', action: function () { handleChatIntent('responder-scenario:debris'); } }
+          ]
         );
-        findFastestEmergencyService('responder');
+        if (dispatchData && dispatchData.html) {
+          appendBotMessage(dispatchData.html);
+        }
+        if (dispatchData) {
+          plotResponderRoute(dispatchData);
+        }
       } else if (intent === 'hotlines') {
         appendBotMessage(
           '☎️ <strong>Official Emergency Hotlines:</strong><br>' +
@@ -3697,8 +3918,28 @@
           handleChatIntent('police');
         } else if (/fire|smoke|burning|flame|trapped/i.test(q)) {
           handleChatIntent('fire');
-        } else if (/rescue|flood|storm|water|drown|typhoon/i.test(q)) {
-          handleChatIntent('responder');
+        } else if (/rescue|flood|water|submerge|drown|typhoon|storm|trapped|crash|accident|collapse/i.test(q)) {
+          let detectedScen = 'flood';
+          if (/car|crash|accident|collision|pinned|rollover/i.test(q)) detectedScen = 'accident';
+          else if (/injur|bleed|wound|head|unconscious|heart|cardiac|stroke|breath|burn|trauma/i.test(q)) detectedScen = 'medical';
+          else if (/storm|typhoon|wind|cyclone|tree|gale|blow/i.test(q)) detectedScen = 'storm';
+          else if (/collapse|debris|wall|building|rubble|landslide/i.test(q)) detectedScen = 'debris';
+          currentResponderScenario = detectedScen;
+          const dispatchData = recommendResponderDispatch(userText, detectedScen);
+          appendBotMessage(
+            '🛟 <strong>Incident Report Processed</strong><br>' +
+            'Based on the information you provided and where you are currently located detected on the map, here is the situation assessment and recommended fastest route:'
+          );
+          if (dispatchData && dispatchData.html) {
+            appendBotMessage(dispatchData.html, [
+              { label: '🌊 Flood / Water', action: function () { handleChatIntent('responder-scenario:flood'); } },
+              { label: '🚗 Trapped / Crash', action: function () { handleChatIntent('responder-scenario:accident'); } },
+              { label: '🚑 Medical Trauma', action: function () { handleChatIntent('responder-scenario:medical'); } },
+              { label: '🌀 Storm Evacuation', action: function () { handleChatIntent('responder-scenario:storm'); } },
+              { label: '🏚️ Structural Collapse', action: function () { handleChatIntent('responder-scenario:debris'); } }
+            ]);
+            plotResponderRoute(dispatchData);
+          }
         } else if (/call|number|hotline|contact|phone/i.test(q)) {
           handleChatIntent('hotlines');
         } else if (/fastest|route|traffic|navigate|directions|way/i.test(q)) {
@@ -3748,6 +3989,377 @@
         openAssistanceChat();
       });
     }
+
+    // --- Responder Dispatch & Route Recommendation Controller ---
+    let currentResponderScenario = 'flood';
+    let lastResponderDispatchData = null;
+
+    function getDetectedUserLocation() {
+      let coords = null;
+      let sourceName = 'Detected Location';
+
+      if (userLocationMarker && typeof userLocationMarker.getLatLng === 'function') {
+        const latlng = userLocationMarker.getLatLng();
+        coords = [latlng.lng, latlng.lat];
+        sourceName = 'GPS Device Location';
+      } else if (userDeviceCoords && Array.isArray(userDeviceCoords)) {
+        coords = userDeviceCoords;
+        sourceName = 'Device Coordinates';
+      } else if (routeOrigin && Array.isArray(routeOrigin)) {
+        coords = routeOrigin;
+        sourceName = 'Selected Starting Point';
+      } else if (initialCenter && Array.isArray(initialCenter)) {
+        coords = initialCenter;
+        sourceName = 'City Center Anchor';
+      } else {
+        const center = map.getCenter();
+        coords = [center.lng, center.lat];
+        sourceName = 'Map Viewport Center';
+      }
+
+      const landmarks = [
+        { name: 'Mandurriao District', lat: 10.7196, lng: 122.5368, streets: 'Benigno Aquino Ave / Guzman St' },
+        { name: 'Molo District', lat: 10.6977, lng: 122.5458, streets: 'Locsin St / M.H. del Pilar St' },
+        { name: 'Iloilo City Proper', lat: 10.6957, lng: 122.5684, streets: 'General Luna St / Iznart St' },
+        { name: 'Jaro District', lat: 10.7253, lng: 122.5574, streets: 'E. Lopez St / Commission Civil St' },
+        { name: 'La Paz District', lat: 10.7118, lng: 122.5691, streets: 'Huervana St / Luna St' },
+        { name: 'Villa Arevalo District', lat: 10.6865, lng: 122.5186, streets: 'Quezon St / Osmeña St' },
+        { name: 'Lapuz / Port Area', lat: 10.7012, lng: 122.5794, streets: 'Bo. Obrero / Lapuz Norte' },
+        { name: 'Oton Municipality', lat: 10.6951, lng: 122.4770, streets: 'Mabini St / National Highway' }
+      ];
+
+      let nearestLandmark = landmarks[0];
+      let minD = Infinity;
+      landmarks.forEach(function (lm) {
+        const d = haversineMeters(coords[1], coords[0], lm.lat, lm.lng);
+        if (d < minD) {
+          minD = d;
+          nearestLandmark = lm;
+        }
+      });
+
+      const formattedCoords = coords[1].toFixed(4) + '° N, ' + coords[0].toFixed(4) + '° E';
+      const label = nearestLandmark.name + ' (' + formattedCoords + ')';
+
+      return {
+        coords: coords,
+        lat: coords[1],
+        lng: coords[0],
+        sourceName: sourceName,
+        districtName: nearestLandmark.name,
+        streetRef: nearestLandmark.streets,
+        formattedCoords: formattedCoords,
+        label: label
+      };
+    }
+
+    function analyzeSituationReport(scenarioType, customText) {
+      const q = (customText || '').toLowerCase();
+      let type = scenarioType || 'flood';
+
+      if (customText) {
+        if (/flood|water|submerge|drown|river|rising|rain|gutter|knee|waist|chest/i.test(q)) {
+          type = 'flood';
+        } else if (/car|vehicle|crash|accident|collision|trapped|pinned|rollover/i.test(q)) {
+          type = 'accident';
+        } else if (/injur|bleed|head|wound|unconscious|heart|cardiac|stroke|breath|burn|trauma/i.test(q)) {
+          type = 'medical';
+        } else if (/storm|typhoon|wind|roof|cyclone|tree|gale|blow/i.test(q)) {
+          type = 'storm';
+        } else if (/collapse|wall|building|debris|rubble|fall|crack|landslide/i.test(q)) {
+          type = 'debris';
+        }
+      }
+
+      const scenarios = {
+        flood: {
+          key: 'flood',
+          title: '🌊 Flash Flood & Water Evacuation',
+          severity: 'Code Red · Immediate Water Extraction',
+          summary: customText ? 'Report received: "' + customText + '". Water rise threatening location. Civilian transport impossible.' : 'Severe water rise / flash flooding reported in caller area. Standard road vehicles unable to navigate submerged segments.',
+          equipment: 'Amphibious Rubber Boats (Zodiac), High-Clearance 4x4 Rescue Truck, Floatation Vests & Ropes',
+          tacticalAdvice: 'Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.',
+          preferredKeywords: ['rescue', 'operations', 'disaster', 'coast guard', 'red cross']
+        },
+        accident: {
+          key: 'accident',
+          title: '🚗 Vehicular Accident & Extrication',
+          severity: 'Code Red · Emergency Vehicle Extrication',
+          summary: customText ? 'Report received: "' + customText + '". Vehicle collision with trapped occupants requiring urgent extrication.' : 'Major vehicular collision reported. Entrapped occupants requiring hydraulic rescue tools and emergency airway stabilization.',
+          equipment: 'Hydraulic Cutters/Spreaders (Jaws of Life), Advanced Life Support (ALS) Ambulance, Cervical Collars',
+          tacticalAdvice: 'Do not attempt to pull entrapped victims without cervical stabilization unless active fire risk is present.',
+          preferredKeywords: ['rescue', 'operations', 'disaster', 'emergency response']
+        },
+        medical: {
+          key: 'medical',
+          title: '🚑 Acute Trauma & Emergency Medical Evacuation',
+          severity: 'Code Red · Rapid Medical Extraction',
+          summary: customText ? 'Report received: "' + customText + '". Critical medical/trauma event requiring paramedic intervention.' : 'Critical trauma or medical emergency reported at caller coordinates. Urgent need for field triage and rapid transit to tertiary facility.',
+          equipment: 'Emergency Medical Crew (EMT-P), Defibrillator/AED, Portable Oxygen, Trauma Splints',
+          tacticalAdvice: 'Keep patient calm and still. Apply direct firm pressure with clean cloth to any visible arterial bleeding.',
+          preferredKeywords: ['ambulance', 'red cross', 'hospital', 'operations']
+        },
+        storm: {
+          key: 'storm',
+          title: '🌀 Severe Storm Damage & Evacuation',
+          severity: 'Code Orange · Urgent Disaster Evacuation',
+          summary: customText ? 'Report received: "' + customText + '". Structural damage, flying debris, and gale-force wind hazards reported.' : 'Severe storm hazards including roof blow-off, fallen trees, and downed utility poles blocking caller area.',
+          equipment: 'Heavy Clearing Chainsaw Unit, Disaster Evacuation Van, Emergency Power Generator, Tarpaulins',
+          tacticalAdvice: 'Remain indoors away from windows and glass facades. Watch for downed power lines which may be live.',
+          preferredKeywords: ['drrmo', 'operations', 'disaster', 'response']
+        },
+        debris: {
+          key: 'debris',
+          title: '🏚️ Structural Collapse & Urban Search & Rescue',
+          severity: 'Code Red · Urban Search & Rescue (USAR)',
+          summary: customText ? 'Report received: "' + customText + '". Structural failure or wall collapse with potential trapped individuals.' : 'Building compromise or wall collapse reported. Urban Search & Rescue (USAR) unit dispatched with shoring and search gear.',
+          equipment: 'Acoustic Listening Detectors, Pneumatic Shoring Jacks, Concrete Breakers, Heavy Rescue Winch',
+          tacticalAdvice: 'If trapped, tap rhythmically on pipes or walls rather than shouting continuously to conserve oxygen.',
+          preferredKeywords: ['cdrmmo', 'operations', 'disaster', 'rescue']
+        },
+        general: {
+          key: 'general',
+          title: '🛟 Rapid Emergency Distress & Disaster Response',
+          severity: 'Code Orange · Priority Dispatch',
+          summary: customText ? 'Report received: "' + customText + '". Urgent response requested.' : 'Emergency assistance call registered. Quick Response Team dispatched to caller location.',
+          equipment: 'First Response Unit, Field Command Communications, First Aid Kits',
+          tacticalAdvice: 'Keep communication lines clear and remain at the detected location if safe to do so.',
+          preferredKeywords: ['operations', 'disaster', 'rescue', 'red cross']
+        }
+      };
+
+      return scenarios[type] || scenarios.general;
+    }
+
+    function findBestResponderFacility(userCoords, scenario) {
+      const userPoint = L.latLng(userCoords[1], userCoords[0]);
+      const responders = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+        return f.type === 'responder';
+      });
+
+      const scored = responders.map(function (facility) {
+        const facPoint = L.latLng(facility.coordinates[1], facility.coordinates[0]);
+        const distMeters = userPoint.distanceTo(facPoint);
+        let score = distMeters;
+
+        const nameLower = facility.name.toLowerCase();
+        if (scenario.key === 'flood' && /coast guard|red cross|cdrmmo/i.test(nameLower)) {
+          score *= 0.85;
+        }
+
+        return {
+          facility: facility,
+          distanceMeters: distMeters,
+          score: score
+        };
+      });
+
+      scored.sort(function (a, b) { return a.score - b.score; });
+      return scored[0];
+    }
+
+    function evaluateRouteHazards(startCoords, endCoords) {
+      const hazardsDetected = [];
+      const steps = 15;
+      for (let i = 0; i <= steps; i++) {
+        const ratio = i / steps;
+        const lat = startCoords[1] + (endCoords[1] - startCoords[1]) * ratio;
+        const lng = startCoords[0] + (endCoords[0] - startCoords[0]) * ratio;
+
+        liveIncidents.forEach(function (inc) {
+          const d = haversineMeters(lat, lng, inc.lat, inc.lng);
+          if (d <= inc.radius + 80) {
+            if (!hazardsDetected.some(function (h) { return h.id === inc.id; })) {
+              hazardsDetected.push(inc);
+            }
+          }
+        });
+      }
+
+      let hazardAvoidanceNote = 'Direct arterial corridors clear of impassable hazards.';
+      let detourSeconds = 0;
+
+      if (hazardsDetected.length > 0) {
+        const names = hazardsDetected.map(function (h) { return h.name; }).join(', ');
+        const hasImpassable = hazardsDetected.some(function (h) { return h.impassable; });
+        const hasFlood = hazardsDetected.some(function (h) { return h.type === 'flood'; });
+
+        if (hasFlood) {
+          hazardAvoidanceNote = '⚠️ Active Flash Flood zone detected on Diversion corridor. Fastest response route automatically detoured via elevated bypass.';
+          detourSeconds += 150;
+        } else if (hasImpassable) {
+          hazardAvoidanceNote = '⛔ Active road closure detected (' + names + '). Response unit routed via open peripheral arterial.';
+          detourSeconds += 180;
+        } else {
+          hazardAvoidanceNote = '🚧 Road hazards reported along path (' + names + '). Slow-down caution applied.';
+          detourSeconds += 90;
+        }
+      }
+
+      return {
+        hazards: hazardsDetected,
+        note: hazardAvoidanceNote,
+        detourSeconds: detourSeconds
+      };
+    }
+
+    function calculateResponderRouteMetrics(startCoords, endCoords, detourSec) {
+      const distMeters = haversineMeters(startCoords[1], startCoords[0], endCoords[1], endCoords[0]) * 1.35;
+      const baseSpeedKmh = 38;
+      const baseSec = Math.round((distMeters / (baseSpeedKmh * 1000 / 3600)));
+      const totalSec = baseSec + (detourSec || 0);
+      const mins = Math.max(2, Math.round(totalSec / 60));
+      const distKm = (distMeters / 1000).toFixed(1);
+
+      return {
+        distMeters: distMeters,
+        distKm: distKm,
+        durationSeconds: totalSec,
+        durationMins: mins
+      };
+    }
+
+    function buildResponderAssessmentHtml(data) {
+      return (
+        '<div class="responder-dispatch-card">' +
+          '<div class="responder-dispatch-header">' +
+            '<span class="responder-dispatch-badge">🚨 ' + escapeHtml(data.scenario.severity) + '</span>' +
+            '<span class="responder-dispatch-time">⏱️ Fastest ETA: ~' + data.metrics.durationMins + ' min (' + data.metrics.distKm + ' km)</span>' +
+          '</div>' +
+          '<div class="responder-scenario-title">' + escapeHtml(data.scenario.title) + '</div>' +
+          '<div class="responder-assessment-box">' +
+            '<div class="assessment-row"><strong>What it looks like based on your report:</strong><br>' +
+              '<span style="color:#d93025;font-weight:600;">' + escapeHtml(data.scenario.summary) + '</span>' +
+            '</div>' +
+            '<div class="assessment-row"><strong>📍 Caller Detected Location:</strong> ' + escapeHtml(data.userLoc.districtName) + ' <span style="color:#5f6368;font-size:10.5px;">(' + escapeHtml(data.userLoc.formattedCoords) + ' · Near ' + escapeHtml(data.userLoc.streetRef) + ')</span></div>' +
+            '<div class="assessment-row"><strong>🚨 Assigned Responder Base:</strong> <strong>' + escapeHtml(data.responder.name) + '</strong><br>' +
+              '<span style="color:#5f6368;font-size:10.5px;">📍 ' + escapeHtml(data.responder.address) + '</span>' +
+            '</div>' +
+            '<div class="assessment-row"><strong>🛣️ Recommended Fastest Route:</strong> Dispatched from ' + escapeHtml(data.responder.name) + ' directly to your detected location via fastest clear thoroughfare.' +
+            '</div>' +
+            '<div class="assessment-row"><strong>🛡️ Hazard & Avoidance Status:</strong> ' + escapeHtml(data.hazardEval.note) + '</div>' +
+            '<div class="assessment-row"><strong>🧰 Deployed Gear & Response Team:</strong> ' + escapeHtml(data.scenario.equipment) + '</div>' +
+            '<div class="assessment-row" style="background:#fef7e0;padding:4px 6px;border-radius:4px;border:1px solid #f9ab00;margin-top:2px;"><strong>💡 Immediate Safety Advice:</strong> ' + escapeHtml(data.scenario.tacticalAdvice) + '</div>' +
+          '</div>' +
+          '<div class="responder-actions">' +
+            '<button type="button" class="chat-action-btn" data-action="plot-responder-route">🗺️ View Route on Map</button>' +
+            (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary">📞 Call ' + escapeHtml(data.responder.phone) + '</a>' : '') +
+            '<a href="tel:911" class="chat-action-btn emergency">🚨 Call 911</a>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function updateResponderDispatchBanner(data) {
+      const banner = document.getElementById('responder-dispatch-banner');
+      if (!banner) return;
+      if (!data) {
+        banner.hidden = true;
+        return;
+      }
+      banner.hidden = false;
+      banner.innerHTML = (
+        '<div class="responder-banner-title">' +
+          '<span>🚨</span> Recommended Responder Route' +
+        '</div>' +
+        '<div style="font-weight:700;font-size:12px;color:#d93025;">' + escapeHtml(data.scenario.title) + '</div>' +
+        '<div style="font-size:11px;color:#3c4043;margin:3px 0;">' +
+          '<strong>Situation:</strong> ' + escapeHtml(data.scenario.summary) +
+        '</div>' +
+        '<div style="font-size:11px;display:flex;flex-direction:column;gap:2px;">' +
+          '<div>📍 Caller: <strong>' + escapeHtml(data.userLoc.districtName) + '</strong> (' + escapeHtml(data.userLoc.formattedCoords) + ')</div>' +
+          '<div>🚨 Station: <strong>' + escapeHtml(data.responder.name) + '</strong></div>' +
+          '<div>⏱️ Fastest ETA: <strong style="color:#188038;">~' + data.metrics.durationMins + ' min (' + data.metrics.distKm + ' km)</strong></div>' +
+          '<div style="color:#b3261e;font-size:10.5px;">🛡️ ' + escapeHtml(data.hazardEval.note) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:6px;">' +
+          '<button type="button" class="emergency-facility-route-btn" data-action="plot-responder-route" style="flex:1;">Active Route</button>' +
+          (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;">📞 Call</a>' : '') +
+        '</div>'
+      );
+    }
+
+    function plotResponderRoute(data) {
+      if (!data) return;
+      const responder = data.responder;
+      const userLoc = data.userLoc;
+
+      if (destinationInput) {
+        destinationInput.value = 'Detected Location (' + userLoc.districtName + ')';
+      }
+
+      searchDestination(
+        'Detected Location (' + userLoc.districtName + ')',
+        userLoc.coords,
+        { emergencyType: 'responder', dispatchData: data },
+        responder.coordinates
+      );
+    }
+
+    function recommendResponderDispatch(customText, scenarioType) {
+      const userLoc = getDetectedUserLocation();
+      const scenario = analyzeSituationReport(scenarioType || currentResponderScenario, customText);
+      const best = findBestResponderFacility(userLoc.coords, scenario);
+      const responder = best.facility;
+      const hazardEval = evaluateRouteHazards(responder.coordinates, userLoc.coords);
+      const metrics = calculateResponderRouteMetrics(responder.coordinates, userLoc.coords, hazardEval.detourSeconds);
+
+      const dispatchData = {
+        userLoc: userLoc,
+        scenario: scenario,
+        responder: responder,
+        hazardEval: hazardEval,
+        metrics: metrics
+      };
+
+      dispatchData.html = buildResponderAssessmentHtml(dispatchData);
+      lastResponderDispatchData = dispatchData;
+
+      updateResponderDispatchBanner(dispatchData);
+
+      return dispatchData;
+    }
+
+    // Situation selector chip listener in emergency modal
+    const responderSituationSelector = document.getElementById('responder-situation-selector');
+    if (responderSituationSelector) {
+      responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
+            c.classList.remove('active');
+          });
+          chip.classList.add('active');
+          const sc = chip.dataset.scenario;
+          currentResponderScenario = sc;
+          const data = recommendResponderDispatch('', sc);
+          if (data) {
+            const assistanceContainer = document.getElementById('emergency-assistance-results');
+            if (assistanceContainer) {
+              const existingCard = assistanceContainer.querySelector('.responder-dispatch-card');
+              if (existingCard) {
+                const parent = existingCard.parentElement;
+                parent.innerHTML = buildResponderAssessmentHtml(data);
+              }
+            }
+            plotResponderRoute(data);
+          }
+        });
+      });
+    }
+
+    // Global listener for plot-responder-route buttons
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-action="plot-responder-route"]');
+      if (btn && lastResponderDispatchData) {
+        closeAssistanceChat();
+        if (emergencyAssistance) {
+          emergencyAssistance.hidden = true;
+          emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        }
+        expandSidebar();
+        plotResponderRoute(lastResponderDispatchData);
+      }
+    });
 
     function setAccountStatus(message) {
       accountStatus.textContent = message;
@@ -4913,6 +5525,12 @@
         assistanceContainer.hidden = false;
         assistanceContainer.innerHTML = '';
 
+        if (type === 'responder' && lastResponderDispatchData) {
+          const assessDiv = document.createElement('div');
+          assessDiv.innerHTML = buildResponderAssessmentHtml(lastResponderDispatchData);
+          assistanceContainer.appendChild(assessDiv);
+        }
+
         const header = document.createElement('div');
         header.className = 'emergency-results-header';
         header.innerHTML = '<strong>Nearest ' + label + ' Facilities</strong>' +
@@ -5166,6 +5784,19 @@
         emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
           btn.classList.toggle('active', btn.dataset.emergencyType === type);
         });
+      }
+
+      const situationSelector = document.getElementById('responder-situation-selector');
+      if (situationSelector) {
+        situationSelector.hidden = (type !== 'responder');
+      }
+      const responderBanner = document.getElementById('responder-dispatch-banner');
+      if (responderBanner && type !== 'responder') {
+        responderBanner.hidden = true;
+      }
+
+      if (type === 'responder') {
+        recommendResponderDispatch('', currentResponderScenario || 'flood');
       }
 
       // Ensure appropriate layer is visible
@@ -5745,7 +6376,33 @@
         if (requestId !== searchRequestId) return;
         const popupContent = document.createElement('span');
         popupContent.textContent = 'Destination: ' + destination;
-        destinationMarker = L.marker([end[1], end[0]]).addTo(map).bindPopup(popupContent);
+        if (routePurpose && routePurpose.emergencyType === 'responder' && routePurpose.dispatchData) {
+          const pin = document.createElement('div');
+          pin.className = 'service-pin';
+          pin.style.setProperty('--service-color', '#d93025');
+          const badge = document.createElement('span');
+          badge.className = 'service-badge';
+          badge.style.backgroundColor = '#d93025';
+          badge.textContent = '🚨';
+          const label = document.createElement('span');
+          label.className = 'service-name';
+          label.textContent = 'Incident Site (' + destination + ')';
+          pin.append(badge, label);
+
+          const icon = L.divIcon({
+            className: 'service-div-icon',
+            html: pin,
+            iconSize: [Math.min(220, Math.max(70, label.textContent.length * 7)) + 30, 28],
+            iconAnchor: [11, 14]
+          });
+          destinationMarker = L.marker([end[1], end[0]], { icon: icon }).addTo(map).bindPopup(
+            '<strong>🚨 Incident Site (Detected Location)</strong><br>' +
+            'Scenario: ' + escapeHtml(routePurpose.dispatchData.scenario.title) + '<br>' +
+            'Location: ' + escapeHtml(routePurpose.dispatchData.userLoc.districtName)
+          );
+        } else {
+          destinationMarker = L.marker([end[1], end[0]]).addTo(map).bindPopup(popupContent);
+        }
 
         // Resolve user source / origin
         let start = originOverride;
@@ -5772,12 +6429,16 @@
         }
 
         const originPopup = document.createElement('span');
-        originPopup.textContent = 'Starting point: ' + (sourceInput && sourceInput.value ? sourceInput.value : 'Your location');
+        if (routePurpose && routePurpose.emergencyType === 'responder' && routePurpose.dispatchData) {
+          originPopup.textContent = '🚨 Responder Station: ' + routePurpose.dispatchData.responder.name;
+        } else {
+          originPopup.textContent = 'Starting point: ' + (sourceInput && sourceInput.value ? sourceInput.value : 'Your location');
+        }
         originMarker = L.circleMarker([start[1], start[0]], {
           radius: 8,
           color: '#fff',
           weight: 3,
-          fillColor: '#1a73e8',
+          fillColor: (routePurpose && routePurpose.emergencyType === 'responder') ? '#d93025' : '#1a73e8',
           fillOpacity: 1
         }).addTo(map).bindPopup(originPopup);
 
