@@ -2332,6 +2332,7 @@
       flex-direction: column;
       gap: 6px;
       cursor: pointer;
+      user-select: none;
     }
 
     .responder-situation-prompt[hidden] {
@@ -2519,7 +2520,7 @@
       <button type="button" data-emergency-type="police">Police</button>
       <button type="button" data-emergency-type="fire">Fire Truck</button>
     </div>
-    <div id="responder-situation-selector" class="responder-situation-prompt" hidden>
+    <div id="responder-situation-selector" class="responder-situation-prompt" title="Click empty area to de-select scenario" hidden>
       <div style="font-weight:700;color:#b3261e;display:flex;align-items:center;gap:5px;">
         <span>🛟</span> Select Situation to Recommend Fastest Route:
       </div>
@@ -3621,11 +3622,19 @@
         '#assistance-chatbox'
       ));
 
-      // Collapse panels when clicking on any empty space anywhere
-      if (!isInteractive) {
-        collapseSidebar();
-      } else if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
-        collapseSidebar();
+      // Check if click was inside any UI panel or modal
+      const isInsidePanels = Boolean(el && el.closest(
+        '#map-search-controls, #emergency-assistance, #assistance-chatbox, ' +
+        '#account-panel, #history-panel, .map-categories-control, .leaflet-control'
+      ));
+
+      // Collapse panels only when clicking outside panels on map empty space
+      if (!isInsidePanels) {
+        if (!isInteractive) {
+          collapseSidebar();
+        } else if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
+          collapseSidebar();
+        }
       }
 
       const accountPanel = document.getElementById('account-panel');
@@ -4545,6 +4554,7 @@
     if (responderSituationSelector) {
       // Click on grey empty space inside selector de-selects the scenario option
       responderSituationSelector.addEventListener('click', function (e) {
+        e.stopPropagation();
         const clickedChip = e.target.closest('.responder-scenario-chip');
         if (!clickedChip) {
           deSelectResponderScenario();
@@ -4627,6 +4637,16 @@
         responderBanner.hidden = true;
         responderBanner.innerHTML = '';
       }
+      routeLayers.clearLayers();
+      routesElement.replaceChildren();
+      if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+      }
+      if (destinationInput && /Detected Location/i.test(destinationInput.value)) {
+        destinationInput.value = '';
+      }
+      setStatus('');
     }
 
     // Global listener for plot-responder-route buttons
