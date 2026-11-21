@@ -3690,6 +3690,11 @@
           const emergencyOpenChat = document.getElementById('emergency-open-chat');
           if (emergencyOpenChat) emergencyOpenChat.hidden = false;
           routeLayers.clearLayers();
+
+          broadcastUserEmergencyActivity('service_deselected', {
+            serviceType: null,
+            actionDescription: 'De-selected emergency service (Standby)'
+          });
           if (destinationMarker) {
             map.removeLayer(destinationMarker);
             destinationMarker = null;
@@ -4089,6 +4094,10 @@
         const text = (chatboxInput.value || '').trim();
         if (!text) return;
         appendUserMessage(text);
+        broadcastUserEmergencyActivity('chat_message', {
+          userMessage: text,
+          actionDescription: 'Caller reported via chat: "' + (text.length > 35 ? text.slice(0, 35) + '...' : text) + '"'
+        });
         chatboxInput.value = '';
         setTimeout(function () {
           handleChatIntent(null, text);
@@ -4117,6 +4126,60 @@
     // --- Responder Dispatch & Route Recommendation Controller ---
     let currentResponderScenario = 'flood';
     let lastResponderDispatchData = null;
+
+    function broadcastUserEmergencyActivity(actionType, extraData) {
+      try {
+        const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
+          coords: [122.5368, 10.7196],
+          lat: 10.7196,
+          lng: 122.5368,
+          districtName: 'Mandurriao District',
+          formattedCoords: '10.7196° N, 122.5368° E'
+        };
+
+        const currentRaw = localStorage.getItem('tracked_user_emergency');
+        let state = currentRaw ? JSON.parse(currentRaw) : {};
+
+        state.lastAction = actionType;
+        state.lastActionTime = Date.now();
+        state.lat = userLoc.lat;
+        state.lng = userLoc.lng;
+        state.coords = userLoc.formattedCoords || (userLoc.lat.toFixed(4) + '° N, ' + userLoc.lng.toFixed(4) + '° E');
+        state.district = userLoc.districtName;
+        state.timestamp = Date.now();
+
+        if (extraData) {
+          for (const key in extraData) {
+            state[key] = extraData[key];
+          }
+        }
+
+        if (!Array.isArray(state.activityLog)) {
+          state.activityLog = [];
+        }
+
+        if (extraData && extraData.actionDescription) {
+          state.activityLog.unshift({
+            desc: extraData.actionDescription,
+            time: Date.now(),
+            type: actionType
+          });
+          if (state.activityLog.length > 20) {
+            state.activityLog.length = 20;
+          }
+        }
+
+        localStorage.setItem('tracked_user_emergency', JSON.stringify(state));
+
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel('emergency_dispatch');
+          bc.postMessage({ type: 'USER_ACTIVITY_SYNC', data: state });
+          bc.close();
+        }
+      } catch (err) {
+        console.warn('Could not broadcast user activity:', err);
+      }
+    }
 
     function getDetectedUserLocation() {
       let coords = null;
@@ -4495,6 +4558,13 @@
           chip.classList.add('active');
           currentResponderScenario = sc;
           const data = recommendResponderDispatch('', sc);
+          broadcastUserEmergencyActivity('situation_change', {
+            scenarioType: sc,
+            scenario: data && data.scenario && data.scenario.title,
+            summary: data && data.scenario && data.scenario.summary,
+            tacticalAdvice: data && data.scenario && data.scenario.tacticalAdvice,
+            actionDescription: 'Selected scenario: ' + ((data && data.scenario && data.scenario.title) || sc)
+          });
           if (data) {
             const assistanceContainer = document.getElementById('emergency-assistance-results');
             if (assistanceContainer) {
@@ -4519,6 +4589,12 @@
     }
 
     function deSelectResponderScenario() {
+      broadcastUserEmergencyActivity('scenario_deselected', {
+        scenario: null,
+        summary: 'Emergency scenario de-selected',
+        tacticalAdvice: 'Standby for situation report confirmation.',
+        actionDescription: 'Cleared scenario selection'
+      });
       if (responderSituationSelector) {
         responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
           c.classList.remove('active');
@@ -5337,21 +5413,12 @@
       }
       setLocationStatus('Using device location as the route starting point.');
 
-      // Update broadcast for responder tracker
-      try {
-        const raw = localStorage.getItem('tracked_user_emergency');
-        let current = raw ? JSON.parse(raw) : {};
-        current.lat = event.latlng.lat;
-        current.lng = event.latlng.lng;
-        current.coords = event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E';
-        current.timestamp = Date.now();
-        localStorage.setItem('tracked_user_emergency', JSON.stringify(current));
-        if (window.BroadcastChannel) {
-          const bc = new BroadcastChannel('emergency_dispatch');
-          bc.postMessage({ type: 'USER_LOCATION_UPDATE', data: current });
-          bc.close();
-        }
-      } catch (e) {}
+      broadcastUserEmergencyActivity('location_update', {
+        lat: event.latlng.lat,
+        lng: event.latlng.lng,
+        coords: event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E',
+        actionDescription: 'Caller GPS position updated (' + event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E)'
+      });
     });
 
     map.on('locationerror', function (event) {
@@ -5881,6 +5948,16 @@
               }
             }
 
+            broadcastUserEmergencyActivity('facility_route_selected', {
+              targetFacility: {
+                name: candidate.name,
+                category: candidate.category || label,
+                coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
+                distanceMeters: candidate.distanceMeters,
+                phone: candidate.phone || ''
+              },
+              actionDescription: 'Routed to facility: ' + candidate.name
+            });
             candidate.selectService();
             collapseSidebar();
           });
@@ -5946,6 +6023,16 @@
             const thisBtn = card.querySelector('.emergency-facility-route-btn');
             if (thisBtn) thisBtn.textContent = 'Active';
 
+            broadcastUserEmergencyActivity('facility_route_selected', {
+              targetFacility: {
+                name: candidate.name,
+                category: candidate.category || label,
+                coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
+                distanceMeters: candidate.distanceMeters,
+                phone: candidate.phone || ''
+              },
+              actionDescription: 'Routed to facility: ' + candidate.name
+            });
             candidate.selectService();
           });
 
@@ -6120,6 +6207,12 @@
       const statusMsg = 'Finding nearest ' + (labels[type] || type) + '...';
       setStatus(statusMsg);
       const emergencyStatusEl = document.getElementById('emergency-status-text');
+
+      broadcastUserEmergencyActivity('service_change', {
+        serviceType: type,
+        serviceLabel: labels[type] || type,
+        actionDescription: 'Selected ' + (type === 'fire' ? 'Fire Truck' : type === 'responder' ? 'Rescue / Responder' : type.charAt(0).toUpperCase() + type.slice(1)) + ' service'
+      });
       if (emergencyStatusEl) emergencyStatusEl.textContent = statusMsg;
 
       const focus = L.latLng(origin[1], origin[0]);

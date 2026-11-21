@@ -49,7 +49,7 @@
       top: 14px;
       left: 14px;
       z-index: 1000;
-      width: 380px;
+      width: 390px;
       max-width: calc(100vw - 28px);
       max-height: calc(100vh - 28px);
       overflow-y: auto;
@@ -131,17 +131,168 @@
     .hud-badge {
       font-size: 10.5px;
       font-weight: 700;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       background: #492320;
       color: #f28b82;
       border: 1px solid #7a3535;
+      letter-spacing: 0.4px;
+      transition: all 0.3s ease;
     }
 
     :root[data-theme="light"] .hud-badge {
       background: #fce8e6;
       color: #b3261e;
       border-color: #f28b82;
+    }
+
+    .hud-badge.synced-flash {
+      background: #1e4620 !important;
+      color: #81c995 !important;
+      border-color: #34a853 !important;
+      box-shadow: 0 0 8px rgba(52, 168, 83, 0.6);
+    }
+
+    /* Live User Activity Card */
+    .user-activity-card {
+      background: #1f2327;
+      border: 1px solid #3c4043;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    :root[data-theme="light"] .user-activity-card {
+      background: #f8f9fa;
+      border-color: #dadce0;
+    }
+
+    .user-activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="light"] .user-activity-header {
+      color: #1a73e8;
+    }
+
+    .user-activity-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-activity-dot {
+      width: 7px;
+      height: 7px;
+      background: #34a853;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .sync-freshness {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #81c995;
+      background: rgba(52, 168, 83, 0.15);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    :root[data-theme="light"] .sync-freshness {
+      background: #e6f4ea;
+      color: #188038;
+    }
+
+    .latest-activity-summary {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e8eaed;
+      line-height: 1.35;
+    }
+
+    :root[data-theme="light"] .latest-activity-summary {
+      color: #202124;
+    }
+
+    .caller-chat-note {
+      background: #2a2015;
+      border-left: 3px solid #f9ab00;
+      padding: 4px 8px;
+      border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: #ffd54f;
+      margin-top: 3px;
+    }
+
+    :root[data-theme="light"] .caller-chat-note {
+      background: #fef7e0;
+      border-color: #f9ab00;
+      color: #b06000;
+    }
+
+    .activity-log-toggle {
+      font-size: 10.5px;
+      color: #9aa0a6;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+      user-select: none;
+    }
+
+    :root[data-theme="light"] .activity-log-toggle {
+      color: #5f6368;
+    }
+
+    .activity-log-toggle:hover {
+      color: #8ab4f8;
+    }
+
+    .activity-log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding-top: 4px;
+      border-top: 1px solid #3c4043;
+      margin-top: 4px;
+    }
+
+    :root[data-theme="light"] .activity-log-list {
+      border-top-color: #e8eaed;
+    }
+
+    .activity-item {
+      font-size: 10.5px;
+      line-height: 1.3;
+      color: #bdc1c6;
+      display: flex;
+      gap: 6px;
+    }
+
+    :root[data-theme="light"] .activity-item {
+      color: #5f6368;
+    }
+
+    .activity-item-time {
+      color: #8ab4f8;
+      font-weight: 600;
+      min-width: 48px;
+    }
+
+    :root[data-theme="light"] .activity-item-time {
+      color: #1a73e8;
     }
 
     /* Tracked User Card */
@@ -533,9 +684,31 @@
     <div class="hud-header">
       <div class="hud-title-wrap">
         <span class="hud-pulse-dot"></span>
-        <span class="hud-title">User Tracking Console</span>
+        <span id="hud-main-title" class="hud-title">Responder Live Tracker</span>
       </div>
       <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
+    </div>
+
+    <!-- Live User Activity Feed Card -->
+    <div class="user-activity-card">
+      <div class="user-activity-header">
+        <div class="user-activity-title">
+          <span class="user-activity-dot"></span>
+          <span>Live Caller Activity</span>
+        </div>
+        <span id="sync-freshness-badge" class="sync-freshness">SYNCED</span>
+      </div>
+      <div id="latest-activity-summary" class="latest-activity-summary">
+        Caller active in Map app
+      </div>
+      <div id="caller-chat-container" style="display: none;">
+        <div id="caller-chat-note" class="caller-chat-note"></div>
+      </div>
+      <div id="activity-log-toggle" class="activity-log-toggle">
+        <span id="activity-log-count">Show Activity Stream (0)</span>
+        <span id="activity-toggle-arrow">▼</span>
+      </div>
+      <div id="activity-log-list" class="activity-log-list" hidden></div>
     </div>
 
     <!-- Live Tracked User Location Card -->
@@ -591,7 +764,7 @@
         <span>📍</span> Track User
       </button>
       <button id="btn-center-responder" type="button" class="hud-btn">
-        <span>🚑</span> Station Unit
+        <span id="btn-responder-icon">🚑</span> Station Unit
       </button>
       <button id="btn-fit-overview" type="button" class="hud-btn">
         <span>🗺️</span> Fit Both
@@ -672,51 +845,34 @@
       }
     ];
 
-    // Standard responder bases in Iloilo
-    const KNOWN_RESPONDER_BASES = [
-      {
-        id: 'mandurriao-dru',
-        name: 'Mandurriao Disaster Response Unit',
-        coords: [122.5369, 10.7194],
-        address: 'Mandurriao District Office, Iloilo City',
-        phone: '(033) 321-2777'
-      },
-      {
-        id: 'cdrrmo-eoc',
-        name: 'Iloilo City Emergency Operations Center (CDRRMO)',
-        coords: [122.5705, 10.6929],
-        address: 'Iloilo City Hall, Plaza Libertad, Iloilo City',
-        phone: '(033) 333-1111'
-      },
-      {
-        id: 'red-cross',
-        name: 'Philippine Red Cross - Iloilo Chapter',
-        coords: [122.5641, 10.6989],
-        address: 'Bonifacio Drive, Iloilo City',
-        phone: '(033) 337-5976'
-      },
-      {
-        id: 'molo-deru',
-        name: 'Molo District Emergency Response Unit',
-        coords: [122.5460, 10.6979],
-        address: 'Molo Plaza Area, Iloilo City',
-        phone: '(033) 337-3011'
-      },
-      {
-        id: 'coast-guard',
-        name: 'Philippine Coast Guard District Western Visayas',
-        coords: [122.5794, 10.7012],
-        address: 'Bo. Obrero, Lapuz, Iloilo City',
-        phone: '(033) 337-5264'
-      },
-      {
-        id: 'oton-mdrrmo',
-        name: 'Oton MDRRMO Emergency Rescue Unit',
-        coords: [122.4768, 10.6953],
-        address: 'Municipal Hall Compound, Oton, Iloilo',
-        phone: '(033) 336-0911'
-      }
-    ];
+    // Standard responder bases by service type
+    const KNOWN_SERVICE_BASES = {
+      ambulance: [
+        { id: 'tmci', name: 'The Medical City Iloilo (Ambulance Base)', coords: [122.5435, 10.7027], address: 'Locsin St, Tap-oc, Molo, Iloilo City', phone: '(033) 500-1000', icon: '🚑', category: 'Tertiary Hospital / Emergency Ambulance' },
+        { id: 'wvmc', name: 'Western Visayas Medical Center (WVMC)', coords: [122.5358, 10.7188], address: 'Q. Abeto St, Mandurriao, Iloilo City', phone: '(033) 321-2841', icon: '🚑', category: 'Tertiary Government Hospital / Ambulance' },
+        { id: 'medicus', name: 'Medicus Medical Center', coords: [122.5482, 10.7121], address: 'Diversion Rd, Mandurriao, Iloilo City', phone: '(033) 509-8888', icon: '🚑', category: 'Tertiary General Hospital / Ambulance' },
+        { id: 'idh', name: "Iloilo Doctors' Hospital", coords: [122.5539, 10.7001], address: 'West Timawa, Molo, Iloilo City', phone: '(033) 337-7702', icon: '🚑', category: 'Medical Center / Emergency Unit' }
+      ],
+      responder: [
+        { id: 'mandurriao-dru', name: 'Mandurriao Disaster Response Unit', coords: [122.5369, 10.7194], address: 'Mandurriao District Office, Iloilo City', phone: '(033) 321-2777', icon: '🛟', category: 'Emergency Rescue Unit' },
+        { id: 'cdrrmo-eoc', name: 'Iloilo City Emergency Operations Center (CDRRMO)', coords: [122.5705, 10.6929], address: 'Iloilo City Hall, Plaza Libertad, Iloilo City', phone: '(033) 333-1111', icon: '🛟', category: 'Disaster Command Center' },
+        { id: 'red-cross', name: 'Philippine Red Cross - Iloilo Chapter', coords: [122.5641, 10.6989], address: 'Bonifacio Drive, Iloilo City', phone: '(033) 337-5976', icon: '🛟', category: 'Disaster Relief & Ambulance' },
+        { id: 'molo-deru', name: 'Molo District Emergency Response Unit', coords: [122.5460, 10.6979], address: 'Molo Plaza Area, Iloilo City', phone: '(033) 337-3011', icon: '🛟', category: 'District Rescue Unit' },
+        { id: 'coast-guard', name: 'Philippine Coast Guard District Western Visayas', coords: [122.5794, 10.7012], address: 'Bo. Obrero, Lapuz, Iloilo City', phone: '(033) 337-5264', icon: '🛟', category: 'Water Rescue / Marine Unit' },
+        { id: 'oton-mdrrmo', name: 'Oton MDRRMO Emergency Rescue Unit', coords: [122.4768, 10.6953], address: 'Municipal Hall Compound, Oton, Iloilo', phone: '(033) 336-0911', icon: '🛟', category: 'Municipal Disaster Rescue Unit' }
+      ],
+      police: [
+        { id: 'oton-police', name: 'Oton Municipal Police Station', coords: [122.4770, 10.6955], address: 'Mabini St, Poblacion South, Oton', phone: '(033) 336-0112', icon: '🚓', category: 'Municipal Police Station' },
+        { id: 'police-stn-4', name: 'Iloilo City Police Station 4 (Molo)', coords: [122.5458, 10.6976], address: 'M.H. del Pilar St, Molo, Iloilo City', phone: '(033) 337-2342', icon: '🚓', category: 'District Police Station' },
+        { id: 'police-stn-5', name: 'Iloilo City Police Station 5 (Mandurriao)', coords: [122.5365, 10.7190], address: 'Guzman St, Mandurriao, Iloilo City', phone: '(033) 321-1250', icon: '🚓', category: 'District Police Station' },
+        { id: 'police-hq', name: 'Iloilo City Police Office Headquarters', coords: [122.5670, 10.6960], address: 'General Luna St, Iloilo City', phone: '(033) 337-0400', icon: '🚓', category: 'City Police Command' }
+      ],
+      fire: [
+        { id: 'bfp-oton', name: 'BFP Oton Municipal Fire Station', coords: [122.4762, 10.6950], address: 'J.C. Zulueta St, Oton, Iloilo', phone: '(033) 336-0911', icon: '🚒', category: 'Fire & Rescue Engine Unit' },
+        { id: 'bfp-mandurriao', name: 'BFP Mandurriao Fire Sub-Station', coords: [122.5372, 10.7185], address: 'Mandurriao Plaza Area, Iloilo City', phone: '(033) 321-3911', icon: '🚒', category: 'Sub-Station Fire Engine' },
+        { id: 'bfp-iloilo-central', name: 'BFP Iloilo City Central Fire Station', coords: [122.5685, 10.6948], address: 'Macario Peralta St, Iloilo City', phone: '(033) 337-4444', icon: '🚒', category: 'Central Fire & Hazmat Station' }
+      ]
+    };
 
     // 1. Initialize Map
     const initialView = [10.7120, 122.5500];
@@ -771,8 +927,10 @@
     let userMarker = null;
     let responderMarker = null;
     let routeLayers = L.featureGroup().addTo(map);
-    let activeResponderStation = KNOWN_RESPONDER_BASES[0];
+    let currentServiceType = 'responder';
+    let activeResponderStation = KNOWN_SERVICE_BASES.responder[0];
     let lastTrackedCoords = null;
+    let lastRenderedStationId = null;
 
     let currentTrackedUser = {
       lat: 10.7196,
@@ -784,7 +942,12 @@
       summary: 'Severe water rise / flash flooding reported in caller area. Specialized amphibious/high-clearance unit deployed.',
       tacticalAdvice: 'Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.',
       callerPhone: '(033) 333-1111',
-      lastPingTime: new Date()
+      lastPingTime: new Date(),
+      lastAction: 'location_update',
+      lastActionTime: Date.now(),
+      latestSummary: 'Caller active in Map app',
+      chatMessage: null,
+      activityLog: []
     };
 
     // Haversine distance calculator
@@ -798,8 +961,10 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // 3. User Location Syncing Logic
+    // 3. User Location & Activity Syncing Logic
     function loadTrackedUser() {
+      let stateChanged = false;
+
       // 1. Check URL parameters
       const params = new URLSearchParams(window.location.search);
       const urlLat = parseFloat(params.get('lat'));
@@ -813,26 +978,83 @@
         if (params.get('summary')) currentTrackedUser.summary = params.get('summary');
         if (params.get('advice')) currentTrackedUser.tacticalAdvice = params.get('advice');
         currentTrackedUser.lastPingTime = new Date();
-      } else {
-        // 2. Check localStorage from map.html
-        try {
-          const raw = localStorage.getItem('tracked_user_emergency');
-          if (raw) {
-            const data = JSON.parse(raw);
-            if (Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
-              currentTrackedUser.lat = data.lat;
-              currentTrackedUser.lng = data.lng;
-              currentTrackedUser.district = data.district || currentTrackedUser.district;
-              currentTrackedUser.coordsFormatted = data.coords || (data.lat.toFixed(4) + '° N, ' + data.lng.toFixed(4) + '° E');
-              currentTrackedUser.scenario = data.scenario || currentTrackedUser.scenario;
-              currentTrackedUser.summary = data.summary || currentTrackedUser.summary;
-              currentTrackedUser.tacticalAdvice = data.tacticalAdvice || currentTrackedUser.tacticalAdvice;
-              currentTrackedUser.lastPingTime = new Date(data.timestamp || Date.now());
+      }
+
+      // 2. Check localStorage from map.html
+      try {
+        const raw = localStorage.getItem('tracked_user_emergency');
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
+            currentTrackedUser.lat = data.lat;
+            currentTrackedUser.lng = data.lng;
+            currentTrackedUser.district = data.district || currentTrackedUser.district;
+            currentTrackedUser.coordsFormatted = data.coords || (data.lat.toFixed(4) + '° N, ' + data.lng.toFixed(4) + '° E');
+            if (data.scenario) currentTrackedUser.scenario = data.scenario;
+            if (data.summary) currentTrackedUser.summary = data.summary;
+            if (data.tacticalAdvice) currentTrackedUser.tacticalAdvice = data.tacticalAdvice;
+            currentTrackedUser.lastPingTime = new Date(data.timestamp || Date.now());
+
+            if (data.serviceType && data.serviceType !== currentServiceType) {
+              currentServiceType = data.serviceType;
+              stateChanged = true;
+            }
+
+            if (data.lastAction) {
+              currentTrackedUser.lastAction = data.lastAction;
+              currentTrackedUser.lastActionTime = data.lastActionTime || Date.now();
+            }
+
+            if (data.userMessage) {
+              currentTrackedUser.chatMessage = data.userMessage;
+            }
+
+            if (Array.isArray(data.activityLog)) {
+              currentTrackedUser.activityLog = data.activityLog;
+              if (data.activityLog[0] && data.activityLog[0].desc) {
+                currentTrackedUser.latestSummary = data.activityLog[0].desc;
+              }
+            }
+
+            // Adapt active station if user specifically selected a facility on map.html
+            if (data.targetFacility && Array.isArray(data.targetFacility.coordinates)) {
+              activeResponderStation = {
+                id: 'custom-target-' + (data.targetFacility.name || '').replace(/\s+/g, '-'),
+                name: data.targetFacility.name,
+                coords: data.targetFacility.coordinates,
+                address: data.targetFacility.category || 'User Selected Emergency Facility',
+                phone: data.targetFacility.phone || '(033) 333-1111',
+                icon: getServiceIcon(currentServiceType)
+              };
+              stateChanged = true;
+            } else if (data.assignedResponder && Array.isArray(data.assignedResponder.coordinates)) {
+              activeResponderStation = {
+                id: 'assigned-' + (data.assignedResponder.name || '').replace(/\s+/g, '-'),
+                name: data.assignedResponder.name,
+                coords: data.assignedResponder.coordinates,
+                address: data.assignedResponder.address || 'Assigned Base Station',
+                phone: data.assignedResponder.phone || '(033) 333-1111',
+                icon: getServiceIcon(currentServiceType)
+              };
+              stateChanged = true;
+            } else if (stateChanged || !activeResponderStation || !activeResponderStation.id.startsWith('custom-target-')) {
+              // Pick closest base for current service type
+              const baseList = KNOWN_SERVICE_BASES[currentServiceType] || KNOWN_SERVICE_BASES.responder;
+              let closestBase = baseList[0];
+              let minD = Infinity;
+              baseList.forEach(function (base) {
+                const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, base.coords[1], base.coords[0]);
+                if (d < minD) {
+                  minD = d;
+                  closestBase = base;
+                }
+              });
+              activeResponderStation = closestBase;
             }
           }
-        } catch (e) {
-          console.warn('Could not read user location from localStorage:', e);
         }
+      } catch (e) {
+        console.warn('Could not read user activity sync from localStorage:', e);
       }
 
       updateUI();
@@ -841,22 +1063,43 @@
         Math.abs(lastTrackedCoords.lat - currentTrackedUser.lat) > 0.0001 ||
         Math.abs(lastTrackedCoords.lng - currentTrackedUser.lng) > 0.0001;
 
-      if (coordsChanged) {
+      const stationChanged = lastRenderedStationId !== (activeResponderStation && activeResponderStation.id);
+
+      if (coordsChanged || stationChanged || stateChanged) {
         lastTrackedCoords = { lat: currentTrackedUser.lat, lng: currentTrackedUser.lng };
-
-        // Pick closest responder base to tracked user
-        let closestBase = KNOWN_RESPONDER_BASES[0];
-        let minD = Infinity;
-        KNOWN_RESPONDER_BASES.forEach(function (base) {
-          const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, base.coords[1], base.coords[0]);
-          if (d < minD) {
-            minD = d;
-            closestBase = base;
-          }
-        });
-        activeResponderStation = closestBase;
-
+        lastRenderedStationId = activeResponderStation ? activeResponderStation.id : null;
         updateMapMarkersAndRoute();
+      }
+    }
+
+    function getServiceIcon(type) {
+      if (type === 'ambulance') return '🚑';
+      if (type === 'police') return '🚓';
+      if (type === 'fire') return '🚒';
+      return '🛟';
+    }
+
+    function getServiceBadgeText(type) {
+      if (type === 'ambulance') return 'AMBULANCE ACTIVE';
+      if (type === 'police') return 'POLICE ACTIVE';
+      if (type === 'fire') return 'FIRE ENGINE ACTIVE';
+      return 'RESCUE ACTIVE';
+    }
+
+    function flashSyncBadge() {
+      const badge = document.getElementById('dispatch-badge');
+      if (badge) {
+        badge.classList.add('synced-flash');
+        setTimeout(function () {
+          badge.classList.remove('synced-flash');
+        }, 800);
+      }
+      const syncFreshness = document.getElementById('sync-freshness-badge');
+      if (syncFreshness) {
+        syncFreshness.textContent = 'SYNCED JUST NOW';
+        setTimeout(function () {
+          syncFreshness.textContent = 'SYNCED';
+        }, 1500);
       }
     }
 
@@ -864,6 +1107,7 @@
     window.addEventListener('storage', function (e) {
       if (e.key === 'tracked_user_emergency') {
         loadTrackedUser();
+        flashSyncBadge();
       }
     });
 
@@ -871,25 +1115,60 @@
     if (window.BroadcastChannel) {
       const channel = new BroadcastChannel('emergency_dispatch');
       channel.onmessage = function (event) {
-        if (event && event.data && event.data.type === 'USER_LOCATION_UPDATE') {
+        if (event && event.data) {
           loadTrackedUser();
+          flashSyncBadge();
         }
       };
     }
 
-    // Polling heartbeat (every 3 seconds) for live location continuity
+    // Polling heartbeat (every 1 second) for immediate sync responsiveness
     setInterval(function () {
       loadTrackedUser();
-    }, 3000);
+    }, 1000);
 
     // 4. Update UI Elements
     function updateUI() {
+      const serviceIcon = getServiceIcon(currentServiceType);
+      document.getElementById('hud-main-title').textContent = (currentServiceType.toUpperCase()) + ' LIVE TRACKER';
+      document.getElementById('dispatch-badge').textContent = getServiceBadgeText(currentServiceType);
+
+      const btnRespIcon = document.getElementById('btn-responder-icon');
+      if (btnRespIcon) btnRespIcon.textContent = serviceIcon;
+
       document.getElementById('user-scenario-title').textContent = currentTrackedUser.scenario || '🚨 Live Incident Site';
       document.getElementById('user-district-val').textContent = currentTrackedUser.district || 'Caller Zone';
       document.getElementById('user-coords-val').textContent = currentTrackedUser.coordsFormatted;
       document.getElementById('responder-station-val').textContent = activeResponderStation.name;
       document.getElementById('user-situation-val').textContent = currentTrackedUser.summary || 'Emergency distress reported';
       document.getElementById('user-advice-val').textContent = currentTrackedUser.tacticalAdvice || 'Stay in safe area and keep line open.';
+
+      // Activity Feed display
+      document.getElementById('latest-activity-summary').textContent = currentTrackedUser.latestSummary || 'Caller active on map';
+
+      const chatContainer = document.getElementById('caller-chat-container');
+      const chatNote = document.getElementById('caller-chat-note');
+      if (currentTrackedUser.chatMessage) {
+        chatContainer.style.display = 'block';
+        chatNote.textContent = '💬 Caller: "' + currentTrackedUser.chatMessage + '"';
+      } else {
+        chatContainer.style.display = 'none';
+      }
+
+      // Render activity log
+      const logList = document.getElementById('activity-log-list');
+      const logCount = document.getElementById('activity-log-count');
+      const logs = currentTrackedUser.activityLog || [];
+      logCount.textContent = 'Show Activity Stream (' + logs.length + ')';
+
+      logList.innerHTML = logs.map(function (item) {
+        const timeAgo = Math.max(0, Math.round((Date.now() - item.time) / 1000));
+        const timeStr = timeAgo < 5 ? 'Just now' : (timeAgo < 60 ? timeAgo + 's ago' : Math.round(timeAgo / 60) + 'm ago');
+        return '<div class="activity-item">' +
+          '<span class="activity-item-time">' + timeStr + '</span>' +
+          '<span>' + escapeHtml(item.desc) + '</span>' +
+          '</div>';
+      }).join('');
 
       const timeAgoStr = Math.max(0, Math.round((Date.now() - currentTrackedUser.lastPingTime.getTime()) / 1000));
       document.getElementById('user-last-ping').textContent = timeAgoStr < 5 ? 'Live Ping Just Now' : timeAgoStr + 's ago';
@@ -900,6 +1179,29 @@
         telLink.innerHTML = '<span>📞</span> Contact Caller (' + currentTrackedUser.callerPhone + ')';
       }
     }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Toggle Activity Log List
+    document.getElementById('activity-log-toggle').addEventListener('click', function () {
+      const list = document.getElementById('activity-log-list');
+      const arrow = document.getElementById('activity-toggle-arrow');
+      if (list.hidden) {
+        list.hidden = false;
+        arrow.textContent = '▲';
+      } else {
+        list.hidden = true;
+        arrow.textContent = '▼';
+      }
+    });
 
     // 5. Update Map Markers and Calculate Response Route
     async function updateMapMarkersAndRoute() {
@@ -923,18 +1225,22 @@
         '<strong>🚨 Tracked Caller Location</strong><br>' +
         'District: <strong>' + currentTrackedUser.district + '</strong><br>' +
         'GPS: ' + currentTrackedUser.coordsFormatted + '<br>' +
+        'Service Needed: <strong>' + currentServiceType.toUpperCase() + '</strong><br>' +
         'Scenario: ' + currentTrackedUser.scenario
       );
 
       // 2. Plot / Update Responder Station Marker
       const stationLatLng = [activeResponderStation.coords[1], activeResponderStation.coords[0]];
+      const unitIconSymbol = getServiceIcon(currentServiceType);
 
       if (responderMarker) {
         responderMarker.setLatLng(stationLatLng);
+        const pinEl = responderMarker.getElement() && responderMarker.getElement().querySelector('.responder-unit-pin');
+        if (pinEl) pinEl.textContent = unitIconSymbol;
       } else {
         const responderIcon = L.divIcon({
           className: 'responder-unit-icon',
-          html: '<div class="responder-unit-pin">🚒</div>',
+          html: '<div class="responder-unit-pin">' + unitIconSymbol + '</div>',
           iconSize: [38, 38],
           iconAnchor: [19, 19]
         });
@@ -943,7 +1249,7 @@
       }
 
       responderMarker.bindPopup(
-        '<strong>🚑 Responder Base Unit</strong><br>' +
+        '<strong>' + unitIconSymbol + ' Active Dispatched Unit Base</strong><br>' +
         'Station: <strong>' + activeResponderStation.name + '</strong><br>' +
         activeResponderStation.address
       );
@@ -1059,7 +1365,8 @@
     });
 
     document.getElementById('btn-refresh-user').addEventListener('click', function () {
-      lastTrackedCoords = null; // force re-evaluation
+      lastTrackedCoords = null;
+      lastRenderedStationId = null;
       loadTrackedUser();
     });
 
