@@ -8,3 +8,8 @@ Prototype Shortest Route Emergency Map Finder
 - Changes are also implemented as of this moment.
 
 - Link for the Project Interface: http://127.0.0.1:8000/map.html
+
+
+# Additional Information 
+- The map.html is where the user interacts with the system
+- While the responder.html is where the system tracks where the user is sending help from to give the immediate emergency aid/action.
