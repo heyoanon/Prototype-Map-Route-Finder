@@ -3526,8 +3526,21 @@
     document.addEventListener('click', function (event) {
       const target = event.target;
       if (!(target instanceof Node)) return;
+      const el = target instanceof Element ? target : target.parentElement;
 
-      if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
+      // Detect if click is on an interactive element or content
+      const isInteractive = Boolean(el && el.closest(
+        'input, textarea, select, label, button, a, [role="button"], ' +
+        '.service-pin, .service-badge, .service-name, .leaflet-marker-icon, .leaflet-popup, ' +
+        '.emergency-facility-card, .route-card, .chatbox-input-form, .chat-msg, .chat-chip, .chat-action-btn, ' +
+        '#account-panel, #history-panel, .map-categories-panel, .map-categories-toggle, .leaflet-control, ' +
+        '#assistance-chatbox'
+      ));
+
+      // Collapse panels when clicking on any empty space anywhere
+      if (!isInteractive) {
+        collapseSidebar();
+      } else if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
         collapseSidebar();
       }
 
@@ -3536,11 +3549,11 @@
       const layersControl = document.querySelector('.map-categories-control');
       const layersPanel = layersControl && layersControl.querySelector('.map-categories-panel');
       const layersToggle = layersControl && layersControl.querySelector('.map-categories-toggle');
-      if (!accountPanel.contains(target)) {
+      if (accountPanel && !accountPanel.contains(target)) {
         accountContent.hidden = true;
         accountToggle.setAttribute('aria-expanded', 'false');
       }
-      if (!historyPanel.contains(target)) {
+      if (historyPanel && !historyPanel.contains(target)) {
         historyContent.hidden = true;
         historyToggle.setAttribute('aria-expanded', 'false');
       }
@@ -3587,9 +3600,7 @@
     }
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
-        if (!emergencyAssistance.hidden) {
-          collapseSidebar();
-        }
+        collapseSidebar();
         if (assistanceChatBox && !assistanceChatBox.hidden) {
           closeAssistanceChat();
         }
@@ -4738,6 +4749,7 @@
       searchButton.disabled = false;
       serviceDetailsRequestId += 1;
       status.classList.remove('visible');
+      status.textContent = '';
       locationStatus.classList.remove('visible');
       form.hidden = false;
       emergencyOpenButton.hidden = false;
@@ -4758,6 +4770,42 @@
       document.querySelectorAll('.service-pin.expanded').forEach(function (expandedPin) {
         expandedPin.classList.remove('expanded');
       });
+
+      // Collapse responder dispatch and emergency facilities results
+      const responderBanner = document.getElementById('responder-dispatch-banner');
+      if (responderBanner) {
+        responderBanner.hidden = true;
+        responderBanner.innerHTML = '';
+      }
+      const emergencyResultsList = document.getElementById('emergency-results-list');
+      if (emergencyResultsList) {
+        emergencyResultsList.hidden = true;
+        emergencyResultsList.replaceChildren();
+      }
+      const responderSituationSelector = document.getElementById('responder-situation-selector');
+      if (responderSituationSelector) {
+        responderSituationSelector.hidden = true;
+      }
+      const emergencyAssistanceResults = document.getElementById('emergency-assistance-results');
+      if (emergencyAssistanceResults) {
+        emergencyAssistanceResults.hidden = true;
+        emergencyAssistanceResults.replaceChildren();
+      }
+      if (emergencyAssistance) {
+        emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
+          btn.classList.remove('active');
+        });
+      }
+      const incidentBanner = document.getElementById('incident-banner');
+      if (incidentBanner) {
+        incidentBanner.hidden = true;
+      }
+      if (typeof isAddingIncident !== 'undefined') {
+        isAddingIncident = false;
+      }
+      if (typeof closeAssistanceChat === 'function') {
+        closeAssistanceChat();
+      }
     }
 
     function setLocationStatus(message) {
