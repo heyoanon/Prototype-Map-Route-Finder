@@ -5911,6 +5911,46 @@
         .replace(/'/g, '&#39;');
     }
 
+    function createUnifiedFacilityCard(candidate, index, label, isFirst) {
+      const card = document.createElement('div');
+      card.className = 'emergency-facility-card' + (isFirst ? ' active-facility' : '');
+      card.setAttribute('data-index', String(index));
+
+      const distKm = candidate.distanceMeters >= 1000
+        ? (candidate.distanceMeters / 1000).toFixed(1) + ' km'
+        : Math.round(candidate.distanceMeters) + ' m';
+      const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
+      const categoryText = candidate.category || (label + ' facility');
+
+      card.innerHTML =
+        '<div class="emergency-facility-info">' +
+        '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
+        '<div class="emergency-facility-sub">' + escapeHtml(categoryText) + '</div>' +
+        '<div class="emergency-facility-badges">' +
+        '<span>📍 ' + distKm + '</span>' +
+        '<span>⏱ ~' + estMins + ' min drive</span>' +
+        (index === 0 ? '<span style="font-weight:700;color:#188038;">• Nearest</span>' : '') +
+        '</div>' +
+        '</div>' +
+        '<button type="button" class="emergency-facility-route-btn">' +
+        (isFirst ? 'Active Route' : 'Route') +
+        '</button>';
+
+      return card;
+    }
+
+    function syncFacilityCardSelection(selectedIndex) {
+      document.querySelectorAll('.emergency-facility-card').forEach(function (c) {
+        const idx = Number(c.getAttribute('data-index'));
+        const isSelected = (idx === selectedIndex);
+        c.classList.toggle('active-facility', isSelected);
+        const btn = c.querySelector('.emergency-facility-route-btn');
+        if (btn) {
+          btn.textContent = isSelected ? 'Active Route' : 'Route';
+        }
+      });
+    }
+
     function renderEmergencyFacilitiesList(candidates, type) {
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = true;
@@ -5923,7 +5963,7 @@
       };
       const label = typeLabels[type] || 'Emergency';
 
-      // 1. Render in #emergency-assistance-results (modal dialog)
+      // 1. Populate the merged list in #emergency-assistance-results (modal dialog)
       const assistanceContainer = document.getElementById('emergency-assistance-results');
       if (assistanceContainer) {
         assistanceContainer.hidden = false;
@@ -5945,54 +5985,10 @@
         listEl.className = 'emergency-facility-list';
 
         candidates.forEach(function (candidate, index) {
-          const card = document.createElement('div');
-          card.className = 'emergency-facility-card' + (index === 0 ? ' active-facility' : '');
-          card.setAttribute('data-index', String(index));
-
-          const distKm = candidate.distanceMeters >= 1000
-            ? (candidate.distanceMeters / 1000).toFixed(1) + ' km'
-            : Math.round(candidate.distanceMeters) + ' m';
-          const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
-
-          card.innerHTML =
-            '<div class="emergency-facility-info">' +
-            '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
-            '<div class="emergency-facility-sub">' + escapeHtml(candidate.category || (label + ' facility')) + '</div>' +
-            '<div class="emergency-facility-badges">' +
-            '<span>📍 ' + distKm + '</span>' +
-            '<span>⏱ ~' + estMins + ' min drive</span>' +
-            (index === 0 ? '<span style="font-weight:700;color:#188038;">• Nearest</span>' : '') +
-            '</div>' +
-            '</div>' +
-            '<button type="button" class="emergency-facility-route-btn">' +
-            (index === 0 ? 'Active Route' : 'Route') +
-            '</button>';
+          const card = createUnifiedFacilityCard(candidate, index, label, index === 0);
 
           card.addEventListener('click', function () {
-            assistanceContainer.querySelectorAll('.emergency-facility-card').forEach(function (c) {
-              c.classList.remove('active-facility');
-              const btn = c.querySelector('.emergency-facility-route-btn');
-              if (btn) btn.textContent = 'Route';
-            });
-            card.classList.add('active-facility');
-            const thisBtn = card.querySelector('.emergency-facility-route-btn');
-            if (thisBtn) thisBtn.textContent = 'Active Route';
-
-            // Also synchronize sidebar cards
-            const sidebar = document.getElementById('emergency-results-list');
-            if (sidebar) {
-              const cards = sidebar.querySelectorAll('.emergency-facility-card');
-              if (cards[index]) {
-                cards.forEach(function (c) {
-                  c.classList.remove('active-facility');
-                  const b = c.querySelector('.emergency-facility-route-btn');
-                  if (b) b.textContent = 'Route';
-                });
-                cards[index].classList.add('active-facility');
-                const sbBtn = cards[index].querySelector('.emergency-facility-route-btn');
-                if (sbBtn) sbBtn.textContent = 'Active';
-              }
-            }
+            syncFacilityCardSelection(index);
 
             broadcastUserEmergencyActivity('facility_route_selected', {
               targetFacility: {
@@ -6005,7 +6001,6 @@
               actionDescription: 'Routed to facility: ' + candidate.name
             });
             candidate.selectService();
-            collapseSidebar();
           });
 
           listEl.appendChild(card);
@@ -6017,16 +6012,29 @@
         viewMapBtn.className = 'emergency-view-map-btn';
         viewMapBtn.textContent = 'Close & View Route on Map';
         viewMapBtn.addEventListener('click', function () {
-          collapseSidebar();
+          emergencyAssistance.hidden = true;
+          const sidebarContainer = document.getElementById('emergency-results-list');
+          if (sidebarContainer) {
+            sidebarContainer.hidden = false;
+          }
+          if (emergencyOpenButton) {
+            emergencyOpenButton.hidden = true;
+            emergencyOpenButton.setAttribute('aria-expanded', 'false');
+          }
+          if (map) {
+            map.invalidateSize();
+          }
         });
         assistanceContainer.appendChild(viewMapBtn);
       }
 
-      // 2. Render in left sidebar (#emergency-results-list)
+      // 2. Populate merged list in sidebar (#emergency-results-list) but keep hidden while modal is open
       const sidebarContainer = document.getElementById('emergency-results-list');
       if (sidebarContainer) {
-        sidebarContainer.hidden = false;
         sidebarContainer.innerHTML = '';
+        // Hide while center modal is active to prevent on-screen duplication
+        const modalIsOpen = emergencyAssistance && !emergencyAssistance.hidden;
+        sidebarContainer.hidden = modalIsOpen;
 
         const sHeader = document.createElement('div');
         sHeader.className = 'emergency-results-header';
@@ -6036,38 +6044,13 @@
 
         const sList = document.createElement('div');
         sList.className = 'emergency-facility-list';
-        sList.style.maxHeight = '180px';
+        sList.style.maxHeight = '200px';
 
         candidates.forEach(function (candidate, index) {
-          const card = document.createElement('div');
-          card.className = 'emergency-facility-card' + (index === 0 ? ' active-facility' : '');
-
-          const distKm = candidate.distanceMeters >= 1000
-            ? (candidate.distanceMeters / 1000).toFixed(1) + ' km'
-            : Math.round(candidate.distanceMeters) + ' m';
-          const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
-
-          card.innerHTML =
-            '<div class="emergency-facility-info">' +
-            '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
-            '<div class="emergency-facility-badges">' +
-            '<span>📍 ' + distKm + '</span>' +
-            '<span>⏱ ~' + estMins + ' min</span>' +
-            '</div>' +
-            '</div>' +
-            '<button type="button" class="emergency-facility-route-btn">' +
-            (index === 0 ? 'Active' : 'Route') +
-            '</button>';
+          const card = createUnifiedFacilityCard(candidate, index, label, index === 0);
 
           card.addEventListener('click', function () {
-            sidebarContainer.querySelectorAll('.emergency-facility-card').forEach(function (c) {
-              c.classList.remove('active-facility');
-              const btn = c.querySelector('.emergency-facility-route-btn');
-              if (btn) btn.textContent = 'Route';
-            });
-            card.classList.add('active-facility');
-            const thisBtn = card.querySelector('.emergency-facility-route-btn');
-            if (thisBtn) thisBtn.textContent = 'Active';
+            syncFacilityCardSelection(index);
 
             broadcastUserEmergencyActivity('facility_route_selected', {
               targetFacility: {
