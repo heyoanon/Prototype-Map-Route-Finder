@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,104 +12,304 @@
   <link rel="apple-touch-icon" href="icons/app-icon-192.png">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <style>
-    * { box-sizing: border-box; }
-    :root { color-scheme: light; }
-    :root[data-theme="dark"] { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
-    body { color: #202124; background: #fff; }
-    #map { width: 100%; height: 100%; }
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: light;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      color: #202124;
+      background: #fff;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
     #offline-banner {
-      position: fixed; z-index: 2000; left: 50%; bottom: 18px; transform: translateX(-50%);
-      max-width: calc(100vw - 32px); padding: 9px 14px; border-radius: 999px;
-      background: #202124; color: #fff; box-shadow: 0 2px 10px #0005;
-      font-size: 13px; text-align: center;
+      position: fixed;
+      z-index: 2000;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 32px);
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: #202124;
+      color: #fff;
+      box-shadow: 0 2px 10px #0005;
+      font-size: 13px;
+      text-align: center;
     }
-    #offline-banner[hidden] { display: none; }
+
+    #offline-banner[hidden] {
+      display: none;
+    }
+
     #map-search-controls {
-      position: absolute; z-index: 1000; top: 14px; left: 20px; width: min(340px, calc(100vw - 32px));
-      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      position: absolute;
+      z-index: 1000;
+      top: 14px;
+      left: 20px;
+      width: min(340px, calc(100vw - 32px));
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
     }
+
     .search-panel {
-      position: relative; width: 100%; max-height: calc(100vh - 32px); overflow-y: auto; padding: 6px;
-      border-radius: 18px; background: #fff; box-shadow: 0 4px 16px #0003;
+      position: relative;
+      width: 100%;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding: 6px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 4px 16px #0003;
     }
+
     #search-form {
-      display: flex; flex-direction: column; gap: 6px; padding: 4px;
-      border: 0; background: transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 4px;
+      border: 0;
+      background: transparent;
     }
-    #search-form[hidden] { display: none; }
+
+    #search-form[hidden] {
+      display: none;
+    }
+
     .search-inputs-wrapper {
-      display: flex; flex-direction: column; gap: 6px; background: #f8f9fa;
-      border: 1px solid #dadce0; border-radius: 12px; padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 12px;
+      padding: 4px;
     }
+
     .search-row {
-      display: flex; align-items: center; gap: 6px; background: #fff;
-      border: 1px solid #e8eaed; border-radius: 8px; padding: 2px 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      padding: 2px 6px;
     }
-    .search-row:focus-within { border-color: #1a73e8; outline: 1px solid #1a73e8; }
+
+    .search-row:focus-within {
+      border-color: #1a73e8;
+      outline: 1px solid #1a73e8;
+    }
+
     .route-point-marker {
-      flex: 0 0 10px; width: 10px; height: 10px; border-radius: 50%;
+      flex: 0 0 10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
     }
-    .origin-marker { background: #1a73e8; box-shadow: 0 0 0 2px #c2e7ff; }
-    .dest-marker { background: #d93025; box-shadow: 0 0 0 2px #fce8e6; }
-    #source-input, #destination {
-      flex: 1; min-width: 0; height: 36px; padding: 0 4px; border: 0; outline: 0;
-      font-size: 13.5px; background: transparent; color: inherit;
+
+    .origin-marker {
+      background: #1a73e8;
+      box-shadow: 0 0 0 2px #c2e7ff;
     }
+
+    .dest-marker {
+      background: #d93025;
+      box-shadow: 0 0 0 2px #fce8e6;
+    }
+
+    #source-input,
+    #destination {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      padding: 0 4px;
+      border: 0;
+      outline: 0;
+      font-size: 13.5px;
+      background: transparent;
+      color: inherit;
+    }
+
     .search-inline-button {
-      display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
-      border: 0; border-radius: 6px; background: transparent; color: #5f6368; cursor: pointer;
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #5f6368;
+      cursor: pointer;
     }
-    .search-inline-button:hover { background: #f1f3f4; color: #202124; }
-    .search-inline-button svg { display: block; }
+
+    .search-inline-button:hover {
+      background: #f1f3f4;
+      color: #202124;
+    }
+
+    .search-inline-button svg {
+      display: block;
+    }
+
     .factors-toolbar {
-      display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px; padding: 2px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+      padding: 2px;
     }
+
     .factor-chip {
-      display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
-      border: 1px solid #dadce0; border-radius: 999px; background: #fff;
-      font-size: 11.5px; font-weight: 500; color: #3c4043; cursor: pointer; user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 999px;
+      background: #fff;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #3c4043;
+      cursor: pointer;
+      user-select: none;
     }
-    .factor-chip input { margin: 0; accent-color: #1a73e8; }
-    .factor-chip:hover { background: #f1f3f4; }
+
+    .factor-chip input {
+      margin: 0;
+      accent-color: #1a73e8;
+    }
+
+    .factor-chip:hover {
+      background: #f1f3f4;
+    }
+
     .factor-action-btn {
-      margin-left: auto; padding: 3px 8px; border: 1px dashed #1a73e8;
-      border-radius: 999px; background: #e8f0fe; color: #1a73e8;
-      font-size: 11.5px; font-weight: 600; cursor: pointer;
+      margin-left: auto;
+      padding: 3px 8px;
+      border: 1px dashed #1a73e8;
+      border-radius: 999px;
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .factor-action-btn:hover { background: #d2e3fc; }
-    .factor-action-btn.active { background: #1a73e8; color: #fff; border-style: solid; }
+
+    .factor-action-btn:hover {
+      background: #d2e3fc;
+    }
+
+    .factor-action-btn.active {
+      background: #1a73e8;
+      color: #fff;
+      border-style: solid;
+    }
+
     #incident-banner {
-      margin: 4px 6px; padding: 6px 10px; border-radius: 8px;
-      background: #fef7e0; border: 1px solid #f9ab00; color: #b06000;
-      font-size: 11.5px; line-height: 1.35; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      margin: 4px 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #fef7e0;
+      border: 1px solid #f9ab00;
+      color: #b06000;
+      font-size: 11.5px;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
-    #incident-banner[hidden] { display: none; }
+
+    #incident-banner[hidden] {
+      display: none;
+    }
+
     #incident-banner button {
-      padding: 2px 6px; border: 1px solid #b06000; border-radius: 4px;
-      background: #fff; color: #b06000; font-size: 11px; cursor: pointer;
+      padding: 2px 6px;
+      border: 1px solid #b06000;
+      border-radius: 4px;
+      background: #fff;
+      color: #b06000;
+      font-size: 11px;
+      cursor: pointer;
     }
+
     .delay-badge {
-      display: inline-block; padding: 1px 6px; border-radius: 4px;
-      background: #fce8e6; color: #c5221f; font-weight: 700; font-size: 11px;
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #fce8e6;
+      color: #c5221f;
+      font-weight: 700;
+      font-size: 11px;
     }
+
     .route-event-warning {
-      margin: 6px 0 2px; padding: 5px 8px; border-radius: 6px;
-      background: #fef7e0; border-left: 3px solid #f9ab00; color: #7a4b04;
-      font-size: 11.5px; line-height: 1.35;
+      margin: 6px 0 2px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: #fef7e0;
+      border-left: 3px solid #f9ab00;
+      color: #7a4b04;
+      font-size: 11.5px;
+      line-height: 1.35;
     }
+
     .route-event-warning.safe {
-      background: #e6f4ea; border-left-color: #188038; color: #137333;
+      background: #e6f4ea;
+      border-left-color: #188038;
+      color: #137333;
     }
+
     .route-event-warning.danger {
-      background: #fce8e6; border-left-color: #d93025; color: #c5221f;
+      background: #fce8e6;
+      border-left-color: #d93025;
+      color: #c5221f;
     }
+
     .hazard-step-tag {
-      display: inline-block; margin-left: 4px; padding: 1px 4px;
-      border-radius: 4px; font-size: 10px; font-weight: 600;
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
     }
-    .hazard-step-tag.traffic { background: #feefe3; color: #d56a00; }
-    .hazard-step-tag.event { background: #fce8e6; color: #c5221f; }
+
+    .hazard-step-tag.traffic {
+      background: #feefe3;
+      color: #d56a00;
+    }
+
+    .hazard-step-tag.event {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+
     .travel-time-breakdown {
       margin: 8px 0;
       padding: 9px;
@@ -119,6 +320,7 @@
       flex-direction: column;
       gap: 6px;
     }
+
     .breakdown-title {
       font-size: 11px;
       font-weight: 700;
@@ -126,14 +328,19 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
     .breakdown-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 5px;
     }
+
     @media (max-width: 360px) {
-      .breakdown-grid { grid-template-columns: repeat(2, 1fr); }
+      .breakdown-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
+
     .breakdown-tile {
       background: #fff;
       border: 1px solid #e8eaed;
@@ -141,14 +348,17 @@
       padding: 5px 3px;
       text-align: center;
     }
+
     .breakdown-tile.total {
       background: #e6f4ea;
       border-color: #ceead6;
     }
+
     .breakdown-tile.delayed {
       background: #fce8e6;
       border-color: #fad2cf;
     }
+
     .breakdown-label {
       font-size: 9.5px;
       color: #5f6368;
@@ -158,17 +368,21 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .breakdown-value {
       font-size: 12.5px;
       font-weight: 700;
       color: #202124;
     }
+
     .breakdown-tile.total .breakdown-value {
       color: #137333;
     }
+
     .breakdown-tile.delayed .breakdown-value {
       color: #c5221f;
     }
+
     .breakdown-formula {
       font-size: 11.5px;
       color: #3c4043;
@@ -176,315 +390,1002 @@
       padding-top: 5px;
       border-top: 1px dashed #dadce0;
     }
+
     .breakdown-item-list {
       margin: 2px 0 0;
       padding-left: 16px;
       font-size: 11px;
       color: #5f6368;
     }
+
     .breakdown-item-list li {
       padding: 1px 0;
     }
+
     .incident-marker-icon {
-      display: grid; place-items: center; width: 28px; height: 28px;
-      border: 2px solid #fff; border-radius: 50%; color: #fff;
-      font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
     }
-    .incident-popup h4 { margin: 0 0 4px; font-size: 13px; }
-    .incident-popup p { margin: 2px 0 6px; font-size: 11.5px; color: #555; }
+
+    .incident-popup h4 {
+      margin: 0 0 4px;
+      font-size: 13px;
+    }
+
+    .incident-popup p {
+      margin: 2px 0 6px;
+      font-size: 11.5px;
+      color: #555;
+    }
+
     .incident-popup button.remove-incident-btn {
-      padding: 3px 8px; border: 1px solid #d93025; border-radius: 4px;
-      background: #fff; color: #d93025; font-size: 11px; cursor: pointer;
+      padding: 3px 8px;
+      border: 1px solid #d93025;
+      border-radius: 4px;
+      background: #fff;
+      color: #d93025;
+      font-size: 11px;
+      cursor: pointer;
     }
-    .incident-popup button.remove-incident-btn:hover { background: #fce8e6; }
+
+    .incident-popup button.remove-incident-btn:hover {
+      background: #fce8e6;
+    }
+
     .theme-control {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      margin: 6px 4px 2px; color: #555; font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 6px 4px 2px;
+      color: #555;
+      font-size: 12px;
     }
+
     .theme-control select {
-      flex: 1; width: 100%; min-width: 0; padding: 5px 7px; border: 1px solid #dadce0;
-      border-radius: 4px; background: #fff; color: #202124; font: inherit;
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      padding: 5px 7px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      background: #fff;
+      color: #202124;
+      font: inherit;
     }
-    .account-panel { position: relative; margin: 0; padding: 0; border: 0; }
+
+    .account-panel {
+      position: relative;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
     .map-tool-button {
-      display: grid; place-items: center; width: 46px; height: 46px; padding: 0;
-      border: 1px solid #bbb; border-radius: 50%; background: #fff;
-      color: #333; cursor: pointer;
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      padding: 0;
+      border: 1px solid #bbb;
+      border-radius: 50%;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
     }
-    .map-tool-button:hover { background: #f1f3f4; }
-    .map-tool-button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
-    .map-tool-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .map-tool-button:hover {
+      background: #f1f3f4;
+    }
+
+    .map-tool-button:focus-visible {
+      outline: 2px solid #1a73e8;
+      outline-offset: 2px;
+    }
+
+    .map-tool-button svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .account-content {
-      position: absolute; z-index: 1001; top: 52px; right: 0;
-      width: min(320px, calc(100vw - 24px)); max-height: min(75vh, 560px);
-      overflow-y: auto; margin: 0; padding: 10px; border: 1px solid #dadce0;
-      border-radius: 16px; background: #fff; box-shadow: 0 2px 10px #0004;
+      position: absolute;
+      z-index: 1001;
+      top: 52px;
+      right: 0;
+      width: min(320px, calc(100vw - 24px));
+      max-height: min(75vh, 560px);
+      overflow-y: auto;
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #dadce0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 2px 10px #0004;
     }
-    .history-panel { position: relative; }
+
+    .history-panel {
+      position: relative;
+    }
+
     .history-content {
-      position: absolute; z-index: 1001; bottom: 52px; left: 0;
-      width: min(340px, calc(100vw - 24px)); max-height: min(75vh, 560px);
-      overflow-y: auto; padding: 10px; border: 1px solid #dadce0;
-      border-radius: 16px; background: #fff; box-shadow: 0 2px 10px #0004;
+      position: absolute;
+      z-index: 1001;
+      bottom: 52px;
+      left: 0;
+      width: min(340px, calc(100vw - 24px));
+      max-height: min(75vh, 560px);
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #dadce0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 2px 10px #0004;
     }
-    .history-content[hidden], .account-content[hidden] { display: none; }
-    #history-status { margin-top: 7px; color: #555; font-size: 12px; line-height: 1.4; }
-    #history-logged-out { margin-top: 6px; color: #555; font-size: 12px; line-height: 1.4; }
-    .account-content label { display: block; margin-top: 7px; color: #555; font-size: 12px; }
+
+    .history-content[hidden],
+    .account-content[hidden] {
+      display: none;
+    }
+
+    #history-status {
+      margin-top: 7px;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    #history-logged-out {
+      margin-top: 6px;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .account-content label {
+      display: block;
+      margin-top: 7px;
+      color: #555;
+      font-size: 12px;
+    }
+
     .account-content input {
-      display: block; width: 100%; min-height: 34px; margin-top: 3px; padding: 5px 7px;
-      border: 1px solid #dadce0; border-radius: 4px; background: #fff; color: #202124; font: inherit;
+      display: block;
+      width: 100%;
+      min-height: 34px;
+      margin-top: 3px;
+      padding: 5px 7px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      background: #fff;
+      color: #202124;
+      font: inherit;
     }
-    .account-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .account-buttons button, #account-open-form, #clear-history {
-      min-height: 32px; padding: 5px 8px; border: 1px solid #dadce0; border-radius: 4px;
-      background: #fff; color: #1a73e8; font: inherit; font-size: 12px; cursor: pointer;
+
+    .account-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
     }
-    .account-buttons button:disabled, #account-open-form:disabled { color: #777; cursor: not-allowed; }
-    #account-status { margin-top: 7px; color: #555; font-size: 12px; line-height: 1.4; }
-    #account-identity { color: #202124; font-size: 12px; overflow-wrap: anywhere; }
-    .account-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-    .account-history-heading h3 { margin: 0; color: #202124; font-size: 13px; }
-    #clear-history { min-height: 28px; padding: 3px 6px; }
-    #activity-history { max-height: 180px; overflow-y: auto; margin: 6px 0 0; padding-left: 20px; }
-    #activity-history li { padding: 4px 0; color: #333; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
-    .activity-time { display: block; color: #666; font-size: 10px; }
+
+    .account-buttons button,
+    #account-open-form,
+    #clear-history {
+      min-height: 32px;
+      padding: 5px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      background: #fff;
+      color: #1a73e8;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .account-buttons button:disabled,
+    #account-open-form:disabled {
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    #account-status {
+      margin-top: 7px;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    #account-identity {
+      color: #202124;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .account-history-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .account-history-heading h3 {
+      margin: 0;
+      color: #202124;
+      font-size: 13px;
+    }
+
+    #clear-history {
+      min-height: 28px;
+      padding: 3px 6px;
+    }
+
+    #activity-history {
+      max-height: 180px;
+      overflow-y: auto;
+      margin: 6px 0 0;
+      padding-left: 20px;
+    }
+
+    #activity-history li {
+      padding: 4px 0;
+      color: #333;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-time {
+      display: block;
+      color: #666;
+      font-size: 10px;
+    }
+
     #destination {
-      flex: 1; min-width: 0; height: 40px; padding: 0 8px; border: 0; outline: 0;
-      font-size: 15px; background: transparent;
+      flex: 1;
+      min-width: 0;
+      height: 40px;
+      padding: 0 8px;
+      border: 0;
+      outline: 0;
+      font-size: 15px;
+      background: transparent;
     }
+
     #search-button {
-      display: grid; place-items: center; width: 40px; height: 40px; border: 0;
-      border-radius: 50%; background: #fff; color: #444; cursor: pointer;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      color: #444;
+      cursor: pointer;
     }
-    #search-button:hover { background: #f1f3f4; }
-    #search-button:disabled { color: #999; cursor: wait; }
+
+    #search-button:hover {
+      background: #f1f3f4;
+    }
+
+    #search-button:disabled {
+      color: #999;
+      cursor: wait;
+    }
+
     #emergency-open {
-      display: grid; flex: 0 0 42px; place-items: center; width: 42px; height: 42px; margin: 0;
-      padding: 0; border: 0; border-radius: 50%; background: #fff;
-      color: #b3261e; cursor: pointer;
+      display: grid;
+      flex: 0 0 42px;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      color: #b3261e;
+      cursor: pointer;
     }
-    #emergency-open[hidden] { display: none; }
-    #emergency-open:hover { background: #f1f3f4; }
-    #emergency-open:focus-visible { outline: 2px solid #d93025; outline-offset: 2px; }
+
+    #emergency-open[hidden] {
+      display: none;
+    }
+
+    #emergency-open:hover {
+      background: #f1f3f4;
+    }
+
+    #emergency-open:focus-visible {
+      outline: 2px solid #d93025;
+      outline-offset: 2px;
+    }
+
     #emergency-open svg {
-      width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2;
-      stroke-linecap: round; stroke-linejoin: round;
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
-    #status { display: none; margin: 4px 8px 2px; color: #555; font-size: 13px; line-height: 1.4; }
-    #status.visible { display: block; }
-    #location-status { display: none; margin: 4px 8px 2px; color: #555; font-size: 12px; line-height: 1.35; }
-    #location-status.visible { display: block; }
+
+    #status {
+      display: none;
+      margin: 4px 8px 2px;
+      color: #555;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    #status.visible {
+      display: block;
+    }
+
+    #location-status {
+      display: none;
+      margin: 4px 8px 2px;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    #location-status.visible {
+      display: block;
+    }
+
     #emergency-assistance {
-      position: fixed; z-index: 2500; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
-      padding: 14px 16px; border-radius: 16px; background: #fff;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32); border: 1px solid #dadce0; color: #202124;
+      position: fixed;
+      z-index: 2500;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+      border: 1px solid #dadce0;
+      color: #202124;
     }
-    #emergency-assistance[hidden] { display: none; }
+
+    #emergency-assistance[hidden] {
+      display: none;
+    }
+
     .emergency-assistance-header {
-      display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 8px;
     }
+
     .emergency-assistance-header-title {
-      font-size: 14px; font-weight: 700; color: #b3261e;
+      font-size: 14px;
+      font-weight: 700;
+      color: #b3261e;
     }
+
     .emergency-status-text {
-      font-size: 12.5px; line-height: 1.4; color: #3c4043; margin-bottom: 8px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: #3c4043;
+      margin-bottom: 8px;
     }
+
     .emergency-assistance-divider {
-      border: 0; border-top: 1px solid #f1c7c5; margin: 8px 0;
+      border: 0;
+      border-top: 1px solid #f1c7c5;
+      margin: 8px 0;
     }
-    .emergency-assistance-title { margin: 0; font-size: 13px; }
-    .emergency-assistance-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+    .emergency-assistance-title {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .emergency-assistance-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
     .emergency-assistance-buttons button {
-      min-height: 34px; padding: 0 11px; border: 1px solid #dadce0; border-radius: 6px;
-      background: #fff; color: #b3261e; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      background: #fff;
+      color: #b3261e;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
       transition: all 0.15s ease;
     }
-    .emergency-assistance-buttons button:hover { background: #fce8e6; border-color: #f28b82; }
+
+    .emergency-assistance-buttons button:hover {
+      background: #fce8e6;
+      border-color: #f28b82;
+    }
+
     .emergency-assistance-buttons button.active {
-      background: #fce8e6; border-color: #d93025; font-weight: 700; box-shadow: 0 0 0 1px #d93025;
+      background: #fce8e6;
+      border-color: #d93025;
+      font-weight: 700;
+      box-shadow: 0 0 0 1px #d93025;
     }
+
     .emergency-assistance-results {
-      margin-top: 10px; display: flex; flex-direction: column; gap: 8px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .emergency-assistance-results[hidden] { display: none; }
+
+    .emergency-assistance-results[hidden] {
+      display: none;
+    }
+
     .emergency-results-header {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 12.5px; font-weight: 700; color: #202124; padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #202124;
+      padding-bottom: 4px;
       border-bottom: 1px solid #f1f3f4;
     }
+
     .emergency-results-count {
-      font-size: 11px; font-weight: 500; color: #5f6368;
+      font-size: 11px;
+      font-weight: 500;
+      color: #5f6368;
     }
+
     .emergency-facility-list {
-      display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
     }
+
     .emergency-facility-card {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      padding: 8px 10px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px;
-      cursor: pointer; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
+
     .emergency-facility-card:hover {
-      background: #f1f3f4; border-color: #1a73e8;
+      background: #f1f3f4;
+      border-color: #1a73e8;
     }
+
     .emergency-facility-card.active-facility {
-      border-color: #188038; background: #e6f4ea; box-shadow: 0 0 0 1px #188038;
+      border-color: #188038;
+      background: #e6f4ea;
+      box-shadow: 0 0 0 1px #188038;
     }
+
     .emergency-facility-info {
-      flex: 1; min-width: 0;
+      flex: 1;
+      min-width: 0;
     }
+
     .emergency-facility-name {
-      font-size: 12.5px; font-weight: 600; color: #202124;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #202124;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
     .emergency-facility-sub {
-      font-size: 11px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;
+      font-size: 11px;
+      color: #5f6368;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
     }
+
     .emergency-facility-badges {
-      display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; font-weight: 500; color: #1a73e8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #1a73e8;
     }
+
     .emergency-facility-card.active-facility .emergency-facility-badges {
       color: #137333;
     }
+
     .emergency-facility-route-btn {
-      flex-shrink: 0; padding: 4px 8px; font-size: 11px; font-weight: 600;
-      border-radius: 5px; border: 1px solid #1a73e8; background: #1a73e8; color: #fff; cursor: pointer;
+      flex-shrink: 0;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 5px;
+      border: 1px solid #1a73e8;
+      background: #1a73e8;
+      color: #fff;
+      cursor: pointer;
     }
+
     .emergency-facility-route-btn:hover {
       background: #1557b0;
     }
+
     .emergency-facility-card.active-facility .emergency-facility-route-btn {
-      background: #188038; border-color: #188038;
+      background: #188038;
+      border-color: #188038;
     }
+
     .emergency-view-map-btn {
-      width: 100%; padding: 7px 10px; font-size: 12px; font-weight: 600;
-      border-radius: 6px; border: 1px solid #dadce0; background: #fff; color: #3c4043; cursor: pointer; margin-top: 4px;
+      width: 100%;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid #dadce0;
+      background: #fff;
+      color: #3c4043;
+      cursor: pointer;
+      margin-top: 4px;
     }
+
     .emergency-view-map-btn:hover {
       background: #f1f3f4;
     }
+
     .emergency-facilities-container {
-      margin: 8px 10px; padding: 10px; border-radius: 8px; background: #f8f9fa;
-      border: 1px solid #dadce0; display: flex; flex-direction: column; gap: 6px;
+      margin: 8px 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .emergency-facilities-container[hidden] { display: none; }
-    .emergency-assistance-notice { margin: 10px 0 0; color: #5f6368; font-size: 11px; line-height: 1.35; }
-    .search-panel > #location-status,
-    .search-panel > #status,
-    .search-panel > #service-details,
-    .search-panel > #routes { margin-left: 10px; margin-right: 10px; }
-    #routes { display: grid; gap: 8px; margin-top: 6px; }
-    #routes:empty { margin-top: 0; }
-    .route-card { overflow: hidden; border: 1px solid #dadce0; border-radius: 6px; background: #fff; }
-    .route-card.fastest { border: 2px solid #188038; background: #f4fbf6; }
-    .route-card.selected { box-shadow: 0 0 0 2px #1a73e8; }
+
+    .emergency-facilities-container[hidden] {
+      display: none;
+    }
+
+    .emergency-assistance-notice {
+      margin: 10px 0 0;
+      color: #5f6368;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .search-panel>#location-status,
+    .search-panel>#status,
+    .search-panel>#service-details,
+    .search-panel>#routes {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    #routes {
+      display: grid;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    #routes:empty {
+      margin-top: 0;
+    }
+
+    .route-card {
+      overflow: hidden;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .route-card.fastest {
+      border: 2px solid #188038;
+      background: #f4fbf6;
+    }
+
+    .route-card.selected {
+      box-shadow: 0 0 0 2px #1a73e8;
+    }
+
     .route-card summary {
-      display: flex; justify-content: space-between; gap: 12px; align-items: center;
-      padding: 10px; cursor: pointer; list-style: none;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+      list-style: none;
     }
-    .route-card summary::-webkit-details-marker { display: none; }
-    .route-name { font-size: 14px; }
-    .route-card.fastest .route-name, .route-card.fastest .route-meta { font-weight: 700; }
-    .route-meta { flex: 0 0 auto; color: #555; font-size: 12px; text-align: right; }
-    .route-directions { padding: 0 10px 10px; border-top: 1px solid #e8eaed; }
-    .route-directions ol { margin: 8px 0 0; padding-left: 26px; }
-    .route-directions li { padding: 5px 0 5px 2px; color: #333; font-size: 13px; line-height: 1.35; }
-    .step-distance { display: block; margin-top: 2px; color: #666; font-size: 11px; }
-    .no-directions { margin: 9px 0 0; color: #666; font-size: 13px; }
+
+    .route-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .route-name {
+      font-size: 14px;
+    }
+
+    .route-card.fastest .route-name,
+    .route-card.fastest .route-meta {
+      font-weight: 700;
+    }
+
+    .route-meta {
+      flex: 0 0 auto;
+      color: #555;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .route-directions {
+      padding: 0 10px 10px;
+      border-top: 1px solid #e8eaed;
+    }
+
+    .route-directions ol {
+      margin: 8px 0 0;
+      padding-left: 26px;
+    }
+
+    .route-directions li {
+      padding: 5px 0 5px 2px;
+      color: #333;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .step-distance {
+      display: block;
+      margin-top: 2px;
+      color: #666;
+      font-size: 11px;
+    }
+
+    .no-directions {
+      margin: 9px 0 0;
+      color: #666;
+      font-size: 13px;
+    }
+
     .map-categories-control {
-      position: relative; border-radius: 6px; background: transparent; transform: translateY(-18px);
+      position: relative;
+      border-radius: 6px;
+      background: transparent;
+      transform: translateY(-18px);
     }
-    .map-categories-toolbar { display: flex; align-items: flex-start; gap: 6px; }
-    .map-categories-toggle { font: inherit; }
+
+    .map-categories-toolbar {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .map-categories-toggle {
+      font: inherit;
+    }
+
     .map-categories-panel {
-      position: absolute; bottom: 52px; left: 0; width: min(270px, calc(100vw - 24px));
-      max-height: min(75vh, 560px); overflow-y: auto; padding: 10px;
-      border-radius: 16px; background: #fff; box-shadow: 0 2px 10px #0004;
+      position: absolute;
+      bottom: 52px;
+      left: 0;
+      width: min(270px, calc(100vw - 24px));
+      max-height: min(75vh, 560px);
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 2px 10px #0004;
     }
-    .map-categories-panel[hidden] { display: none; }
-    .map-control-section + .map-control-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e8eaed; }
-    .map-control-heading { margin: 0 0 5px; color: #555; font-size: 12px; font-weight: 700; }
-    .map-control-row { display: flex; min-height: 30px; align-items: center; gap: 7px; padding: 3px 4px; color: #202124; font-size: 13px; }
-    .map-control-row input { margin: 0; }
-    .map-category-main { display: flex; align-items: center; gap: 6px; }
-    .map-category-main .map-control-row { flex: 1; font-weight: 600; }
+
+    .map-categories-panel[hidden] {
+      display: none;
+    }
+
+    .map-control-section+.map-control-section {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #e8eaed;
+    }
+
+    .map-control-heading {
+      margin: 0 0 5px;
+      color: #555;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .map-control-row {
+      display: flex;
+      min-height: 30px;
+      align-items: center;
+      gap: 7px;
+      padding: 3px 4px;
+      color: #202124;
+      font-size: 13px;
+    }
+
+    .map-control-row input {
+      margin: 0;
+    }
+
+    .map-category-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .map-category-main .map-control-row {
+      flex: 1;
+      font-weight: 600;
+    }
+
     .map-category-expand {
-      width: 28px; height: 28px; border: 0; border-radius: 4px;
-      background: transparent; color: #444; font-size: 16px; cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #444;
+      font-size: 16px;
+      cursor: pointer;
     }
-    .map-category-expand:hover { background: #f1f3f4; }
-    .map-category-children { padding-left: 20px; }
-    .map-category-children[hidden] { display: none; }
+
+    .map-category-expand:hover {
+      background: #f1f3f4;
+    }
+
+    .map-category-children {
+      padding-left: 20px;
+    }
+
+    .map-category-children[hidden] {
+      display: none;
+    }
+
     .leaflet-bottom.leaflet-right .leaflet-control-attribution {
-      max-width: min(72vw, 560px); margin: 0 10px 0 0; padding: 3px 7px;
-      border-radius: 8px; background: #fffffff0; box-shadow: 0 1px 5px #0002;
-      font-size: 9px; line-height: 1.35; text-align: right;
+      max-width: min(72vw, 560px);
+      margin: 0 10px 0 0;
+      padding: 3px 7px;
+      border-radius: 8px;
+      background: #fffffff0;
+      box-shadow: 0 1px 5px #0002;
+      font-size: 9px;
+      line-height: 1.35;
+      text-align: right;
     }
+
     .leaflet-control-zoom.leaflet-bar {
-      display: flex; gap: 6px; border: 0; box-shadow: none;
+      display: flex;
+      gap: 6px;
+      border: 0;
+      box-shadow: none;
     }
-    .leaflet-control-zoom-in { order: 2; }
-    .leaflet-control-zoom-out { order: 1; }
+
+    .leaflet-control-zoom-in {
+      order: 2;
+    }
+
+    .leaflet-control-zoom-out {
+      order: 1;
+    }
+
     .leaflet-control-zoom.leaflet-bar a,
     .leaflet-control-zoom.leaflet-bar a:first-child,
     .leaflet-control-zoom.leaflet-bar a:last-child {
-      float: none; width: 46px; height: 46px; line-height: 44px;
-      border: 1px solid #bbb; border-radius: 50%; background: #fff;
-      color: #333; font-size: 24px; box-shadow: 0 1px 5px #0003;
+      float: none;
+      width: 46px;
+      height: 46px;
+      line-height: 44px;
+      border: 1px solid #bbb;
+      border-radius: 50%;
+      background: #fff;
+      color: #333;
+      font-size: 24px;
+      box-shadow: 0 1px 5px #0003;
     }
+
     @media (max-width: 650px) {
-      .map-categories-control { transform: translateY(-30px); }
+      .map-categories-control {
+        transform: translateY(-30px);
+      }
     }
+
     @media (max-width: 359px) {
-      .map-categories-control { transform: translateY(-42px); }
+      .map-categories-control {
+        transform: translateY(-42px);
+      }
     }
-    .service-div-icon { border: 0; background: transparent; }
-    .service-pin { display: flex; align-items: center; gap: 5px; height: 28px; }
-    .service-badge {
-      display: grid; flex: 0 0 22px; place-items: center; width: 22px; height: 22px;
-      border: 2px solid #fff; border-radius: 50%; color: #fff; font-size: 14px;
-      font-weight: 700; box-shadow: 0 1px 5px #0008;
-    }
-    .service-name {
-      display: none; overflow: hidden; max-width: 210px; padding: 3px 5px;
+
+    .service-div-icon {
       border: 0;
-      background: transparent; color: #202124; font-size: 12px; font-weight: 600;
-      text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px #fff, 0 0 5px #fff;
+      background: transparent;
+    }
+
+    .service-pin {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+    }
+
+    .service-badge {
+      display: grid;
+      flex: 0 0 22px;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 1px 5px #0008;
+    }
+
+    .service-name {
+      display: none;
+      overflow: hidden;
+      max-width: 210px;
+      padding: 3px 5px;
+      border: 0;
+      background: transparent;
+      color: #202124;
+      font-size: 12px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px #fff, 0 0 5px #fff;
       cursor: pointer;
     }
+
     .service-pin.expanded .service-name {
       display: inline-block;
       -webkit-text-stroke: 0.45px var(--service-color);
       paint-order: stroke fill;
     }
+
     #service-details {
-      margin-top: 8px; padding: 10px; border: 1px solid #dadce0;
-      border-left: 3px solid var(--service-color); border-radius: 6px; background: #fff;
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px solid #dadce0;
+      border-left: 3px solid var(--service-color);
+      border-radius: 6px;
+      background: #fff;
     }
-    #service-details[hidden] { display: none; }
-    .service-details-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .service-details-title { font-size: 14px; }
-    .service-details-category { margin-top: 4px; color: #555; font-size: 13px; }
-    .service-details-row { margin-top: 5px; color: #333; font-size: 13px; line-height: 1.35; }
-    .service-details-row a { color: #1a73e8; overflow-wrap: anywhere; }
-    .service-details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+    #service-details[hidden] {
+      display: none;
+    }
+
+    .service-details-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .service-details-title {
+      font-size: 14px;
+    }
+
+    .service-details-category {
+      margin-top: 4px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .service-details-row {
+      margin-top: 5px;
+      color: #333;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .service-details-row a {
+      color: #1a73e8;
+      overflow-wrap: anywhere;
+    }
+
+    .service-details-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
     .service-details-action {
-      min-height: 34px; padding: 0 10px; border: 1px solid #dadce0; border-radius: 5px;
-      background: #fff; color: #1a73e8; font: inherit; font-size: 13px;
-      text-decoration: none; cursor: pointer;
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid #dadce0;
+      border-radius: 5px;
+      background: #fff;
+      color: #1a73e8;
+      font: inherit;
+      font-size: 13px;
+      text-decoration: none;
+      cursor: pointer;
     }
-    .service-details-action:hover { background: #f1f3f4; }
-    .service-details-action:disabled { color: #777; background: #f8f9fa; cursor: not-allowed; }
-    .service-details-action.assistance { border-color: #d93025; color: #d93025; }
-    .service-details-hours { font-weight: 700; }
-    .service-details-hours.open { color: #188038; }
-    .service-details-hours.closed { color: #d93025; }
-    .service-details-hours.unknown { color: #666; }
+
+    .service-details-action:hover {
+      background: #f1f3f4;
+    }
+
+    .service-details-action:disabled {
+      color: #777;
+      background: #f8f9fa;
+      cursor: not-allowed;
+    }
+
+    .service-details-action.assistance {
+      border-color: #d93025;
+      color: #d93025;
+    }
+
+    .service-details-hours {
+      font-weight: 700;
+    }
+
+    .service-details-hours.open {
+      color: #188038;
+    }
+
+    .service-details-hours.closed {
+      color: #d93025;
+    }
+
+    .service-details-hours.unknown {
+      color: #666;
+    }
+
     .service-details-notice {
-      margin-top: 8px; color: #666; font-size: 11px; line-height: 1.35;
+      margin-top: 8px;
+      color: #666;
+      font-size: 11px;
+      line-height: 1.35;
     }
-    :root[data-theme="dark"] body { color: #e8eaed; background: #202124; }
+
+    :root[data-theme="dark"] body {
+      color: #e8eaed;
+      background: #202124;
+    }
+
     :root[data-theme="dark"] .search-panel,
     :root[data-theme="dark"] .route-card,
     :root[data-theme="dark"] .map-categories-toggle,
@@ -499,96 +1400,160 @@
     :root[data-theme="dark"] .service-details-action,
     :root[data-theme="dark"] .theme-control select,
     :root[data-theme="dark"] #search-button {
-      border-color: #5f6368; background-color: #202124; color: #e8eaed;
+      border-color: #5f6368;
+      background-color: #202124;
+      color: #e8eaed;
     }
+
     :root[data-theme="dark"] .route-card.fastest {
-      border-color: #81c995; background: #1b2b20;
+      border-color: #81c995;
+      background: #1b2b20;
     }
+
     :root[data-theme="dark"] .service-details-action.assistance {
-      border-color: #f28b82; color: #f28b82;
+      border-color: #f28b82;
+      color: #f28b82;
     }
+
     :root[data-theme="dark"] .emergency-assistance-buttons button {
-      border-color: #5f6368; background: #202124; color: #f28b82;
+      border-color: #5f6368;
+      background: #202124;
+      color: #f28b82;
     }
+
     :root[data-theme="dark"] #emergency-open {
       color: #f28b82;
     }
+
     :root[data-theme="dark"] #emergency-assistance {
       background: #202124;
       border-color: #5f6368;
       color: #e8eaed;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
     }
-    :root[data-theme="dark"] .emergency-assistance-header-title { color: #f28b82; }
-    :root[data-theme="dark"] .emergency-status-text { color: #bdc1c6; }
-    :root[data-theme="dark"] .emergency-assistance-divider { border-top-color: #5f6368; }
+
+    :root[data-theme="dark"] .emergency-assistance-header-title {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .emergency-status-text {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .emergency-assistance-divider {
+      border-top-color: #5f6368;
+    }
+
     :root[data-theme="dark"] .emergency-assistance-buttons button {
       border-color: #5f6368;
       background: #303134;
       color: #f28b82;
     }
+
     :root[data-theme="dark"] .emergency-assistance-buttons button:hover {
       background: #492320;
       border-color: #f28b82;
     }
+
     :root[data-theme="dark"] .emergency-assistance-buttons button.active {
-      background: #492320; border-color: #f28b82; color: #f28b82; box-shadow: 0 0 0 1px #f28b82;
+      background: #492320;
+      border-color: #f28b82;
+      color: #f28b82;
+      box-shadow: 0 0 0 1px #f28b82;
     }
+
     :root[data-theme="dark"] .emergency-results-header {
-      color: #e8eaed; border-bottom-color: #3c4043;
+      color: #e8eaed;
+      border-bottom-color: #3c4043;
     }
+
     :root[data-theme="dark"] .emergency-results-count {
       color: #bdc1c6;
     }
+
     :root[data-theme="dark"] .emergency-facility-card {
-      background: #2d2f31; border-color: #3c4043;
+      background: #2d2f31;
+      border-color: #3c4043;
     }
+
     :root[data-theme="dark"] .emergency-facility-card:hover {
-      background: #35383a; border-color: #8ab4f8;
+      background: #35383a;
+      border-color: #8ab4f8;
     }
+
     :root[data-theme="dark"] .emergency-facility-card.active-facility {
-      border-color: #81c995; background: #1b2b20; box-shadow: 0 0 0 1px #81c995;
+      border-color: #81c995;
+      background: #1b2b20;
+      box-shadow: 0 0 0 1px #81c995;
     }
+
     :root[data-theme="dark"] .emergency-facility-name {
       color: #e8eaed;
     }
+
     :root[data-theme="dark"] .emergency-facility-sub {
       color: #bdc1c6;
     }
+
     :root[data-theme="dark"] .emergency-facility-badges {
       color: #8ab4f8;
     }
+
     :root[data-theme="dark"] .emergency-facility-card.active-facility .emergency-facility-badges {
       color: #81c995;
     }
+
     :root[data-theme="dark"] .emergency-view-map-btn {
-      background: #303134; border-color: #5f6368; color: #e8eaed;
+      background: #303134;
+      border-color: #5f6368;
+      color: #e8eaed;
     }
+
     :root[data-theme="dark"] .emergency-view-map-btn:hover {
       background: #3c4043;
     }
+
     :root[data-theme="dark"] .emergency-facilities-container {
-      background: #202124; border-color: #5f6368;
+      background: #202124;
+      border-color: #5f6368;
     }
-    :root[data-theme="dark"] .emergency-assistance-notice { color: #bdc1c6; }
+
+    :root[data-theme="dark"] .emergency-assistance-notice {
+      color: #bdc1c6;
+    }
+
     :root[data-theme="dark"] .service-details-action:disabled {
-      background: #303134; color: #9aa0a6;
+      background: #303134;
+      color: #9aa0a6;
     }
+
     :root[data-theme="dark"] #account-identity,
     :root[data-theme="dark"] .account-history-heading h3,
     :root[data-theme="dark"] #history-logged-out,
-    :root[data-theme="dark"] #activity-history li { color: #e8eaed; }
+    :root[data-theme="dark"] #activity-history li {
+      color: #e8eaed;
+    }
+
     :root[data-theme="dark"] .account-content label,
     :root[data-theme="dark"] #account-status,
     :root[data-theme="dark"] #history-status,
-    :root[data-theme="dark"] .activity-time { color: #bdc1c6; }
+    :root[data-theme="dark"] .activity-time {
+      color: #bdc1c6;
+    }
+
     :root[data-theme="dark"] .account-content input,
     :root[data-theme="dark"] .account-buttons button,
     :root[data-theme="dark"] #account-open-form,
     :root[data-theme="dark"] #clear-history {
-      border-color: #5f6368; background: #202124; color: #8ab4f8;
+      border-color: #5f6368;
+      background: #202124;
+      color: #8ab4f8;
     }
-    :root[data-theme="dark"] .account-content input { color: #e8eaed; }
+
+    :root[data-theme="dark"] .account-content input {
+      color: #e8eaed;
+    }
+
     :root[data-theme="dark"] #destination,
     :root[data-theme="dark"] .route-name,
     :root[data-theme="dark"] .route-directions li,
@@ -596,6 +1561,7 @@
     :root[data-theme="dark"] .service-details-title {
       color: #e8eaed;
     }
+
     :root[data-theme="dark"] #destination::placeholder,
     :root[data-theme="dark"] #status,
     :root[data-theme="dark"] #location-status,
@@ -609,12 +1575,20 @@
     :root[data-theme="dark"] .theme-control {
       color: #bdc1c6;
     }
-    :root[data-theme="dark"] .map-control-row { color: #e8eaed; }
-    :root[data-theme="dark"] .map-control-section + .map-control-section,
+
+    :root[data-theme="dark"] .map-control-row {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .map-control-section+.map-control-section,
     :root[data-theme="dark"] .route-directions {
       border-color: #5f6368;
     }
-    :root[data-theme="dark"] .map-category-expand { color: #e8eaed; }
+
+    :root[data-theme="dark"] .map-category-expand {
+      color: #e8eaed;
+    }
+
     :root[data-theme="dark"] .map-category-expand:hover,
     :root[data-theme="dark"] .map-tool-button:hover,
     :root[data-theme="dark"] #emergency-open:hover,
@@ -622,55 +1596,606 @@
     :root[data-theme="dark"] .service-details-action:hover {
       background: #303134;
     }
-    :root[data-theme="dark"] .service-details-hours.open { color: #81c995; }
-    :root[data-theme="dark"] .service-details-hours.closed { color: #f28b82; }
-    :root[data-theme="dark"] .service-details-hours.unknown { color: #bdc1c6; }
-    :root[data-theme="dark"] .service-details-row a { color: #8ab4f8; }
-    :root[data-theme="dark"] .service-name {
-      color: #f1f3f4; text-shadow: 0 1px 3px #000, 0 0 5px #000;
+
+    :root[data-theme="dark"] .service-details-hours.open {
+      color: #81c995;
     }
+
+    :root[data-theme="dark"] .service-details-hours.closed {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .service-details-hours.unknown {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .service-details-row a {
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .service-name {
+      color: #f1f3f4;
+      text-shadow: 0 1px 3px #000, 0 0 5px #000;
+    }
+
     :root[data-theme="dark"] .leaflet-control-zoom a,
     :root[data-theme="dark"] .leaflet-popup-content-wrapper,
     :root[data-theme="dark"] .leaflet-popup-tip {
-      border-color: #5f6368; background: #202124; color: #e8eaed;
+      border-color: #5f6368;
+      background: #202124;
+      color: #e8eaed;
     }
+
     :root[data-theme="dark"] .leaflet-control-attribution {
-      background: #202124cc; color: #bdc1c6;
+      background: #202124cc;
+      color: #bdc1c6;
     }
-    :root[data-theme="dark"] .leaflet-control-attribution a { color: #8ab4f8; }
-    :root[data-theme="dark"] .search-inputs-wrapper { background: #202124; border-color: #5f6368; }
-    :root[data-theme="dark"] .search-row { background: #303134; border-color: #5f6368; }
-    :root[data-theme="dark"] .search-inline-button { color: #bdc1c6; }
-    :root[data-theme="dark"] .search-inline-button:hover { background: #3c4043; color: #e8eaed; }
-    :root[data-theme="dark"] .factor-chip { background: #303134; border-color: #5f6368; color: #e8eaed; }
-    :root[data-theme="dark"] .factor-chip:hover { background: #3c4043; }
-    :root[data-theme="dark"] .factor-action-btn { background: #253346; border-color: #8ab4f8; color: #8ab4f8; }
-    :root[data-theme="dark"] #incident-banner { background: #3c2f1e; border-color: #73562a; color: #fdd663; }
-    :root[data-theme="dark"] #incident-banner button { background: #303134; border-color: #fdd663; color: #fdd663; }
-    :root[data-theme="dark"] .delay-badge { background: #492320; color: #f28b82; }
-    :root[data-theme="dark"] .route-event-warning { background: #3c2f1e; border-left-color: #fdd663; color: #fdd663; }
-    :root[data-theme="dark"] .route-event-warning.safe { background: #1c3222; border-left-color: #81c995; color: #81c995; }
-    :root[data-theme="dark"] .route-event-warning.danger { background: #492320; border-left-color: #f28b82; color: #f28b82; }
-    :root[data-theme="dark"] .hazard-step-tag.traffic { background: #442918; color: #ffb74d; }
-    :root[data-theme="dark"] .hazard-step-tag.event { background: #492320; color: #f28b82; }
-    :root[data-theme="dark"] .incident-popup p { color: #bdc1c6; }
-    :root[data-theme="dark"] .incident-popup button.remove-incident-btn { background: #303134; border-color: #f28b82; color: #f28b82; }
-    :root[data-theme="dark"] .travel-time-breakdown { background: #202124; border-color: #5f6368; }
-    :root[data-theme="dark"] .breakdown-title { color: #bdc1c6; }
-    :root[data-theme="dark"] .breakdown-tile { background: #303134; border-color: #5f6368; }
-    :root[data-theme="dark"] .breakdown-tile.total { background: #1c3222; border-color: #2b4c34; }
-    :root[data-theme="dark"] .breakdown-tile.delayed { background: #492320; border-color: #5c2b27; }
-    :root[data-theme="dark"] .breakdown-label { color: #bdc1c6; }
-    :root[data-theme="dark"] .breakdown-value { color: #e8eaed; }
-    :root[data-theme="dark"] .breakdown-tile.total .breakdown-value { color: #81c995; }
-    :root[data-theme="dark"] .breakdown-tile.delayed .breakdown-value { color: #f28b82; }
-    :root[data-theme="dark"] .breakdown-formula { color: #bdc1c6; border-top-color: #5f6368; }
-    :root[data-theme="dark"] .breakdown-item-list { color: #9aa0a6; }
+
+    :root[data-theme="dark"] .leaflet-control-attribution a {
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .search-inputs-wrapper {
+      background: #202124;
+      border-color: #5f6368;
+    }
+
+    :root[data-theme="dark"] .search-row {
+      background: #303134;
+      border-color: #5f6368;
+    }
+
+    :root[data-theme="dark"] .search-inline-button {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .search-inline-button:hover {
+      background: #3c4043;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .factor-chip {
+      background: #303134;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .factor-chip:hover {
+      background: #3c4043;
+    }
+
+    :root[data-theme="dark"] .factor-action-btn {
+      background: #253346;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] #incident-banner {
+      background: #3c2f1e;
+      border-color: #73562a;
+      color: #fdd663;
+    }
+
+    :root[data-theme="dark"] #incident-banner button {
+      background: #303134;
+      border-color: #fdd663;
+      color: #fdd663;
+    }
+
+    :root[data-theme="dark"] .delay-badge {
+      background: #492320;
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .route-event-warning {
+      background: #3c2f1e;
+      border-left-color: #fdd663;
+      color: #fdd663;
+    }
+
+    :root[data-theme="dark"] .route-event-warning.safe {
+      background: #1c3222;
+      border-left-color: #81c995;
+      color: #81c995;
+    }
+
+    :root[data-theme="dark"] .route-event-warning.danger {
+      background: #492320;
+      border-left-color: #f28b82;
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .hazard-step-tag.traffic {
+      background: #442918;
+      color: #ffb74d;
+    }
+
+    :root[data-theme="dark"] .hazard-step-tag.event {
+      background: #492320;
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .incident-popup p {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .incident-popup button.remove-incident-btn {
+      background: #303134;
+      border-color: #f28b82;
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .travel-time-breakdown {
+      background: #202124;
+      border-color: #5f6368;
+    }
+
+    :root[data-theme="dark"] .breakdown-title {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .breakdown-tile {
+      background: #303134;
+      border-color: #5f6368;
+    }
+
+    :root[data-theme="dark"] .breakdown-tile.total {
+      background: #1c3222;
+      border-color: #2b4c34;
+    }
+
+    :root[data-theme="dark"] .breakdown-tile.delayed {
+      background: #492320;
+      border-color: #5c2b27;
+    }
+
+    :root[data-theme="dark"] .breakdown-label {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .breakdown-value {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .breakdown-tile.total .breakdown-value {
+      color: #81c995;
+    }
+
+    :root[data-theme="dark"] .breakdown-tile.delayed .breakdown-value {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .breakdown-formula {
+      color: #bdc1c6;
+      border-top-color: #5f6368;
+    }
+
+    :root[data-theme="dark"] .breakdown-item-list {
+      color: #9aa0a6;
+    }
+
     #map.dark-street-map .leaflet-tile-pane {
       filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9);
     }
+
+    /* Assistance Chat Box */
+    .assistance-chatbox {
+      position: fixed;
+      z-index: 3000;
+      right: 20px;
+      bottom: 20px;
+      width: min(390px, calc(100vw - 32px));
+      height: 500px;
+      max-height: calc(100vh - 40px);
+      background: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 16px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: chatSlideIn 0.22s ease-out;
+    }
+
+    .assistance-chatbox[hidden] {
+      display: none;
+    }
+
+    @keyframes chatSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .chatbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #b3261e;
+      color: #ffffff;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+    }
+
+    .chatbox-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .chatbox-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #81c995;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+    }
+
+    .chatbox-header-subtitle {
+      font-size: 11px;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+
+    .chatbox-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chatbox-btn {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .chatbox-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .chatbox-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f8f9fa;
+    }
+
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 88%;
+      animation: chatMsgFade 0.15s ease-out;
+    }
+
+    @keyframes chatMsgFade {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .chat-msg.bot {
+      align-self: flex-start;
+    }
+
+    .chat-msg.user {
+      align-self: flex-end;
+    }
+
+    .chat-msg-bubble {
+      padding: 9px 13px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .chat-msg.bot .chat-msg-bubble {
+      background: #ffffff;
+      color: #202124;
+      border: 1px solid #dadce0;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-msg.user .chat-msg-bubble {
+      background: #1a73e8;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-msg-time {
+      font-size: 10px;
+      color: #80868b;
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+
+    .chat-msg.user .chat-msg-time {
+      text-align: right;
+    }
+
+    .chat-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      margin-right: 4px;
+      padding: 6px 11px;
+      border-radius: 6px;
+      border: 1px solid #1a73e8;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .chat-action-btn:hover {
+      background: #1557b0;
+    }
+
+    .chat-action-btn.secondary {
+      background: #fff;
+      color: #1a73e8;
+      border-color: #dadce0;
+    }
+
+    .chat-action-btn.secondary:hover {
+      background: #f1f3f4;
+    }
+
+    .chat-action-btn.emergency {
+      background: #d93025;
+      border-color: #d93025;
+      color: #fff;
+    }
+
+    .chat-action-btn.emergency:hover {
+      background: #b3261e;
+    }
+
+    .chatbox-quick-chips {
+      display: flex;
+      gap: 6px;
+      padding: 7px 12px;
+      background: #ffffff;
+      border-top: 1px solid #f1f3f4;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+
+    .chatbox-quick-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chat-chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #dadce0;
+      background: #f1f3f4;
+      color: #3c4043;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .chat-chip:hover {
+      background: #e8f0fe;
+      border-color: #1a73e8;
+      color: #1a73e8;
+    }
+
+    .chatbox-input-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      background: #ffffff;
+      border-top: 1px solid #dadce0;
+    }
+
+    .chatbox-input-form input {
+      flex: 1;
+      border: 1px solid #dadce0;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      outline: none;
+      background: #f8f9fa;
+      color: #202124;
+      font-family: inherit;
+    }
+
+    .chatbox-input-form input:focus {
+      border-color: #1a73e8;
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+
+    .chatbox-input-form button {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: #1a73e8;
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .chatbox-input-form button:hover {
+      background: #1557b0;
+    }
+
+    .assistance-chat-floating-btn {
+      position: fixed;
+      z-index: 1500;
+      right: 20px;
+      bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      background: #d93025;
+      color: #ffffff;
+      border: none;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(217, 48, 37, 0.36);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+    }
+
+    .assistance-chat-floating-btn:hover {
+      background: #b3261e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(217, 48, 37, 0.45);
+    }
+
+    .assistance-chat-floating-btn[hidden] {
+      display: none;
+    }
+
+    .emergency-chat-trigger-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #1a73e8;
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .emergency-chat-trigger-btn:hover {
+      background: #d2e3fc;
+    }
+
+    /* Dark Mode styles for Assistance Chat Box */
+    :root[data-theme="dark"] .assistance-chatbox {
+      background: #202124;
+      border-color: #5f6368;
+      color: #e8eaed;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+    }
+
+    :root[data-theme="dark"] .chatbox-header {
+      background: #492320;
+      border-bottom: 1px solid #5f6368;
+    }
+
+    :root[data-theme="dark"] .chatbox-messages {
+      background: #18191a;
+    }
+
+    :root[data-theme="dark"] .chat-msg.bot .chat-msg-bubble {
+      background: #2d2f31;
+      border-color: #3c4043;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .chat-msg-time {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .chatbox-quick-chips {
+      background: #202124;
+      border-top-color: #3c4043;
+    }
+
+    :root[data-theme="dark"] .chat-chip {
+      background: #303134;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .chat-chip:hover {
+      background: #3c4043;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .chatbox-input-form {
+      background: #202124;
+      border-top-color: #3c4043;
+    }
+
+    :root[data-theme="dark"] .chatbox-input-form input {
+      background: #303134;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .chatbox-input-form input:focus {
+      background: #2d2f31;
+      border-color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .chat-action-btn.secondary {
+      background: #303134;
+      border-color: #5f6368;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .chat-action-btn.secondary:hover {
+      background: #3c4043;
+    }
+
+    :root[data-theme="dark"] .emergency-chat-trigger-btn {
+      background: #2d3748;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .emergency-chat-trigger-btn:hover {
+      background: #3a475c;
+    }
   </style>
 </head>
+
 <body>
   <div id="map" aria-label="Map"></div>
   <div id="offline-banner" role="status" aria-live="polite" hidden>
@@ -693,7 +2218,8 @@
                 <line x1="19" y1="12" x2="22" y2="12"></line>
               </svg>
             </button>
-            <button id="swap-locations-button" type="button" class="search-inline-button" title="Swap origin and destination">
+            <button id="swap-locations-button" type="button" class="search-inline-button"
+              title="Swap origin and destination">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"></path>
               </svg>
@@ -701,7 +2227,8 @@
           </div>
           <div class="search-row destination-row">
             <span class="route-point-marker dest-marker" title="Destination"></span>
-            <input id="destination" type="search" placeholder="Search destination or coordinates" aria-label="Search places or coordinates" required>
+            <input id="destination" type="search" placeholder="Search destination or coordinates"
+              aria-label="Search places or coordinates" required>
             <button id="search-button" type="submit" aria-label="Search route">
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2"></circle>
@@ -721,8 +2248,8 @@
       <div id="service-details" aria-label="Selected service details" aria-live="polite" hidden></div>
       <div id="routes" aria-label="Available routes"></div>
     </section>
-    <button id="emergency-open" type="button" aria-label="Emergency services"
-      title="Emergency services" aria-expanded="false" aria-controls="emergency-assistance">
+    <button id="emergency-open" type="button" aria-label="Emergency services" title="Emergency services"
+      aria-expanded="false" aria-controls="emergency-assistance">
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <path d="M5 17h14v4H5z"></path>
         <path d="M8 17v-3a4 4 0 0 1 8 0v3"></path>
@@ -740,18 +2267,62 @@
     <hr class="emergency-assistance-divider">
     <div class="emergency-assistance-buttons">
       <button type="button" data-emergency-type="ambulance">Ambulance</button>
-      <button type="button" data-emergency-type="responder">Rescue / responder</button>
+      <button type="button" data-emergency-type="responder">Rescue / Responder</button>
       <button type="button" data-emergency-type="police">Police</button>
-      <button type="button" data-emergency-type="fire">Fire truck</button>
+      <button type="button" data-emergency-type="fire">Fire Truck</button>
     </div>
     <div id="emergency-assistance-results" class="emergency-assistance-results" hidden></div>
+    <button id="emergency-open-chat" type="button" class="emergency-chat-trigger-btn">
+      💬 Chat with Emergency Assistance
+    </button>
     <p class="emergency-assistance-notice">
       Shows mapped stations or facilities, not live vehicles. It does not call or dispatch responders.
       For immediate danger, call your local emergency number.
     </p>
   </section>
+
+  <!-- Assistance Chat Box -->
+  <section id="assistance-chatbox" class="assistance-chatbox" aria-label="Assistance chat" hidden>
+    <div class="chatbox-header">
+      <div class="chatbox-header-info">
+        <div class="chatbox-header-title">
+          <span class="chatbox-status-dot"></span>
+          Emergency Assistance Chat
+        </div>
+        <div class="chatbox-header-subtitle">24/7 Automated Dispatch & Route Support</div>
+      </div>
+      <div class="chatbox-header-actions">
+        <button id="chatbox-minimize" type="button" class="chatbox-btn" aria-label="Minimize chat" title="Minimize">&minus;</button>
+        <button id="chatbox-close" type="button" class="chatbox-btn" aria-label="Close chat" title="Close">&times;</button>
+      </div>
+    </div>
+    <div id="chatbox-messages" class="chatbox-messages" role="log" aria-live="polite">
+      <!-- Messages injected dynamically -->
+    </div>
+    <div id="chatbox-quick-chips" class="chatbox-quick-chips">
+      <!-- Quick chips injected dynamically -->
+    </div>
+    <form id="chatbox-input-form" class="chatbox-input-form">
+      <input id="chatbox-input" type="text" placeholder="Type your message or emergency..." aria-label="Message" autocomplete="off" required>
+      <button id="chatbox-send" type="submit" aria-label="Send message" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
+  </section>
+
+  <!-- Floating chat launcher button (bottom-right) -->
+  <button id="assistance-chat-floating-btn" type="button" class="assistance-chat-floating-btn" aria-label="Open emergency assistance chat" title="Need Assistance? Chat with us">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span class="chat-floating-label">Need Assistance?</span>
+  </button>
   <div id="account-panel" class="account-panel">
-    <button id="account-toggle" class="map-tool-button" type="button" aria-label="Account" title="Account" aria-expanded="false" aria-controls="account-content">
+    <button id="account-toggle" class="map-tool-button" type="button" aria-label="Account" title="Account"
+      aria-expanded="false" aria-controls="account-content">
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <circle cx="12" cy="8" r="4"></circle>
         <path d="M4 21a8 8 0 0 1 16 0"></path>
@@ -795,7 +2366,8 @@
     </div>
   </div>
   <div id="history-panel" class="history-panel">
-    <button id="history-toggle" class="map-tool-button" type="button" aria-label="History" title="History" aria-expanded="false" aria-controls="history-content">
+    <button id="history-toggle" class="map-tool-button" type="button" aria-label="History" title="History"
+      aria-expanded="false" aria-controls="history-content">
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <path d="M3 11a9 9 0 1 1 2.64 6.36L3 15.5"></path>
         <path d="M3 7v5h5"></path>
@@ -1348,8 +2920,8 @@
       const dLat = (lat2 - lat1) * Math.PI / 180.0;
       const dLon = (lon2 - lon1) * Math.PI / 180.0;
       const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180.0) * Math.cos(lat2 * Math.PI / 180.0) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos(lat1 * Math.PI / 180.0) * Math.cos(lat2 * Math.PI / 180.0) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
       return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
@@ -1844,10 +3416,372 @@
       emergencyAssistanceClose.addEventListener('click', collapseSidebar);
     }
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !emergencyAssistance.hidden) {
-        collapseSidebar();
+      if (event.key === 'Escape') {
+        if (!emergencyAssistance.hidden) {
+          collapseSidebar();
+        }
+        if (assistanceChatBox && !assistanceChatBox.hidden) {
+          closeAssistanceChat();
+        }
       }
     });
+
+    // --- Assistance Chat Box Controller ---
+    const assistanceChatBox = document.getElementById('assistance-chatbox');
+    const assistanceChatFloatingBtn = document.getElementById('assistance-chat-floating-btn');
+    const chatboxMessages = document.getElementById('chatbox-messages');
+    const chatboxQuickChips = document.getElementById('chatbox-quick-chips');
+    const chatboxInputForm = document.getElementById('chatbox-input-form');
+    const chatboxInput = document.getElementById('chatbox-input');
+    const chatboxCloseBtn = document.getElementById('chatbox-close');
+    const chatboxMinBtn = document.getElementById('chatbox-minimize');
+    const emergencyOpenChat = document.getElementById('emergency-open-chat');
+    let currentChatFacilityContext = null;
+
+    function openAssistanceChat(facilityContext) {
+      currentChatFacilityContext = facilityContext || null;
+      if (assistanceChatBox) {
+        assistanceChatBox.hidden = false;
+        if (assistanceChatFloatingBtn) assistanceChatFloatingBtn.hidden = true;
+        if (chatboxInput) chatboxInput.focus();
+      }
+
+      if (facilityContext && facilityContext.name) {
+        appendBotMessage(
+          '🚨 <strong>Assistance Request for ' + escapeHtml(facilityContext.name) + '</strong><br>' +
+          '(' + escapeHtml(facilityContext.category || 'Facility') + ')<br><br>' +
+          'How can we assist you with this facility right now?',
+          [
+            {
+              label: '🗺️ Route to Facility',
+              action: function () {
+                destinationInput.value = facilityContext.name;
+                searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: 'assistance' });
+                appendUserMessage('Route to ' + facilityContext.name);
+                appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
+              }
+            },
+            (facilityContext.phone ? {
+              label: '📞 Call ' + facilityContext.phone,
+              href: 'tel:' + facilityContext.phone.replace(/[^\d+*#;]/g, '')
+            } : null),
+            {
+              label: '🚑 Request Ambulance',
+              action: function () {
+                handleChatIntent('ambulance');
+              }
+            },
+            {
+              label: '☎️ Emergency Hotlines',
+              action: function () {
+                handleChatIntent('hotlines');
+              }
+            }
+          ].filter(Boolean)
+        );
+      } else if (!chatboxMessages || chatboxMessages.children.length === 0) {
+        appendBotMessage(
+          '👋 <strong>Emergency & Route Assistance</strong><br>' +
+          'Hello! I am your 24/7 Assistance Assistant. How can we help you right now?<br>' +
+          'Select an emergency service or type your message below.',
+          [
+            { label: '🚑 Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Police', action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Fire Truck', action: function () { handleChatIntent('fire'); } },
+            { label: '🛟 Rescue', action: function () { handleChatIntent('responder'); } },
+            { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          ]
+        );
+      }
+      renderChatQuickChips();
+    }
+
+    function closeAssistanceChat() {
+      if (assistanceChatBox) assistanceChatBox.hidden = true;
+      if (assistanceChatFloatingBtn) assistanceChatFloatingBtn.hidden = false;
+    }
+
+    function appendUserMessage(text) {
+      if (!chatboxMessages) return;
+      const msg = document.createElement('div');
+      msg.className = 'chat-msg user';
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      msg.innerHTML = '<div class="chat-msg-bubble">' + escapeHtml(text) + '</div>' +
+        '<div class="chat-msg-time">' + timeStr + '</div>';
+      chatboxMessages.appendChild(msg);
+      chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+    }
+
+    function appendBotMessage(htmlContent, actions) {
+      if (!chatboxMessages) return;
+      const msg = document.createElement('div');
+      msg.className = 'chat-msg bot';
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let actionsHtml = '';
+      if (Array.isArray(actions) && actions.length > 0) {
+        actionsHtml = '<div class="chat-msg-actions">';
+        actions.forEach(function (act, idx) {
+          if (act.href) {
+            actionsHtml += '<a href="' + escapeHtml(act.href) + '" class="chat-action-btn secondary">' + escapeHtml(act.label) + '</a>';
+          } else {
+            actionsHtml += '<button type="button" class="chat-action-btn' + (act.emergency ? ' emergency' : '') + '" data-action-idx="' + idx + '">' + escapeHtml(act.label) + '</button>';
+          }
+        });
+        actionsHtml += '</div>';
+      }
+
+      msg.innerHTML = '<div class="chat-msg-bubble">' + htmlContent + actionsHtml + '</div>' +
+        '<div class="chat-msg-time">' + timeStr + ' • Assistant</div>';
+
+      if (Array.isArray(actions) && actions.length > 0) {
+        msg.querySelectorAll('button[data-action-idx]').forEach(function (btn) {
+          const idx = parseInt(btn.dataset.actionIdx, 10);
+          if (actions[idx] && typeof actions[idx].action === 'function') {
+            btn.addEventListener('click', actions[idx].action);
+          }
+        });
+      }
+
+      chatboxMessages.appendChild(msg);
+      chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+    }
+
+    function renderChatQuickChips() {
+      if (!chatboxQuickChips) return;
+      chatboxQuickChips.innerHTML = '';
+      const chips = [
+        { label: '🚑 Ambulance', intent: 'ambulance' },
+        { label: '🚓 Police', intent: 'police' },
+        { label: '🚒 Fire Truck', intent: 'fire' },
+        { label: '🛟 Rescue', intent: 'responder' },
+        { label: '☎️ 911 Hotlines', intent: 'hotlines' },
+        { label: '🛣️ Fastest Route', intent: 'route' }
+      ];
+      chips.forEach(function (chip) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chat-chip';
+        btn.textContent = chip.label;
+        btn.addEventListener('click', function () {
+          appendUserMessage(chip.label);
+          handleChatIntent(chip.intent);
+        });
+        chatboxQuickChips.appendChild(btn);
+      });
+    }
+
+    function handleChatIntent(intent, userText) {
+      if (intent === 'ambulance') {
+        appendBotMessage(
+          '🚑 <strong>Searching nearest Ambulance & Medical Facilities...</strong><br>' +
+          'Querying closest hospitals, emergency clinics, and ambulance units.'
+        );
+        findFastestEmergencyService('ambulance');
+        setTimeout(function () {
+          const origin = routeOrigin || initialCenter;
+          const originPoint = L.latLng(origin[1], origin[0]);
+          const nearest = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'ambulance'; })
+            .map(function (f) {
+              return {
+                facility: f,
+                dist: originPoint.distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]))
+              };
+            })
+            .sort(function (a, b) { return a.dist - b.dist; })[0];
+
+          if (nearest) {
+            const distKm = (nearest.dist / 1000).toFixed(1);
+            appendBotMessage(
+              '📍 Nearest Ambulance Base: <strong>' + escapeHtml(nearest.facility.name) + '</strong><br>' +
+              '• Distance: ' + distKm + ' km away<br>' +
+              '• Address: ' + escapeHtml(nearest.facility.address) + '<br>' +
+              '• Contact: ' + escapeHtml(nearest.facility.phone),
+              [
+                {
+                  label: '🗺️ Route Now',
+                  action: function () {
+                    destinationInput.value = nearest.facility.name;
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance' });
+                  }
+                },
+                {
+                  label: '📞 Call ' + nearest.facility.phone,
+                  href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                }
+              ]
+            );
+          }
+        }, 400);
+      } else if (intent === 'police') {
+        appendBotMessage(
+          '🚓 <strong>Searching nearest Police Stations & PNP Precincts...</strong><br>' +
+          'Locating law enforcement units nearest to your position.'
+        );
+        findFastestEmergencyService('police');
+        setTimeout(function () {
+          const origin = routeOrigin || initialCenter;
+          const originPoint = L.latLng(origin[1], origin[0]);
+          const nearest = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'police'; })
+            .map(function (f) {
+              return {
+                facility: f,
+                dist: originPoint.distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]))
+              };
+            })
+            .sort(function (a, b) { return a.dist - b.dist; })[0];
+
+          if (nearest) {
+            const distKm = (nearest.dist / 1000).toFixed(1);
+            appendBotMessage(
+              '📍 Nearest Police Station: <strong>' + escapeHtml(nearest.facility.name) + '</strong><br>' +
+              '• Distance: ' + distKm + ' km away<br>' +
+              '• Address: ' + escapeHtml(nearest.facility.address) + '<br>' +
+              '• Contact: ' + escapeHtml(nearest.facility.phone),
+              [
+                {
+                  label: '🗺️ Route to Station',
+                  action: function () {
+                    destinationInput.value = nearest.facility.name;
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police' });
+                  }
+                },
+                {
+                  label: '📞 Call ' + nearest.facility.phone,
+                  href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                }
+              ]
+            );
+          }
+        }, 400);
+      } else if (intent === 'fire') {
+        appendBotMessage(
+          '🚒 <strong>Searching nearest Fire Stations & BFP Engines...</strong><br>' +
+          'Locating fire protection services nearest to your position.'
+        );
+        findFastestEmergencyService('fire');
+        setTimeout(function () {
+          const origin = routeOrigin || initialCenter;
+          const originPoint = L.latLng(origin[1], origin[0]);
+          const nearest = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'fire'; })
+            .map(function (f) {
+              return {
+                facility: f,
+                dist: originPoint.distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]))
+              };
+            })
+            .sort(function (a, b) { return a.dist - b.dist; })[0];
+
+          if (nearest) {
+            const distKm = (nearest.dist / 1000).toFixed(1);
+            appendBotMessage(
+              '📍 Nearest Fire Station: <strong>' + escapeHtml(nearest.facility.name) + '</strong><br>' +
+              '• Distance: ' + distKm + ' km away<br>' +
+              '• Address: ' + escapeHtml(nearest.facility.address) + '<br>' +
+              '• BFP Hotline: ' + escapeHtml(nearest.facility.phone),
+              [
+                {
+                  label: '🗺️ Route to Station',
+                  action: function () {
+                    destinationInput.value = nearest.facility.name;
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire' });
+                  }
+                },
+                {
+                  label: '📞 Call ' + nearest.facility.phone,
+                  href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                }
+              ]
+            );
+          }
+        }, 400);
+      } else if (intent === 'responder') {
+        appendBotMessage(
+          '🛟 <strong>Searching Disaster Response & Rescue Units...</strong><br>' +
+          'Locating CDRRMO, Red Cross, and disaster command units.'
+        );
+        findFastestEmergencyService('responder');
+      } else if (intent === 'hotlines') {
+        appendBotMessage(
+          '☎️ <strong>Official Emergency Hotlines:</strong><br>' +
+          '• <strong>National Emergency:</strong> 911<br>' +
+          '• <strong>Iloilo City CDRRMO:</strong> (033) 333-1111<br>' +
+          '• <strong>Philippine Red Cross:</strong> (033) 337-5976 / 143<br>' +
+          '• <strong>Iloilo City Police (ICPO):</strong> (033) 337-0400<br>' +
+          '• <strong>BFP Fire Department:</strong> (033) 337-4444<br>' +
+          '• <strong>Coast Guard District:</strong> (033) 337-5264',
+          [
+            { label: '📞 Call 911', href: 'tel:911', emergency: true },
+            { label: '📞 Call CDRRMO', href: 'tel:0333331111' },
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+          ]
+        );
+      } else if (intent === 'route') {
+        if (destinationInput && destinationInput.value) {
+          appendBotMessage('Recalculating factor-aware fastest route to <strong>' + escapeHtml(destinationInput.value) + '</strong>...');
+          searchButton.click();
+        } else {
+          appendBotMessage('Please enter a destination in the search bar or select a facility pin on the map to calculate the fastest route.');
+        }
+      } else {
+        const q = (userText || '').toLowerCase();
+        if (/ambulance|hospital|medical|doctor|medic|injured|hurt|bleeding|sick/i.test(q)) {
+          handleChatIntent('ambulance');
+        } else if (/police|crime|theft|robbery|thief|attack|gun|danger/i.test(q)) {
+          handleChatIntent('police');
+        } else if (/fire|smoke|burning|flame|trapped/i.test(q)) {
+          handleChatIntent('fire');
+        } else if (/rescue|flood|storm|water|drown|typhoon/i.test(q)) {
+          handleChatIntent('responder');
+        } else if (/call|number|hotline|contact|phone/i.test(q)) {
+          handleChatIntent('hotlines');
+        } else if (/fastest|route|traffic|navigate|directions|way/i.test(q)) {
+          handleChatIntent('route');
+        } else {
+          appendBotMessage(
+            'I am here to assist you. For immediate danger, please dial <strong>911</strong>.<br>' +
+            'You can choose an emergency category below or ask for directions to any hospital, police, or fire station.',
+            [
+              { label: '🚑 Ambulance', action: function () { handleChatIntent('ambulance'); } },
+              { label: '🚓 Police', action: function () { handleChatIntent('police'); } },
+              { label: '🚒 Fire Truck', action: function () { handleChatIntent('fire'); } },
+              { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
+            ]
+          );
+        }
+      }
+    }
+
+    if (chatboxInputForm) {
+      chatboxInputForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const text = (chatboxInput.value || '').trim();
+        if (!text) return;
+        appendUserMessage(text);
+        chatboxInput.value = '';
+        setTimeout(function () {
+          handleChatIntent(null, text);
+        }, 200);
+      });
+    }
+
+    if (chatboxCloseBtn) {
+      chatboxCloseBtn.addEventListener('click', closeAssistanceChat);
+    }
+    if (chatboxMinBtn) {
+      chatboxMinBtn.addEventListener('click', closeAssistanceChat);
+    }
+    if (assistanceChatFloatingBtn) {
+      assistanceChatFloatingBtn.addEventListener('click', function () {
+        openAssistanceChat();
+      });
+    }
+    if (emergencyOpenChat) {
+      emergencyOpenChat.addEventListener('click', function () {
+        collapseSidebar();
+        openAssistanceChat();
+      });
+    }
 
     function setAccountStatus(message) {
       accountStatus.textContent = message;
@@ -2116,7 +4050,7 @@
           const cachedSession = readOfflineCache('account-session-last', null);
           const cachedEmail = readOfflineCache('account-last-email', '');
           if (cachedSession && cachedSession.user &&
-              String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
+            String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
             showAccountSession(cachedSession);
             setAccountStatus('Signed in using saved account data offline.');
           } else {
@@ -2468,9 +4402,13 @@
       };
       addContactAction('Call', 'tel:', actions && actions.callNumber);
       addContactAction('Message', 'sms:', actions && actions.messageNumber);
-      if (actions && actions.onNeedAssistance) {
-        addAction('Need assistance', '', actions.onNeedAssistance, 'assistance');
-      }
+      const needAssistanceHandler = (actions && actions.onNeedAssistance) || function () {
+        openAssistanceChat({
+          name: title,
+          category: category
+        });
+      };
+      addAction('Need Assistance', '', needAssistanceHandler, 'assistance');
       serviceDetails.appendChild(actionBar);
 
       details.forEach(function (detail) {
@@ -2692,13 +4630,13 @@
       const summary = document.createElement('summary');
       const title = document.createElement('span');
       title.className = 'route-name';
-      
+
       if (isFastest) {
         title.textContent = route.isDetourBypass
           ? 'Fastest route (hazard bypass)'
           : (route.totalDelaySeconds > 60
-              ? 'Fastest route (live conditions evaluated)'
-              : 'Fastest route');
+            ? 'Fastest route (live conditions evaluated)'
+            : 'Fastest route');
       } else {
         title.textContent = 'Alternative route ' + (index + 1);
       }
@@ -3030,16 +4968,16 @@
 
           card.innerHTML =
             '<div class="emergency-facility-info">' +
-              '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
-              '<div class="emergency-facility-sub">' + escapeHtml(candidate.category || (label + ' facility')) + '</div>' +
-              '<div class="emergency-facility-badges">' +
-                '<span>📍 ' + distKm + '</span>' +
-                '<span>⏱ ~' + estMins + ' min drive</span>' +
-                (index === 0 ? '<span style="font-weight:700;color:#188038;">• Nearest</span>' : '') +
-              '</div>' +
+            '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
+            '<div class="emergency-facility-sub">' + escapeHtml(candidate.category || (label + ' facility')) + '</div>' +
+            '<div class="emergency-facility-badges">' +
+            '<span>📍 ' + distKm + '</span>' +
+            '<span>⏱ ~' + estMins + ' min drive</span>' +
+            (index === 0 ? '<span style="font-weight:700;color:#188038;">• Nearest</span>' : '') +
+            '</div>' +
             '</div>' +
             '<button type="button" class="emergency-facility-route-btn">' +
-              (index === 0 ? 'Active Route' : 'Route') +
+            (index === 0 ? 'Active Route' : 'Route') +
             '</button>';
 
           card.addEventListener('click', function () {
@@ -3113,14 +5051,14 @@
 
           card.innerHTML =
             '<div class="emergency-facility-info">' +
-              '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
-              '<div class="emergency-facility-badges">' +
-                '<span>📍 ' + distKm + '</span>' +
-                '<span>⏱ ~' + estMins + ' min</span>' +
-              '</div>' +
+            '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
+            '<div class="emergency-facility-badges">' +
+            '<span>📍 ' + distKm + '</span>' +
+            '<span>⏱ ~' + estMins + ' min</span>' +
+            '</div>' +
             '</div>' +
             '<button type="button" class="emergency-facility-route-btn">' +
-              (index === 0 ? 'Active' : 'Route') +
+            (index === 0 ? 'Active' : 'Route') +
             '</button>';
 
           card.addEventListener('click', function () {
@@ -3149,13 +5087,13 @@
       const name = (tags.name || '').toLowerCase();
 
       if (amenity === 'ambulance_station' || emergency === 'ambulance_station' || emergency === 'ambulance' ||
-          amenity === 'hospital' || healthcare === 'hospital' ||
-          amenity === 'clinic' || healthcare === 'clinic' ||
-          /hospital|medical center|ambulance|clinic|infirmary|doctor/i.test(name)) {
+        amenity === 'hospital' || healthcare === 'hospital' ||
+        amenity === 'clinic' || healthcare === 'clinic' ||
+        /hospital|medical center|ambulance|clinic|infirmary|doctor/i.test(name)) {
         return 'ambulance';
       }
       if (amenity === 'police' || emergency === 'police' || tags.police ||
-          /police|pnp|precinct|patrol/i.test(name)) {
+        /police|pnp|precinct|patrol/i.test(name)) {
         return 'police';
       }
       if (amenity === 'fire_station' || emergency === 'fire_station' ||
@@ -3168,8 +5106,8 @@
         'emergency_services'].indexOf(emergency) !== -1 ||
         ['rescue_service', 'disaster_response', 'civil_protection', 'emergency',
           'emergency_services'].indexOf(
-          tags.office || ''
-        ) !== -1 ||
+            tags.office || ''
+          ) !== -1 ||
         /rescue|disaster|red cross|cdrrmo|responder/i.test(name)) {
         return 'responder';
       }
@@ -3249,10 +5187,10 @@
 
     function findFastestEmergencyService(type) {
       const origin = (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) ||
-                     userDeviceCoords ||
-                     routeOrigin ||
-                     initialCenter ||
-                     [map.getCenter().lng, map.getCenter().lat];
+        userDeviceCoords ||
+        routeOrigin ||
+        initialCenter ||
+        [map.getCenter().lng, map.getCenter().lat];
       routeOrigin = origin;
       emergencySearchType = type;
       isAssistanceSearch = true;
@@ -3314,7 +5252,7 @@
 
       const shouldUpdateServiceStatus = hasUserInteracted && !isSearching &&
         (!status.classList.contains('visible') ||
-         /mapped services|Loading nearby services|Zoom in to view nearby/.test(status.textContent));
+          /mapped services|Loading nearby services|Zoom in to view nearby/.test(status.textContent));
       if (shouldUpdateServiceStatus) setStatus('Loading nearby services...');
       const bounds = map.getBounds();
       const bbox = [
@@ -3433,7 +5371,14 @@
             return {
               callNumber: phoneNumber,
               messageNumber: mobileNumber || phoneNumber,
-              onNeedAssistance: showNearbyEmergencyServices
+              onNeedAssistance: function () {
+                openAssistanceChat({
+                  name: name,
+                  category: categoryLabel,
+                  phone: phoneNumber,
+                  coordinates: [longitude, latitude]
+                });
+              }
             };
           };
           const getDetails = function () {
@@ -3521,30 +5466,30 @@
           marker.on('click', selectService);
           if (requestedEmergencyType) {
             const matchesType = (requestedEmergencyType === 'ambulance' &&
-                (emergencyServiceType === 'ambulance' ||
-                 serviceGroupName === 'healthHospitals' ||
-                 serviceGroupName === 'emergencyAmbulance' ||
-                 tags.amenity === 'hospital' ||
-                 tags.healthcare === 'hospital' ||
-                 tags.amenity === 'clinic' ||
-                 tags.amenity === 'ambulance_station' ||
-                 /hospital|medical center|ambulance|clinic/i.test(tags.name || ''))) ||
+              (emergencyServiceType === 'ambulance' ||
+                serviceGroupName === 'healthHospitals' ||
+                serviceGroupName === 'emergencyAmbulance' ||
+                tags.amenity === 'hospital' ||
+                tags.healthcare === 'hospital' ||
+                tags.amenity === 'clinic' ||
+                tags.amenity === 'ambulance_station' ||
+                /hospital|medical center|ambulance|clinic/i.test(tags.name || ''))) ||
               (requestedEmergencyType === 'police' &&
                 (emergencyServiceType === 'police' ||
-                 serviceGroupName === 'emergencyPolice' ||
-                 tags.amenity === 'police' ||
-                 /police|pnp|precinct/i.test(tags.name || ''))) ||
+                  serviceGroupName === 'emergencyPolice' ||
+                  tags.amenity === 'police' ||
+                  /police|pnp|precinct/i.test(tags.name || ''))) ||
               (requestedEmergencyType === 'fire' &&
                 (emergencyServiceType === 'fire' ||
-                 serviceGroupName === 'emergencyFire' ||
-                 tags.amenity === 'fire_station' ||
-                 tags.emergency === 'fire_station' ||
-                 tags.emergency === 'fire_service' ||
-                 /fire|bfp/i.test(tags.name || ''))) ||
+                  serviceGroupName === 'emergencyFire' ||
+                  tags.amenity === 'fire_station' ||
+                  tags.emergency === 'fire_station' ||
+                  tags.emergency === 'fire_service' ||
+                  /fire|bfp/i.test(tags.name || ''))) ||
               (requestedEmergencyType === 'responder' &&
                 (emergencyServiceType === 'responder' ||
-                 serviceGroupName === 'emergencyResponders' ||
-                 /rescue|disaster|red cross|responder/i.test(tags.name || '')));
+                  serviceGroupName === 'emergencyResponders' ||
+                  /rescue|disaster|red cross|responder/i.test(tags.name || '')));
 
             if (matchesType) {
               emergencyCandidates.push({
@@ -3585,8 +5530,8 @@
             if (!exists) {
               const targetGroup = serviceGroups[
                 requestedEmergencyType === 'ambulance' ? 'healthHospitals' :
-                requestedEmergencyType === 'police' ? 'emergencyPolice' :
-                requestedEmergencyType === 'fire' ? 'emergencyFire' : 'emergencyResponders'
+                  requestedEmergencyType === 'police' ? 'emergencyPolice' :
+                    requestedEmergencyType === 'fire' ? 'emergencyFire' : 'emergencyResponders'
               ];
               if (targetGroup) {
                 const pin = document.createElement('div');
@@ -3597,8 +5542,8 @@
                 badge.className = 'service-badge';
                 badge.style.backgroundColor = color;
                 badge.textContent = requestedEmergencyType === 'ambulance' ? '✚' :
-                                    requestedEmergencyType === 'police' ? 'P' :
-                                    requestedEmergencyType === 'fire' ? 'F' : 'R';
+                  requestedEmergencyType === 'police' ? 'P' :
+                    requestedEmergencyType === 'fire' ? 'F' : 'R';
                 const label = document.createElement('span');
                 label.className = 'service-name';
                 label.textContent = known.name;
@@ -3635,7 +5580,15 @@
                     {
                       callNumber: known.phone,
                       messageNumber: known.phone,
-                      onNeedAssistance: showNearbyEmergencyServices
+                      onNeedAssistance: function () {
+                        openAssistanceChat({
+                          name: known.name,
+                          category: known.category,
+                          phone: known.phone,
+                          coordinates: known.coordinates,
+                          address: known.address
+                        });
+                      }
                     }
                   );
                   searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
@@ -3670,7 +5623,15 @@
                     {
                       callNumber: known.phone,
                       messageNumber: known.phone,
-                      onNeedAssistance: showNearbyEmergencyServices
+                      onNeedAssistance: function () {
+                        openAssistanceChat({
+                          name: known.name,
+                          category: known.category,
+                          phone: known.phone,
+                          coordinates: known.coordinates,
+                          address: known.address
+                        });
+                      }
                     }
                   );
                   searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
@@ -3760,7 +5721,15 @@
                   {
                     callNumber: known.phone,
                     messageNumber: known.phone,
-                    onNeedAssistance: showNearbyEmergencyServices
+                    onNeedAssistance: function () {
+                      openAssistanceChat({
+                        name: known.name,
+                        category: known.category,
+                        phone: known.phone,
+                        coordinates: known.coordinates,
+                        address: known.address
+                      });
+                    }
                   }
                 );
                 searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
@@ -4072,8 +6041,10 @@
             const color = ['#1684ff', '#ffb300', '#e04f9b'][index % 3];
             const layer = L.geoJSON(route.geometry, {
               pane: 'routePane',
-              style: { color: color, weight: index === 0 ? 8 : 5,
-                opacity: index === 0 ? 0.98 : 0.85 },
+              style: {
+                color: color, weight: index === 0 ? 8 : 5,
+                opacity: index === 0 ? 0.98 : 0.85
+              },
               bubblingMouseEvents: false
             }).addTo(routeLayers);
             addRouteCard(route, index, layer, false, Boolean(routePurpose));
@@ -4104,19 +6075,19 @@
       formDiv.innerHTML =
         '<h4>Add Live Event / Hazard</h4>' +
         '<label style="display:block;font-size:11px;margin-bottom:4px;">Type & Delay:' +
-          '<select id="new-inc-type" style="width:100%;margin-top:2px;padding:3px;font-size:12px;">' +
-            '<option value="flood">🌊 Flash Flood Hazard (+10m delay)</option>' +
-            '<option value="closure">⛔ Road Closure / Marathon (Blocked)</option>' +
-            '<option value="traffic">🚗 Heavy Congestion (3.2x delay)</option>' +
-            '<option value="construction">🚧 Road Construction (+6m delay)</option>' +
-          '</select>' +
+        '<select id="new-inc-type" style="width:100%;margin-top:2px;padding:3px;font-size:12px;">' +
+        '<option value="flood">🌊 Flash Flood Hazard (+10m delay)</option>' +
+        '<option value="closure">⛔ Road Closure / Marathon (Blocked)</option>' +
+        '<option value="traffic">🚗 Heavy Congestion (3.2x delay)</option>' +
+        '<option value="construction">🚧 Road Construction (+6m delay)</option>' +
+        '</select>' +
         '</label>' +
         '<label style="display:block;font-size:11px;margin-bottom:6px;">Radius:' +
-          '<select id="new-inc-radius" style="width:100%;margin-top:2px;padding:3px;font-size:12px;">' +
-            '<option value="150">150 meters</option>' +
-            '<option value="250" selected>250 meters</option>' +
-            '<option value="400">400 meters</option>' +
-          '</select>' +
+        '<select id="new-inc-radius" style="width:100%;margin-top:2px;padding:3px;font-size:12px;">' +
+        '<option value="150">150 meters</option>' +
+        '<option value="250" selected>250 meters</option>' +
+        '<option value="400">400 meters</option>' +
+        '</select>' +
         '</label>' +
         '<button id="save-new-inc-btn" type="button" style="width:100%;padding:6px;background:#1a73e8;color:#fff;border:0;border-radius:4px;cursor:pointer;font-weight:600;">Place Hazard</button>';
 
@@ -4204,4 +6175,5 @@
     }
   </script>
 </body>
+
 </html>
