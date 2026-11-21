@@ -277,23 +277,17 @@
     #location-status.visible { display: block; }
     #emergency-assistance {
       position: fixed; z-index: 2500; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: min(380px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+      width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
       padding: 14px 16px; border-radius: 16px; background: #fff;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32); border: 1px solid #dadce0; color: #202124;
     }
     #emergency-assistance[hidden] { display: none; }
     .emergency-assistance-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;
     }
     .emergency-assistance-header-title {
-      font-size: 13px; font-weight: 700; color: #b3261e;
+      font-size: 14px; font-weight: 700; color: #b3261e;
     }
-    .emergency-close-btn {
-      display: grid; place-items: center; width: 28px; height: 28px; padding: 0;
-      border: 0; border-radius: 50%; background: transparent; color: #5f6368;
-      font-size: 20px; line-height: 1; cursor: pointer;
-    }
-    .emergency-close-btn:hover { background: #f1f3f4; color: #202124; }
     .emergency-status-text {
       font-size: 12.5px; line-height: 1.4; color: #3c4043; margin-bottom: 8px;
     }
@@ -303,10 +297,78 @@
     .emergency-assistance-title { margin: 0; font-size: 13px; }
     .emergency-assistance-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .emergency-assistance-buttons button {
-      min-height: 34px; padding: 0 10px; border: 1px solid #dadce0; border-radius: 6px;
+      min-height: 34px; padding: 0 11px; border: 1px solid #dadce0; border-radius: 6px;
       background: #fff; color: #b3261e; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all 0.15s ease;
     }
     .emergency-assistance-buttons button:hover { background: #fce8e6; border-color: #f28b82; }
+    .emergency-assistance-buttons button.active {
+      background: #fce8e6; border-color: #d93025; font-weight: 700; box-shadow: 0 0 0 1px #d93025;
+    }
+    .emergency-assistance-results {
+      margin-top: 10px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .emergency-assistance-results[hidden] { display: none; }
+    .emergency-results-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12.5px; font-weight: 700; color: #202124; padding-bottom: 4px;
+      border-bottom: 1px solid #f1f3f4;
+    }
+    .emergency-results-count {
+      font-size: 11px; font-weight: 500; color: #5f6368;
+    }
+    .emergency-facility-list {
+      display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 2px;
+    }
+    .emergency-facility-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 8px 10px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .emergency-facility-card:hover {
+      background: #f1f3f4; border-color: #1a73e8;
+    }
+    .emergency-facility-card.active-facility {
+      border-color: #188038; background: #e6f4ea; box-shadow: 0 0 0 1px #188038;
+    }
+    .emergency-facility-info {
+      flex: 1; min-width: 0;
+    }
+    .emergency-facility-name {
+      font-size: 12.5px; font-weight: 600; color: #202124;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .emergency-facility-sub {
+      font-size: 11px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;
+    }
+    .emergency-facility-badges {
+      display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; font-weight: 500; color: #1a73e8;
+    }
+    .emergency-facility-card.active-facility .emergency-facility-badges {
+      color: #137333;
+    }
+    .emergency-facility-route-btn {
+      flex-shrink: 0; padding: 4px 8px; font-size: 11px; font-weight: 600;
+      border-radius: 5px; border: 1px solid #1a73e8; background: #1a73e8; color: #fff; cursor: pointer;
+    }
+    .emergency-facility-route-btn:hover {
+      background: #1557b0;
+    }
+    .emergency-facility-card.active-facility .emergency-facility-route-btn {
+      background: #188038; border-color: #188038;
+    }
+    .emergency-view-map-btn {
+      width: 100%; padding: 7px 10px; font-size: 12px; font-weight: 600;
+      border-radius: 6px; border: 1px solid #dadce0; background: #fff; color: #3c4043; cursor: pointer; margin-top: 4px;
+    }
+    .emergency-view-map-btn:hover {
+      background: #f1f3f4;
+    }
+    .emergency-facilities-container {
+      margin: 8px 10px; padding: 10px; border-radius: 8px; background: #f8f9fa;
+      border: 1px solid #dadce0; display: flex; flex-direction: column; gap: 6px;
+    }
+    .emergency-facilities-container[hidden] { display: none; }
     .emergency-assistance-notice { margin: 10px 0 0; color: #5f6368; font-size: 11px; line-height: 1.35; }
     .search-panel > #location-status,
     .search-panel > #status,
@@ -458,8 +520,6 @@
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
     }
     :root[data-theme="dark"] .emergency-assistance-header-title { color: #f28b82; }
-    :root[data-theme="dark"] .emergency-close-btn { color: #bdc1c6; }
-    :root[data-theme="dark"] .emergency-close-btn:hover { background: #303134; color: #e8eaed; }
     :root[data-theme="dark"] .emergency-status-text { color: #bdc1c6; }
     :root[data-theme="dark"] .emergency-assistance-divider { border-top-color: #5f6368; }
     :root[data-theme="dark"] .emergency-assistance-buttons button {
@@ -470,6 +530,45 @@
     :root[data-theme="dark"] .emergency-assistance-buttons button:hover {
       background: #492320;
       border-color: #f28b82;
+    }
+    :root[data-theme="dark"] .emergency-assistance-buttons button.active {
+      background: #492320; border-color: #f28b82; color: #f28b82; box-shadow: 0 0 0 1px #f28b82;
+    }
+    :root[data-theme="dark"] .emergency-results-header {
+      color: #e8eaed; border-bottom-color: #3c4043;
+    }
+    :root[data-theme="dark"] .emergency-results-count {
+      color: #bdc1c6;
+    }
+    :root[data-theme="dark"] .emergency-facility-card {
+      background: #2d2f31; border-color: #3c4043;
+    }
+    :root[data-theme="dark"] .emergency-facility-card:hover {
+      background: #35383a; border-color: #8ab4f8;
+    }
+    :root[data-theme="dark"] .emergency-facility-card.active-facility {
+      border-color: #81c995; background: #1b2b20; box-shadow: 0 0 0 1px #81c995;
+    }
+    :root[data-theme="dark"] .emergency-facility-name {
+      color: #e8eaed;
+    }
+    :root[data-theme="dark"] .emergency-facility-sub {
+      color: #bdc1c6;
+    }
+    :root[data-theme="dark"] .emergency-facility-badges {
+      color: #8ab4f8;
+    }
+    :root[data-theme="dark"] .emergency-facility-card.active-facility .emergency-facility-badges {
+      color: #81c995;
+    }
+    :root[data-theme="dark"] .emergency-view-map-btn {
+      background: #303134; border-color: #5f6368; color: #e8eaed;
+    }
+    :root[data-theme="dark"] .emergency-view-map-btn:hover {
+      background: #3c4043;
+    }
+    :root[data-theme="dark"] .emergency-facilities-container {
+      background: #202124; border-color: #5f6368;
     }
     :root[data-theme="dark"] .emergency-assistance-notice { color: #bdc1c6; }
     :root[data-theme="dark"] .service-details-action:disabled {
@@ -618,6 +717,7 @@
       </div>
       <div id="location-status" role="status" aria-live="polite">Finding device location...</div>
       <div id="status" role="status" aria-live="polite"></div>
+      <div id="emergency-results-list" class="emergency-facilities-container" hidden></div>
       <div id="service-details" aria-label="Selected service details" aria-live="polite" hidden></div>
       <div id="routes" aria-label="Available routes"></div>
     </section>
@@ -633,18 +733,18 @@
   <section id="emergency-assistance" aria-label="Find emergency service" hidden>
     <div class="emergency-assistance-header">
       <span class="emergency-assistance-header-title">Find a nearby emergency service</span>
-      <button id="emergency-assistance-close" type="button" class="emergency-close-btn" aria-label="Close">&times;</button>
     </div>
     <div id="emergency-status-text" class="emergency-status-text">
-      Loading nearby emergency services...
+      Select an emergency service type below to find the nearest facilities.
     </div>
     <hr class="emergency-assistance-divider">
     <div class="emergency-assistance-buttons">
       <button type="button" data-emergency-type="ambulance">Ambulance</button>
       <button type="button" data-emergency-type="responder">Rescue / responder</button>
       <button type="button" data-emergency-type="police">Police</button>
-      <button type="button" data-emergency-type="fire">Fire service</button>
+      <button type="button" data-emergency-type="fire">Fire truck</button>
     </div>
+    <div id="emergency-assistance-results" class="emergency-assistance-results" hidden></div>
     <p class="emergency-assistance-notice">
       Shows mapped stations or facilities, not live vehicles. It does not call or dispatch responders.
       For immediate danger, call your local emergency number.
@@ -897,7 +997,11 @@
       'osm.office.civil_protection', 'osm.office.emergency_services'
     ];
     const emergencyRouteFilters = {
-      ambulance: ['osm.amenity.ambulance_station', 'osm.emergency.ambulance_station'],
+      ambulance: [
+        'osm.amenity.hospital', 'osm.healthcare.hospital',
+        'osm.amenity.clinic', 'osm.healthcare.clinic',
+        'osm.amenity.ambulance_station', 'osm.emergency.ambulance_station'
+      ],
       responder: [
         'osm.emergency.rescue_station', 'osm.emergency.rescue_service', 'osm.emergency.rescue',
         'osm.emergency.lifeguard', 'osm.emergency.disaster_response',
@@ -917,6 +1021,287 @@
       },
       []
     );
+    const KNOWN_EMERGENCY_FACILITIES = [
+      // Ambulance / Hospitals
+      {
+        name: "Western Visayas Medical Center (WVMC)",
+        type: "ambulance",
+        category: "Tertiary Government Hospital / Ambulance Base",
+        coordinates: [122.5342, 10.7188],
+        address: "Q. Abeto St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2841"
+      },
+      {
+        name: "Iloilo Doctors' Hospital",
+        type: "ambulance",
+        category: "Private Hospital / 24/7 Ambulance Service",
+        coordinates: [122.5489, 10.7001],
+        address: "West Timawa, Molo, Iloilo City",
+        phone: "(033) 337-7702"
+      },
+      {
+        name: "QualiMed Hospital Iloilo",
+        type: "ambulance",
+        category: "General Hospital / Ambulance Service",
+        coordinates: [122.5475, 10.7102],
+        address: "Atria Park District, San Rafael, Mandurriao, Iloilo City",
+        phone: "(033) 501-4848"
+      },
+      {
+        name: "St. Paul's Hospital Iloilo",
+        type: "ambulance",
+        category: "Level 3 Hospital / 24/7 Emergency & Ambulance",
+        coordinates: [122.5647, 10.6975],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-2741"
+      },
+      {
+        name: "The Medical City Iloilo",
+        type: "ambulance",
+        category: "Tertiary Hospital / Emergency Ambulance",
+        coordinates: [122.5412, 10.6953],
+        address: "Locsin St, Tap-oc, Molo, Iloilo City",
+        phone: "(033) 500-1000"
+      },
+      {
+        name: "Iloilo Mission Hospital",
+        type: "ambulance",
+        category: "Tertiary Hospital / Ambulance Service",
+        coordinates: [122.5643, 10.7259],
+        address: "Mission Road, Jaro, Iloilo City",
+        phone: "(033) 320-0315"
+      },
+      {
+        name: "Medicus Medical Center",
+        type: "ambulance",
+        category: "Tertiary General Hospital / Ambulance",
+        coordinates: [122.5441, 10.7153],
+        address: "Diversion Road, Mandurriao, Iloilo City",
+        phone: "(033) 328-7777"
+      },
+      {
+        name: "West Visayas State University Medical Center",
+        type: "ambulance",
+        category: "University Training Hospital / Ambulance",
+        coordinates: [122.5583, 10.7176],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 320-2431"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Ambulance Unit",
+        type: "ambulance",
+        category: "Emergency Medical & Ambulance Service",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Metro Iloilo Hospital and Medical Center",
+        type: "ambulance",
+        category: "Level 2 Hospital / Emergency Ambulance",
+        coordinates: [122.5532, 10.7486],
+        address: "Metropolis Ave, Jaro, Iloilo City",
+        phone: "(033) 327-1527"
+      },
+
+      // Police
+      {
+        name: "Iloilo City Police Station 4 (Molo)",
+        type: "police",
+        category: "PNP Police Station 4",
+        coordinates: [122.5458, 10.6977],
+        address: "M.H. del Pilar St, Molo, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Iloilo City Police Station 5 (Mandurriao)",
+        type: "police",
+        category: "PNP Police Station 5",
+        coordinates: [122.5368, 10.7196],
+        address: "Guzman St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Iloilo City Police Station 6 (Arevalo)",
+        type: "police",
+        category: "PNP Police Station 6",
+        coordinates: [122.5186, 10.6865],
+        address: "Quezon St, Villa Arevalo, Iloilo City",
+        phone: "(033) 337-8855"
+      },
+      {
+        name: "Iloilo City Police Office (ICPO Headquarters)",
+        type: "police",
+        category: "Police Headquarters & Dispatch",
+        coordinates: [122.5623, 10.6961],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-0400"
+      },
+      {
+        name: "Iloilo City Police Station 1 (City Proper)",
+        type: "police",
+        category: "PNP Police Station 1",
+        coordinates: [122.5684, 10.6957],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-2240"
+      },
+      {
+        name: "Iloilo City Police Station 2 (La Paz)",
+        type: "police",
+        category: "PNP Police Station 2",
+        coordinates: [122.5691, 10.7118],
+        address: "Huervana St, La Paz, Iloilo City",
+        phone: "(033) 320-0014"
+      },
+      {
+        name: "Iloilo City Police Station 3 (Jaro)",
+        type: "police",
+        category: "PNP Police Station 3",
+        coordinates: [122.5574, 10.7253],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 329-5484"
+      },
+      {
+        name: "Oton Municipal Police Station",
+        type: "police",
+        category: "PNP Municipal Police Station",
+        coordinates: [122.4770, 10.6951],
+        address: "Mabini St, Poblacion, Oton, Iloilo",
+        phone: "(033) 336-1215"
+      },
+
+      // Fire Truck / Fire Service
+      {
+        name: "BFP Molo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5461, 10.6972],
+        address: "Molo Plaza, Molo, Iloilo City",
+        phone: "(033) 337-2299"
+      },
+      {
+        name: "BFP Mandurriao Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5371, 10.7192],
+        address: "Mandurriao Plaza, Mandurriao, Iloilo City",
+        phone: "(033) 321-0000"
+      },
+      {
+        name: "BFP Arevalo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5181, 10.6862],
+        address: "Villa Arevalo Plaza, Iloilo City",
+        phone: "(033) 336-2244"
+      },
+      {
+        name: "Iloilo City Central Fire Station (BFP)",
+        type: "fire",
+        category: "Central Fire Station & Rescue Engines",
+        coordinates: [122.5712, 10.6938],
+        address: "De la Rama St, City Proper, Iloilo City",
+        phone: "(033) 337-4444"
+      },
+      {
+        name: "ICAG Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade & Response",
+        coordinates: [122.5668, 10.6942],
+        address: "Delgado St, City Proper, Iloilo City",
+        phone: "(033) 337-8888"
+      },
+      {
+        name: "Federation of Iloilo Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade / Tankers & Trucks",
+        coordinates: [122.5654, 10.6960],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-3333"
+      },
+      {
+        name: "BFP Jaro Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5578, 10.7250],
+        address: "Jaro Plaza, Jaro, Iloilo City",
+        phone: "(033) 329-2233"
+      },
+      {
+        name: "BFP La Paz Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5689, 10.7115],
+        address: "La Paz Plaza, La Paz, Iloilo City",
+        phone: "(033) 320-1122"
+      },
+      {
+        name: "Oton BFP Fire Station",
+        type: "fire",
+        category: "Municipal Fire Station",
+        coordinates: [122.4764, 10.6948],
+        address: "Poblacion South, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      },
+
+      // Rescue / Responder
+      {
+        name: "Iloilo City Emergency Operations Center (CDRRMO)",
+        type: "responder",
+        category: "Disaster Risk Reduction & Rescue Command",
+        coordinates: [122.5705, 10.6929],
+        address: "Iloilo City Hall, Plaza Libertad, Iloilo City",
+        phone: "(033) 333-1111"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Chapter",
+        type: "responder",
+        category: "Disaster Response & Rescue Unit",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Iloilo Provincial DRRMO (PDRRMO)",
+        type: "responder",
+        category: "Provincial Disaster Response Headquarters",
+        coordinates: [122.5645, 10.6971],
+        address: "Iloilo Provincial Capitol, Bonifacio Drive, Iloilo City",
+        phone: "(033) 328-7900"
+      },
+      {
+        name: "Molo District Emergency Response Unit",
+        type: "responder",
+        category: "Community Quick Response Team",
+        coordinates: [122.5460, 10.6979],
+        address: "Molo Plaza Area, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Mandurriao Disaster Response Unit",
+        type: "responder",
+        category: "District Emergency Response Team",
+        coordinates: [122.5369, 10.7194],
+        address: "Mandurriao District Office, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Philippine Coast Guard District Western Visayas",
+        type: "responder",
+        category: "Maritime Search & Rescue Unit",
+        coordinates: [122.5794, 10.7012],
+        address: "Bo. Obrero, Lapuz, Iloilo City",
+        phone: "(033) 337-5264"
+      },
+      {
+        name: "Oton MDRRMO Emergency Rescue Unit",
+        type: "responder",
+        category: "Municipal Disaster Risk Reduction & Rescue",
+        coordinates: [122.4768, 10.6953],
+        address: "Municipal Hall Compound, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      }
+    ];
     const baseLayers = {
       'Satellite': satelliteLayer,
       'Terrain': terrainLayer,
@@ -1444,8 +1829,6 @@
     let serviceRequestController = null;
     emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (button) {
       button.addEventListener('click', function () {
-        emergencyAssistance.hidden = true;
-        emergencyOpenButton.setAttribute('aria-expanded', 'false');
         findFastestEmergencyService(button.dataset.emergencyType);
       });
     });
@@ -2601,17 +2984,183 @@
       }
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderEmergencyFacilitiesList(candidates, type) {
+      const typeLabels = {
+        ambulance: 'Ambulance',
+        responder: 'Rescue / Responder',
+        police: 'Police',
+        fire: 'Fire Truck'
+      };
+      const label = typeLabels[type] || 'Emergency';
+
+      // 1. Render in #emergency-assistance-results (modal dialog)
+      const assistanceContainer = document.getElementById('emergency-assistance-results');
+      if (assistanceContainer) {
+        assistanceContainer.hidden = false;
+        assistanceContainer.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.className = 'emergency-results-header';
+        header.innerHTML = '<strong>Nearest ' + label + ' Facilities</strong>' +
+          '<span class="emergency-results-count">' + candidates.length + ' nearby</span>';
+        assistanceContainer.appendChild(header);
+
+        const listEl = document.createElement('div');
+        listEl.className = 'emergency-facility-list';
+
+        candidates.forEach(function (candidate, index) {
+          const card = document.createElement('div');
+          card.className = 'emergency-facility-card' + (index === 0 ? ' active-facility' : '');
+          card.setAttribute('data-index', String(index));
+
+          const distKm = candidate.distanceMeters >= 1000
+            ? (candidate.distanceMeters / 1000).toFixed(1) + ' km'
+            : Math.round(candidate.distanceMeters) + ' m';
+          const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
+
+          card.innerHTML =
+            '<div class="emergency-facility-info">' +
+              '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
+              '<div class="emergency-facility-sub">' + escapeHtml(candidate.category || (label + ' facility')) + '</div>' +
+              '<div class="emergency-facility-badges">' +
+                '<span>📍 ' + distKm + '</span>' +
+                '<span>⏱ ~' + estMins + ' min drive</span>' +
+                (index === 0 ? '<span style="font-weight:700;color:#188038;">• Nearest</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<button type="button" class="emergency-facility-route-btn">' +
+              (index === 0 ? 'Active Route' : 'Route') +
+            '</button>';
+
+          card.addEventListener('click', function () {
+            assistanceContainer.querySelectorAll('.emergency-facility-card').forEach(function (c) {
+              c.classList.remove('active-facility');
+              const btn = c.querySelector('.emergency-facility-route-btn');
+              if (btn) btn.textContent = 'Route';
+            });
+            card.classList.add('active-facility');
+            const thisBtn = card.querySelector('.emergency-facility-route-btn');
+            if (thisBtn) thisBtn.textContent = 'Active Route';
+
+            // Also synchronize sidebar cards
+            const sidebar = document.getElementById('emergency-results-list');
+            if (sidebar) {
+              const cards = sidebar.querySelectorAll('.emergency-facility-card');
+              if (cards[index]) {
+                cards.forEach(function (c) {
+                  c.classList.remove('active-facility');
+                  const b = c.querySelector('.emergency-facility-route-btn');
+                  if (b) b.textContent = 'Route';
+                });
+                cards[index].classList.add('active-facility');
+                const sbBtn = cards[index].querySelector('.emergency-facility-route-btn');
+                if (sbBtn) sbBtn.textContent = 'Active';
+              }
+            }
+
+            candidate.selectService();
+            collapseSidebar();
+          });
+
+          listEl.appendChild(card);
+        });
+        assistanceContainer.appendChild(listEl);
+
+        const viewMapBtn = document.createElement('button');
+        viewMapBtn.type = 'button';
+        viewMapBtn.className = 'emergency-view-map-btn';
+        viewMapBtn.textContent = 'Close & View Route on Map';
+        viewMapBtn.addEventListener('click', function () {
+          collapseSidebar();
+        });
+        assistanceContainer.appendChild(viewMapBtn);
+      }
+
+      // 2. Render in left sidebar (#emergency-results-list)
+      const sidebarContainer = document.getElementById('emergency-results-list');
+      if (sidebarContainer) {
+        sidebarContainer.hidden = false;
+        sidebarContainer.innerHTML = '';
+
+        const sHeader = document.createElement('div');
+        sHeader.className = 'emergency-results-header';
+        sHeader.innerHTML = '<strong>Nearest ' + label + ' Facilities</strong>' +
+          '<span class="emergency-results-count">' + candidates.length + ' nearby</span>';
+        sidebarContainer.appendChild(sHeader);
+
+        const sList = document.createElement('div');
+        sList.className = 'emergency-facility-list';
+        sList.style.maxHeight = '180px';
+
+        candidates.forEach(function (candidate, index) {
+          const card = document.createElement('div');
+          card.className = 'emergency-facility-card' + (index === 0 ? ' active-facility' : '');
+
+          const distKm = candidate.distanceMeters >= 1000
+            ? (candidate.distanceMeters / 1000).toFixed(1) + ' km'
+            : Math.round(candidate.distanceMeters) + ' m';
+          const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
+
+          card.innerHTML =
+            '<div class="emergency-facility-info">' +
+              '<div class="emergency-facility-name">' + (index + 1) + '. ' + escapeHtml(candidate.name) + '</div>' +
+              '<div class="emergency-facility-badges">' +
+                '<span>📍 ' + distKm + '</span>' +
+                '<span>⏱ ~' + estMins + ' min</span>' +
+              '</div>' +
+            '</div>' +
+            '<button type="button" class="emergency-facility-route-btn">' +
+              (index === 0 ? 'Active' : 'Route') +
+            '</button>';
+
+          card.addEventListener('click', function () {
+            sidebarContainer.querySelectorAll('.emergency-facility-card').forEach(function (c) {
+              c.classList.remove('active-facility');
+              const btn = c.querySelector('.emergency-facility-route-btn');
+              if (btn) btn.textContent = 'Route';
+            });
+            card.classList.add('active-facility');
+            const thisBtn = card.querySelector('.emergency-facility-route-btn');
+            if (thisBtn) thisBtn.textContent = 'Active';
+
+            candidate.selectService();
+          });
+
+          sList.appendChild(card);
+        });
+        sidebarContainer.appendChild(sList);
+      }
+    }
+
     function getEmergencyServiceType(tags) {
       const amenity = tags.amenity || '';
       const emergency = tags.emergency || '';
-      if (amenity === 'ambulance_station' || emergency === 'ambulance_station') {
+      const healthcare = tags.healthcare || '';
+      const name = (tags.name || '').toLowerCase();
+
+      if (amenity === 'ambulance_station' || emergency === 'ambulance_station' || emergency === 'ambulance' ||
+          amenity === 'hospital' || healthcare === 'hospital' ||
+          amenity === 'clinic' || healthcare === 'clinic' ||
+          /hospital|medical center|ambulance|clinic|infirmary|doctor/i.test(name)) {
         return 'ambulance';
       }
-      if (amenity === 'police' || emergency === 'police' || tags.police) {
+      if (amenity === 'police' || emergency === 'police' || tags.police ||
+          /police|pnp|precinct|patrol/i.test(name)) {
         return 'police';
       }
       if (amenity === 'fire_station' || emergency === 'fire_station' ||
-        emergency === 'fire_service' || tags.fire_station) {
+        emergency === 'fire_service' || tags.fire_station ||
+        /fire|bfp|firehouse|fire truck/i.test(name)) {
         return 'fire';
       }
       if (['rescue_station', 'rescue_service', 'rescue', 'lifeguard',
@@ -2620,7 +3169,8 @@
         ['rescue_service', 'disaster_response', 'civil_protection', 'emergency',
           'emergency_services'].indexOf(
           tags.office || ''
-        ) !== -1) {
+        ) !== -1 ||
+        /rescue|disaster|red cross|cdrrmo|responder/i.test(name)) {
         return 'responder';
       }
       return '';
@@ -2698,21 +3248,56 @@
     }
 
     function findFastestEmergencyService(type) {
-      if (!userLocationMarker) {
-        setStatus('Device location is unavailable. Allow location access to find routes from your position.');
-        return;
-      }
+      const origin = (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) ||
+                     userDeviceCoords ||
+                     routeOrigin ||
+                     initialCenter ||
+                     [map.getCenter().lng, map.getCenter().lat];
+      routeOrigin = origin;
       emergencySearchType = type;
       isAssistanceSearch = true;
-      routeOrigin = [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat];
-      setStatus('Comparing estimated drive times to nearby mapped services...');
-      const focus = userLocationMarker.getLatLng();
-      const targetZoom = Math.max(map.getZoom(), 15);
-      if (map.getZoom() !== targetZoom || map.getCenter().distanceTo(focus) > 10) {
-        map.setView(focus, targetZoom);
-      } else {
-        loadServices();
+
+      // Update button active state in modal
+      if (emergencyAssistance) {
+        emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
+          btn.classList.toggle('active', btn.dataset.emergencyType === type);
+        });
       }
+
+      // Ensure appropriate layer is visible
+      const layerMapping = {
+        ambulance: ['healthHospitals', 'healthClinics', 'emergencyAmbulance'],
+        police: ['emergencyPolice'],
+        fire: ['emergencyFire'],
+        responder: ['emergencyResponders']
+      };
+      (layerMapping[type] || []).forEach(function (groupName) {
+        if (serviceGroups[groupName]) {
+          map.addLayer(serviceGroups[groupName]);
+          const cb = serviceCategoryCheckboxes[groupName];
+          if (cb && !cb.checked) {
+            cb.checked = true;
+          }
+        }
+      });
+
+      const labels = {
+        ambulance: 'ambulance facilities & hospitals',
+        responder: 'rescue & responder units',
+        police: 'police stations',
+        fire: 'fire stations & trucks'
+      };
+      const statusMsg = 'Finding nearest ' + (labels[type] || type) + '...';
+      setStatus(statusMsg);
+      const emergencyStatusEl = document.getElementById('emergency-status-text');
+      if (emergencyStatusEl) emergencyStatusEl.textContent = statusMsg;
+
+      const focus = L.latLng(origin[1], origin[0]);
+      const targetZoom = Math.max(map.getZoom(), 14);
+      if (map.getZoom() !== targetZoom || map.getCenter().distanceTo(focus) > 50) {
+        map.setView(focus, targetZoom);
+      }
+      loadServices();
     }
 
     async function loadServices() {
@@ -2934,14 +3519,45 @@
             selectService();
           });
           marker.on('click', selectService);
-          if (requestedEmergencyType && isEmergency &&
-            emergencyServiceType === requestedEmergencyType) {
-            emergencyCandidates.push({
-              coordinates: [longitude, latitude],
-              selectService: function () {
-                selectService({ emergencyType: requestedEmergencyType });
-              }
-            });
+          if (requestedEmergencyType) {
+            const matchesType = (requestedEmergencyType === 'ambulance' &&
+                (emergencyServiceType === 'ambulance' ||
+                 serviceGroupName === 'healthHospitals' ||
+                 serviceGroupName === 'emergencyAmbulance' ||
+                 tags.amenity === 'hospital' ||
+                 tags.healthcare === 'hospital' ||
+                 tags.amenity === 'clinic' ||
+                 tags.amenity === 'ambulance_station' ||
+                 /hospital|medical center|ambulance|clinic/i.test(tags.name || ''))) ||
+              (requestedEmergencyType === 'police' &&
+                (emergencyServiceType === 'police' ||
+                 serviceGroupName === 'emergencyPolice' ||
+                 tags.amenity === 'police' ||
+                 /police|pnp|precinct/i.test(tags.name || ''))) ||
+              (requestedEmergencyType === 'fire' &&
+                (emergencyServiceType === 'fire' ||
+                 serviceGroupName === 'emergencyFire' ||
+                 tags.amenity === 'fire_station' ||
+                 tags.emergency === 'fire_station' ||
+                 tags.emergency === 'fire_service' ||
+                 /fire|bfp/i.test(tags.name || ''))) ||
+              (requestedEmergencyType === 'responder' &&
+                (emergencyServiceType === 'responder' ||
+                 serviceGroupName === 'emergencyResponders' ||
+                 /rescue|disaster|red cross|responder/i.test(tags.name || '')));
+
+            if (matchesType) {
+              emergencyCandidates.push({
+                name: name,
+                category: categoryLabel,
+                coordinates: [longitude, latitude],
+                address: tags['addr:street'] || tags['addr:city'] || '',
+                phone: tags.phone || tags['contact:phone'] || '',
+                selectService: function () {
+                  selectService({ emergencyType: requestedEmergencyType });
+                }
+              });
+            }
           }
           addedCount += 1;
           if (isEmergency) emergencyCount += 1;
@@ -2950,31 +3566,147 @@
         if (requestedEmergencyType && requestId === serviceRequestId) {
           emergencySearchType = null;
           isAssistanceSearch = false;
+
+          const origin = routeOrigin || (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) || initialCenter;
+          const originPoint = L.latLng(origin[1], origin[0]);
+
+          // Merge verified known emergency facilities for requested type
+          const knownForType = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+            return f.type === requestedEmergencyType;
+          });
+
+          knownForType.forEach(function (known) {
+            const exists = emergencyCandidates.some(function (cand) {
+              const d = L.latLng(cand.coordinates[1], cand.coordinates[0]).distanceTo(
+                L.latLng(known.coordinates[1], known.coordinates[0])
+              );
+              return d < 120 || cand.name.toLowerCase().includes(known.name.toLowerCase().substring(0, 10));
+            });
+            if (!exists) {
+              const targetGroup = serviceGroups[
+                requestedEmergencyType === 'ambulance' ? 'healthHospitals' :
+                requestedEmergencyType === 'police' ? 'emergencyPolice' :
+                requestedEmergencyType === 'fire' ? 'emergencyFire' : 'emergencyResponders'
+              ];
+              if (targetGroup) {
+                const pin = document.createElement('div');
+                pin.className = 'service-pin';
+                const color = '#d93025';
+                pin.style.setProperty('--service-color', color);
+                const badge = document.createElement('span');
+                badge.className = 'service-badge';
+                badge.style.backgroundColor = color;
+                badge.textContent = requestedEmergencyType === 'ambulance' ? '✚' :
+                                    requestedEmergencyType === 'police' ? 'P' :
+                                    requestedEmergencyType === 'fire' ? 'F' : 'R';
+                const label = document.createElement('span');
+                label.className = 'service-name';
+                label.textContent = known.name;
+                pin.append(badge, label);
+
+                const icon = L.divIcon({
+                  className: 'service-div-icon',
+                  html: pin,
+                  iconSize: [Math.min(210, Math.max(50, known.name.length * 7)) + 30, 28],
+                  iconAnchor: [11, 14]
+                });
+                const marker = L.marker([known.coordinates[1], known.coordinates[0]], {
+                  icon: icon,
+                  title: known.name,
+                  alt: known.name,
+                  bubblingMouseEvents: false
+                }).addTo(targetGroup);
+
+                const selectKnown = function () {
+                  pin.classList.add('expanded');
+                  selectedServiceCoordinates = known.coordinates;
+                  expandSidebar();
+                  destinationInput.value = known.name;
+                  showServiceDetails(
+                    known.name,
+                    known.category,
+                    [
+                      ['Address', known.address],
+                      ['Phone', known.phone, 'phone'],
+                      ['Category', known.category]
+                    ],
+                    '#d93025',
+                    '',
+                    {
+                      callNumber: known.phone,
+                      messageNumber: known.phone,
+                      onNeedAssistance: showNearbyEmergencyServices
+                    }
+                  );
+                  searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
+                };
+                marker.on('click', selectKnown);
+                pin.addEventListener('click', function (e) {
+                  L.DomEvent.stopPropagation(e);
+                  selectKnown();
+                });
+              }
+
+              emergencyCandidates.push({
+                name: known.name,
+                category: known.category,
+                coordinates: known.coordinates,
+                address: known.address,
+                phone: known.phone,
+                selectService: function () {
+                  selectedServiceCoordinates = known.coordinates;
+                  expandSidebar();
+                  destinationInput.value = known.name;
+                  showServiceDetails(
+                    known.name,
+                    known.category,
+                    [
+                      ['Address', known.address],
+                      ['Phone', known.phone, 'phone'],
+                      ['Category', known.category]
+                    ],
+                    '#d93025',
+                    '',
+                    {
+                      callNumber: known.phone,
+                      messageNumber: known.phone,
+                      onNeedAssistance: showNearbyEmergencyServices
+                    }
+                  );
+                  searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
+                }
+              });
+            }
+          });
+
+          // Calculate distance for all candidates from originPoint
+          emergencyCandidates.forEach(function (cand) {
+            cand.distanceMeters = originPoint.distanceTo(L.latLng(cand.coordinates[1], cand.coordinates[0]));
+          });
+
+          // Sort by distance ascending
+          emergencyCandidates.sort(function (a, b) {
+            return a.distanceMeters - b.distanceMeters;
+          });
+
           if (emergencyCandidates.length === 0) {
             const labels = {
-              ambulance: 'ambulance stations',
+              ambulance: 'ambulance facilities',
               responder: 'emergency responder or rescue facilities',
               police: 'police stations',
               fire: 'fire stations'
             };
-            setStatus('No mapped ' + labels[requestedEmergencyType] +
+            setStatus('No mapped ' + (labels[requestedEmergencyType] || 'facilities') +
               ' were found nearby. For immediate danger, call your local emergency number.');
           } else {
-            const labels = {
-              ambulance: 'ambulance',
-              responder: 'emergency responder and rescue',
-              police: 'police',
-              fire: 'fire'
-            };
-            setStatus('Comparing routes to nearby mapped ' + labels[requestedEmergencyType] + ' services...');
-            try {
-              const candidate = await findFastestEmergencyCandidate(emergencyCandidates);
-              if (requestId === serviceRequestId) candidate.selectService();
-            } catch (error) {
-              if (requestId === serviceRequestId) {
-                setStatus(error.message || 'Could not estimate emergency-service routes.');
-              }
-            }
+            // Render the full list of nearest facilities (top 8) in both modal and sidebar
+            renderEmergencyFacilitiesList(emergencyCandidates.slice(0, 8), requestedEmergencyType);
+
+            // Automatically route to the #1 nearest facility
+            const nearest = emergencyCandidates[0];
+            const distKm = (nearest.distanceMeters / 1000).toFixed(1);
+            setStatus('Routing to nearest ' + requestedEmergencyType + ' facility: ' + nearest.name + ' (' + distKm + ' km away)...');
+            nearest.selectService();
           }
         }
 
@@ -2996,6 +3728,52 @@
       } catch (error) {
         if (requestId !== serviceRequestId) return;
         console.error('Could not load map services:', error);
+        if (requestedEmergencyType) {
+          emergencySearchType = null;
+          isAssistanceSearch = false;
+          const origin = routeOrigin || (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) || initialCenter;
+          const originPoint = L.latLng(origin[1], origin[0]);
+          const knownCandidates = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+            return f.type === requestedEmergencyType;
+          }).map(function (known) {
+            return {
+              name: known.name,
+              category: known.category,
+              coordinates: known.coordinates,
+              address: known.address,
+              phone: known.phone,
+              distanceMeters: originPoint.distanceTo(L.latLng(known.coordinates[1], known.coordinates[0])),
+              selectService: function () {
+                selectedServiceCoordinates = known.coordinates;
+                expandSidebar();
+                destinationInput.value = known.name;
+                showServiceDetails(
+                  known.name,
+                  known.category,
+                  [
+                    ['Address', known.address],
+                    ['Phone', known.phone, 'phone'],
+                    ['Category', known.category]
+                  ],
+                  '#d93025',
+                  '',
+                  {
+                    callNumber: known.phone,
+                    messageNumber: known.phone,
+                    onNeedAssistance: showNearbyEmergencyServices
+                  }
+                );
+                searchDestination(known.name, known.coordinates, { emergencyType: requestedEmergencyType });
+              }
+            };
+          });
+          knownCandidates.sort(function (a, b) { return a.distanceMeters - b.distanceMeters; });
+          if (knownCandidates.length) {
+            renderEmergencyFacilitiesList(knownCandidates.slice(0, 8), requestedEmergencyType);
+            knownCandidates[0].selectService();
+            return;
+          }
+        }
         emergencySearchType = null;
         if (hasUserInteracted && !isSearching) {
           setStatus('Could not load service locations. Please try again later.');
