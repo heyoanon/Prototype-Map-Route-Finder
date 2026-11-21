@@ -2255,6 +2255,30 @@
       color: #202124;
     }
 
+    .assessment-advice-box {
+      margin-top: 5px;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: #fef7e0;
+      border: 1.5px solid #f9ab00;
+      color: #202124;
+      font-size: 11.5px;
+      line-height: 1.4;
+      display: block;
+    }
+
+    .assessment-advice-box strong {
+      color: #b06000 !important;
+      display: inline-block;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    .assessment-advice-box .advice-text {
+      color: #202124;
+      font-weight: 500;
+    }
+
     .responder-actions {
       display: flex;
       flex-wrap: wrap;
@@ -2363,6 +2387,21 @@
 
     :root[data-theme="dark"] .assessment-row strong {
       color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .assessment-advice-box {
+      background: #332704;
+      border-color: #ffd54f;
+      color: #fff9c4;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    :root[data-theme="dark"] .assessment-advice-box strong {
+      color: #ffd54f !important;
+    }
+
+    :root[data-theme="dark"] .assessment-advice-box .advice-text {
+      color: #fffde7;
     }
 
     :root[data-theme="dark"] .responder-route-banner {
@@ -4324,7 +4363,7 @@
             '</div>' +
             '<div class="assessment-row"><strong>🛡️ Hazard & Avoidance Status:</strong> ' + escapeHtml(data.hazardEval.note) + '</div>' +
             '<div class="assessment-row"><strong>🧰 Deployed Gear & Response Team:</strong> ' + escapeHtml(data.scenario.equipment) + '</div>' +
-            '<div class="assessment-row" style="background:#fef7e0;padding:4px 6px;border-radius:4px;border:1px solid #f9ab00;margin-top:2px;"><strong>💡 Immediate Safety Advice:</strong> ' + escapeHtml(data.scenario.tacticalAdvice) + '</div>' +
+            '<div class="assessment-advice-box"><strong>💡 Immediate Safety Advice:</strong><br><span class="advice-text">' + escapeHtml(data.scenario.tacticalAdvice) + '</span></div>' +
           '</div>' +
           '<div class="responder-actions">' +
             '<button type="button" class="chat-action-btn" data-action="plot-responder-route">🗺️ View Route on Map</button>' +
@@ -4357,6 +4396,7 @@
           '<div>⏱️ Fastest ETA: <strong style="color:#188038;">~' + data.metrics.durationMins + ' min (' + data.metrics.distKm + ' km)</strong></div>' +
           '<div style="color:#b3261e;font-size:10.5px;">🛡️ ' + escapeHtml(data.hazardEval.note) + '</div>' +
         '</div>' +
+        (data.scenario && data.scenario.tacticalAdvice ? '<div class="assessment-advice-box"><strong>💡 Immediate Safety Advice:</strong><br><span class="advice-text">' + escapeHtml(data.scenario.tacticalAdvice) + '</span></div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
           '<button type="button" class="emergency-facility-route-btn" data-action="plot-responder-route" style="flex:1;">Active Route</button>' +
           (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;">📞 Call</a>' : '') +
