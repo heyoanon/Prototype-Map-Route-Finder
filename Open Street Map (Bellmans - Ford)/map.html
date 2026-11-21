@@ -2108,6 +2108,10 @@
       transition: background 0.15s;
     }
 
+    .emergency-chat-trigger-btn[hidden] {
+      display: none !important;
+    }
+
     .emergency-chat-trigger-btn:hover {
       background: #d2e3fc;
     }
@@ -2295,13 +2299,21 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      cursor: pointer;
+    }
+
+    .responder-situation-prompt[hidden] {
+      display: none !important;
     }
 
     .responder-scenario-chips {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
+      cursor: pointer;
     }
+
+    
 
     .responder-scenario-chip {
       padding: 4px 8px;
@@ -2465,7 +2477,7 @@
         <span>🛟</span> Select Situation to Recommend Fastest Route:
       </div>
       <div class="responder-scenario-chips">
-        <button type="button" class="responder-scenario-chip active" data-scenario="flood">🌊 Flood / Water Rise</button>
+        <button type="button" class="responder-scenario-chip" data-scenario="flood">🌊 Flood / Water Rise</button>
         <button type="button" class="responder-scenario-chip" data-scenario="accident">🚗 Trapped / Accident</button>
         <button type="button" class="responder-scenario-chip" data-scenario="medical">🚑 Medical Trauma</button>
         <button type="button" class="responder-scenario-chip" data-scenario="storm">🌀 Storm Evacuation</button>
@@ -3609,7 +3621,44 @@
     let serviceRequestController = null;
     emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (button) {
       button.addEventListener('click', function () {
-        findFastestEmergencyService(button.dataset.emergencyType);
+        const type = button.dataset.emergencyType;
+        if (button.classList.contains('active')) {
+          // De-select option when clicked again
+          button.classList.remove('active');
+          emergencySearchType = null;
+          isAssistanceSearch = false;
+          const situationSelector = document.getElementById('responder-situation-selector');
+          if (situationSelector) situationSelector.hidden = true;
+          const assistanceResults = document.getElementById('emergency-assistance-results');
+          if (assistanceResults) {
+            assistanceResults.hidden = true;
+            assistanceResults.replaceChildren();
+          }
+          const responderBanner = document.getElementById('responder-dispatch-banner');
+          if (responderBanner) {
+            responderBanner.hidden = true;
+            responderBanner.innerHTML = '';
+          }
+          const emergencyResultsList = document.getElementById('emergency-results-list');
+          if (emergencyResultsList) {
+            emergencyResultsList.hidden = true;
+            emergencyResultsList.replaceChildren();
+          }
+          const emergencyStatusEl = document.getElementById('emergency-status-text');
+          if (emergencyStatusEl) {
+            emergencyStatusEl.textContent = 'Select an emergency service type below to find the nearest facilities.';
+          }
+          const emergencyOpenChat = document.getElementById('emergency-open-chat');
+          if (emergencyOpenChat) emergencyOpenChat.hidden = false;
+          routeLayers.clearLayers();
+          if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+            destinationMarker = null;
+          }
+          setStatus('');
+        } else {
+          findFastestEmergencyService(type);
+        }
       });
     });
     emergencyOpenButton.addEventListener('click', function () {
@@ -4359,13 +4408,27 @@
     // Situation selector chip listener in emergency modal
     const responderSituationSelector = document.getElementById('responder-situation-selector');
     if (responderSituationSelector) {
+      // Click on grey empty space inside selector de-selects the scenario option
+      responderSituationSelector.addEventListener('click', function (e) {
+        const clickedChip = e.target.closest('.responder-scenario-chip');
+        if (!clickedChip) {
+          deSelectResponderScenario();
+        }
+      });
+
       responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (chip) {
-        chip.addEventListener('click', function () {
+        chip.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const sc = chip.dataset.scenario;
+          if (chip.classList.contains('active')) {
+            // Clicking already active chip de-selects it
+            deSelectResponderScenario();
+            return;
+          }
           responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
             c.classList.remove('active');
           });
           chip.classList.add('active');
-          const sc = chip.dataset.scenario;
           currentResponderScenario = sc;
           const data = recommendResponderDispatch('', sc);
           if (data) {
@@ -4374,13 +4437,48 @@
               const existingCard = assistanceContainer.querySelector('.responder-dispatch-card');
               if (existingCard) {
                 const parent = existingCard.parentElement;
-                parent.innerHTML = buildResponderAssessmentHtml(data);
+                if (parent && parent !== assistanceContainer) {
+                  parent.innerHTML = buildResponderAssessmentHtml(data);
+                } else {
+                  existingCard.outerHTML = buildResponderAssessmentHtml(data);
+                }
+              } else {
+                const assessDiv = document.createElement('div');
+                assessDiv.innerHTML = buildResponderAssessmentHtml(data);
+                assistanceContainer.prepend(assessDiv);
               }
             }
             plotResponderRoute(data);
           }
         });
       });
+    }
+
+    function deSelectResponderScenario() {
+      if (responderSituationSelector) {
+        responderSituationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
+          c.classList.remove('active');
+        });
+      }
+      currentResponderScenario = null;
+      lastResponderDispatchData = null;
+      const assistanceContainer = document.getElementById('emergency-assistance-results');
+      if (assistanceContainer) {
+        const existingCard = assistanceContainer.querySelector('.responder-dispatch-card');
+        if (existingCard) {
+          const parent = existingCard.parentElement;
+          if (parent && parent !== assistanceContainer) {
+            parent.remove();
+          } else {
+            existingCard.remove();
+          }
+        }
+      }
+      const responderBanner = document.getElementById('responder-dispatch-banner');
+      if (responderBanner) {
+        responderBanner.hidden = true;
+        responderBanner.innerHTML = '';
+      }
     }
 
     // Global listener for plot-responder-route buttons
@@ -5543,12 +5641,52 @@
     function showNearbyEmergencyServices() {
       expandSidebar();
       isAssistanceSearch = true;
+      emergencySearchType = null;
       form.hidden = false;
       emergencyOpenButton.hidden = false;
       emergencyAssistance.hidden = false;
       emergencyOpenButton.setAttribute('aria-expanded', 'true');
+
+      // Ensure emergency options are NOT selected as default
+      if (emergencyAssistance) {
+        emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
+          btn.classList.remove('active');
+        });
+      }
+      const situationSelector = document.getElementById('responder-situation-selector');
+      if (situationSelector) {
+        situationSelector.hidden = true;
+        situationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
+          c.classList.remove('active');
+        });
+      }
+      currentResponderScenario = null;
+      lastResponderDispatchData = null;
+
+      const assistanceResults = document.getElementById('emergency-assistance-results');
+      if (assistanceResults) {
+        assistanceResults.hidden = true;
+        assistanceResults.replaceChildren();
+      }
+
+      const responderBanner = document.getElementById('responder-dispatch-banner');
+      if (responderBanner) {
+        responderBanner.hidden = true;
+        responderBanner.innerHTML = '';
+      }
+
+      const emergencyResultsList = document.getElementById('emergency-results-list');
+      if (emergencyResultsList) {
+        emergencyResultsList.hidden = true;
+        emergencyResultsList.replaceChildren();
+      }
+
+      // Show Chat with Emergency Assistance button when no options are selected
+      const emergencyOpenChat = document.getElementById('emergency-open-chat');
+      if (emergencyOpenChat) emergencyOpenChat.hidden = false;
+
       const emergencyStatusEl = document.getElementById('emergency-status-text');
-      if (emergencyStatusEl) emergencyStatusEl.textContent = 'Loading nearby emergency services...';
+      if (emergencyStatusEl) emergencyStatusEl.textContent = 'Select an emergency service type below to find the nearest facilities.';
       Object.keys(serviceGroups).forEach(function (groupName) {
         if (groupName.indexOf('emergency') !== 0) return;
         const checkbox = serviceCategoryCheckboxes[groupName];
@@ -5858,6 +5996,10 @@
           btn.classList.toggle('active', btn.dataset.emergencyType === type);
         });
       }
+
+      // Remove / hide chat emergency assistance when an option is selected
+      const emergencyOpenChat = document.getElementById('emergency-open-chat');
+      if (emergencyOpenChat) emergencyOpenChat.hidden = true;
 
       const situationSelector = document.getElementById('responder-situation-selector');
       if (situationSelector) {
