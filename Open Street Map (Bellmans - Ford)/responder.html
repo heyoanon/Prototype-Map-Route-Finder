@@ -33,14 +33,15 @@
     }
 
     #map {
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       position: absolute;
       top: 0;
       bottom: 0;
       left: 0;
       right: 0;
       z-index: 1;
+      background: #1a1a1a;
     }
 
     /* Floating Responder HUD */
@@ -117,7 +118,7 @@
     }
 
     .hud-title {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.5px;
       color: #8ab4f8;
@@ -129,7 +130,7 @@
     }
 
     .hud-badge {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
       padding: 2px 7px;
       border-radius: 4px;
@@ -173,7 +174,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -609,6 +610,46 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
+    /* Custom Leaflet Layer Control Dark/Light Mode Styling */
+    .leaflet-control-layers {
+      background: rgba(30, 31, 34, 0.96) !important;
+      border: 1px solid #4a4d52 !important;
+      border-radius: 10px !important;
+      color: #e8eaed !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+      padding: 8px 12px !important;
+      backdrop-filter: blur(8px);
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    :root[data-theme="light"] .leaflet-control-layers {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border-color: #dadce0 !important;
+      color: #202124 !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .leaflet-control-layers-base label,
+    .leaflet-control-layers-overlays label {
+      display: flex !important;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      margin: 3px 0 !important;
+      cursor: pointer;
+    }
+
+    .leaflet-control-layers-separator {
+      border-top-color: #3c4043 !important;
+      margin: 6px 0 !important;
+    }
+
+    :root[data-theme="light"] .leaflet-control-layers-separator {
+      border-top-color: #e8eaed !important;
+    }
+
     /* Pulsing Leaflet Markers */
     .user-incident-icon {
       position: relative;
@@ -672,6 +713,19 @@
       font-size: 18px;
       color: #fff;
       box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5);
+    }
+
+    .facility-map-pin {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #ffffff;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     }
   </style>
 </head>
@@ -845,67 +899,378 @@
       }
     ];
 
-    // Standard responder bases by service type
-    const KNOWN_SERVICE_BASES = {
-      ambulance: [
-        { id: 'tmci', name: 'The Medical City Iloilo (Ambulance Base)', coords: [122.5435, 10.7027], address: 'Locsin St, Tap-oc, Molo, Iloilo City', phone: '(033) 500-1000', icon: '🚑', category: 'Tertiary Hospital / Emergency Ambulance' },
-        { id: 'wvmc', name: 'Western Visayas Medical Center (WVMC)', coords: [122.5358, 10.7188], address: 'Q. Abeto St, Mandurriao, Iloilo City', phone: '(033) 321-2841', icon: '🚑', category: 'Tertiary Government Hospital / Ambulance' },
-        { id: 'medicus', name: 'Medicus Medical Center', coords: [122.5482, 10.7121], address: 'Diversion Rd, Mandurriao, Iloilo City', phone: '(033) 509-8888', icon: '🚑', category: 'Tertiary General Hospital / Ambulance' },
-        { id: 'idh', name: "Iloilo Doctors' Hospital", coords: [122.5539, 10.7001], address: 'West Timawa, Molo, Iloilo City', phone: '(033) 337-7702', icon: '🚑', category: 'Medical Center / Emergency Unit' }
-      ],
-      responder: [
-        { id: 'mandurriao-dru', name: 'Mandurriao Disaster Response Unit', coords: [122.5369, 10.7194], address: 'Mandurriao District Office, Iloilo City', phone: '(033) 321-2777', icon: '🛟', category: 'Emergency Rescue Unit' },
-        { id: 'cdrrmo-eoc', name: 'Iloilo City Emergency Operations Center (CDRRMO)', coords: [122.5705, 10.6929], address: 'Iloilo City Hall, Plaza Libertad, Iloilo City', phone: '(033) 333-1111', icon: '🛟', category: 'Disaster Command Center' },
-        { id: 'red-cross', name: 'Philippine Red Cross - Iloilo Chapter', coords: [122.5641, 10.6989], address: 'Bonifacio Drive, Iloilo City', phone: '(033) 337-5976', icon: '🛟', category: 'Disaster Relief & Ambulance' },
-        { id: 'molo-deru', name: 'Molo District Emergency Response Unit', coords: [122.5460, 10.6979], address: 'Molo Plaza Area, Iloilo City', phone: '(033) 337-3011', icon: '🛟', category: 'District Rescue Unit' },
-        { id: 'coast-guard', name: 'Philippine Coast Guard District Western Visayas', coords: [122.5794, 10.7012], address: 'Bo. Obrero, Lapuz, Iloilo City', phone: '(033) 337-5264', icon: '🛟', category: 'Water Rescue / Marine Unit' },
-        { id: 'oton-mdrrmo', name: 'Oton MDRRMO Emergency Rescue Unit', coords: [122.4768, 10.6953], address: 'Municipal Hall Compound, Oton, Iloilo', phone: '(033) 336-0911', icon: '🛟', category: 'Municipal Disaster Rescue Unit' }
-      ],
-      police: [
-        { id: 'oton-police', name: 'Oton Municipal Police Station', coords: [122.4770, 10.6955], address: 'Mabini St, Poblacion South, Oton', phone: '(033) 336-0112', icon: '🚓', category: 'Municipal Police Station' },
-        { id: 'police-stn-4', name: 'Iloilo City Police Station 4 (Molo)', coords: [122.5458, 10.6976], address: 'M.H. del Pilar St, Molo, Iloilo City', phone: '(033) 337-2342', icon: '🚓', category: 'District Police Station' },
-        { id: 'police-stn-5', name: 'Iloilo City Police Station 5 (Mandurriao)', coords: [122.5365, 10.7190], address: 'Guzman St, Mandurriao, Iloilo City', phone: '(033) 321-1250', icon: '🚓', category: 'District Police Station' },
-        { id: 'police-hq', name: 'Iloilo City Police Office Headquarters', coords: [122.5670, 10.6960], address: 'General Luna St, Iloilo City', phone: '(033) 337-0400', icon: '🚓', category: 'City Police Command' }
-      ],
-      fire: [
-        { id: 'bfp-oton', name: 'BFP Oton Municipal Fire Station', coords: [122.4762, 10.6950], address: 'J.C. Zulueta St, Oton, Iloilo', phone: '(033) 336-0911', icon: '🚒', category: 'Fire & Rescue Engine Unit' },
-        { id: 'bfp-mandurriao', name: 'BFP Mandurriao Fire Sub-Station', coords: [122.5372, 10.7185], address: 'Mandurriao Plaza Area, Iloilo City', phone: '(033) 321-3911', icon: '🚒', category: 'Sub-Station Fire Engine' },
-        { id: 'bfp-iloilo-central', name: 'BFP Iloilo City Central Fire Station', coords: [122.5685, 10.6948], address: 'Macario Peralta St, Iloilo City', phone: '(033) 337-4444', icon: '🚒', category: 'Central Fire & Hazmat Station' }
-      ]
-    };
+    const KNOWN_EMERGENCY_FACILITIES = [
+      // Ambulance / Hospitals
+      {
+        name: "Western Visayas Medical Center (WVMC)",
+        type: "ambulance",
+        category: "Tertiary Government Hospital / Ambulance Base",
+        coordinates: [122.5342, 10.7188],
+        address: "Q. Abeto St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2841"
+      },
+      {
+        name: "Iloilo Doctors' Hospital",
+        type: "ambulance",
+        category: "Private Hospital / 24/7 Ambulance Service",
+        coordinates: [122.5489, 10.7001],
+        address: "West Timawa, Molo, Iloilo City",
+        phone: "(033) 337-7702"
+      },
+      {
+        name: "QualiMed Hospital Iloilo",
+        type: "ambulance",
+        category: "General Hospital / Ambulance Service",
+        coordinates: [122.5475, 10.7102],
+        address: "Atria Park District, San Rafael, Mandurriao, Iloilo City",
+        phone: "(033) 501-4848"
+      },
+      {
+        name: "St. Paul's Hospital Iloilo",
+        type: "ambulance",
+        category: "Level 3 Hospital / 24/7 Emergency & Ambulance",
+        coordinates: [122.5647, 10.6975],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-2741"
+      },
+      {
+        name: "The Medical City Iloilo",
+        type: "ambulance",
+        category: "Tertiary Hospital / Emergency Ambulance",
+        coordinates: [122.5412, 10.6953],
+        address: "Locsin St, Tap-oc, Molo, Iloilo City",
+        phone: "(033) 500-1000"
+      },
+      {
+        name: "Iloilo Mission Hospital",
+        type: "ambulance",
+        category: "Tertiary Hospital / Ambulance Service",
+        coordinates: [122.5643, 10.7259],
+        address: "Mission Road, Jaro, Iloilo City",
+        phone: "(033) 320-0315"
+      },
+      {
+        name: "Medicus Medical Center",
+        type: "ambulance",
+        category: "Tertiary General Hospital / Ambulance",
+        coordinates: [122.5441, 10.7153],
+        address: "Diversion Road, Mandurriao, Iloilo City",
+        phone: "(033) 328-7777"
+      },
+      {
+        name: "West Visayas State University Medical Center",
+        type: "ambulance",
+        category: "University Training Hospital / Ambulance",
+        coordinates: [122.5583, 10.7176],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 320-2431"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Ambulance Unit",
+        type: "ambulance",
+        category: "Emergency Medical & Ambulance Service",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Metro Iloilo Hospital and Medical Center",
+        type: "ambulance",
+        category: "Level 2 Hospital / Emergency Ambulance",
+        coordinates: [122.5532, 10.7486],
+        address: "Metropolis Ave, Jaro, Iloilo City",
+        phone: "(033) 327-1527"
+      },
+
+      // Police
+      {
+        name: "Iloilo City Police Station 4 (Molo)",
+        type: "police",
+        category: "PNP Police Station 4",
+        coordinates: [122.5458, 10.6977],
+        address: "M.H. del Pilar St, Molo, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Iloilo City Police Station 5 (Mandurriao)",
+        type: "police",
+        category: "PNP Police Station 5",
+        coordinates: [122.5368, 10.7196],
+        address: "Guzman St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Iloilo City Police Station 6 (Arevalo)",
+        type: "police",
+        category: "PNP Police Station 6",
+        coordinates: [122.5186, 10.6865],
+        address: "Quezon St, Villa Arevalo, Iloilo City",
+        phone: "(033) 337-8855"
+      },
+      {
+        name: "Iloilo City Police Office (ICPO Headquarters)",
+        type: "police",
+        category: "Police Headquarters & Dispatch",
+        coordinates: [122.5623, 10.6961],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-0400"
+      },
+      {
+        name: "Iloilo City Police Station 1 (City Proper)",
+        type: "police",
+        category: "PNP Police Station 1",
+        coordinates: [122.5684, 10.6957],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-2240"
+      },
+      {
+        name: "Iloilo City Police Station 2 (La Paz)",
+        type: "police",
+        category: "PNP Police Station 2",
+        coordinates: [122.5691, 10.7118],
+        address: "Huervana St, La Paz, Iloilo City",
+        phone: "(033) 320-0014"
+      },
+      {
+        name: "Iloilo City Police Station 3 (Jaro)",
+        type: "police",
+        category: "PNP Police Station 3",
+        coordinates: [122.5574, 10.7253],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 329-5484"
+      },
+      {
+        name: "Oton Municipal Police Station",
+        type: "police",
+        category: "PNP Municipal Police Station",
+        coordinates: [122.4770, 10.6951],
+        address: "Mabini St, Poblacion, Oton, Iloilo",
+        phone: "(033) 336-1215"
+      },
+
+      // Fire Truck / Fire Service
+      {
+        name: "BFP Molo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5461, 10.6972],
+        address: "Molo Plaza, Molo, Iloilo City",
+        phone: "(033) 337-2299"
+      },
+      {
+        name: "BFP Mandurriao Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5371, 10.7192],
+        address: "Mandurriao Plaza, Mandurriao, Iloilo City",
+        phone: "(033) 321-0000"
+      },
+      {
+        name: "BFP Arevalo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5181, 10.6862],
+        address: "Villa Arevalo Plaza, Iloilo City",
+        phone: "(033) 336-2244"
+      },
+      {
+        name: "Iloilo City Central Fire Station (BFP)",
+        type: "fire",
+        category: "Central Fire Station & Rescue Engines",
+        coordinates: [122.5712, 10.6938],
+        address: "De la Rama St, City Proper, Iloilo City",
+        phone: "(033) 337-4444"
+      },
+      {
+        name: "ICAG Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade & Response",
+        coordinates: [122.5668, 10.6942],
+        address: "Delgado St, City Proper, Iloilo City",
+        phone: "(033) 337-8888"
+      },
+      {
+        name: "Federation of Iloilo Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade / Tankers & Trucks",
+        coordinates: [122.5654, 10.6960],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-3333"
+      },
+      {
+        name: "BFP Jaro Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5578, 10.7250],
+        address: "Jaro Plaza, Jaro, Iloilo City",
+        phone: "(033) 329-2233"
+      },
+      {
+        name: "BFP La Paz Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5689, 10.7115],
+        address: "La Paz Plaza, La Paz, Iloilo City",
+        phone: "(033) 320-1122"
+      },
+      {
+        name: "Oton BFP Fire Station",
+        type: "fire",
+        category: "Municipal Fire Station",
+        coordinates: [122.4764, 10.6948],
+        address: "Poblacion South, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      },
+
+      // Rescue / Responder
+      {
+        name: "Iloilo City Emergency Operations Center (CDRRMO)",
+        type: "responder",
+        category: "Disaster Risk Reduction & Rescue Command",
+        coordinates: [122.5705, 10.6929],
+        address: "Iloilo City Hall, Plaza Libertad, Iloilo City",
+        phone: "(033) 333-1111"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Chapter",
+        type: "responder",
+        category: "Disaster Response & Rescue Unit",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Iloilo Provincial DRRMO (PDRRMO)",
+        type: "responder",
+        category: "Provincial Disaster Response Headquarters",
+        coordinates: [122.5645, 10.6971],
+        address: "Iloilo Provincial Capitol, Bonifacio Drive, Iloilo City",
+        phone: "(033) 328-7900"
+      },
+      {
+        name: "Molo District Emergency Response Unit",
+        type: "responder",
+        category: "Community Quick Response Team",
+        coordinates: [122.5460, 10.6979],
+        address: "Molo Plaza Area, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Mandurriao Disaster Response Unit",
+        type: "responder",
+        category: "District Emergency Response Team",
+        coordinates: [122.5369, 10.7194],
+        address: "Mandurriao District Office, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Philippine Coast Guard District Western Visayas",
+        type: "responder",
+        category: "Maritime Search & Rescue Unit",
+        coordinates: [122.5794, 10.7012],
+        address: "Bo. Obrero, Lapuz, Iloilo City",
+        phone: "(033) 337-5264"
+      },
+      {
+        name: "Oton MDRRMO Emergency Rescue Unit",
+        type: "responder",
+        category: "Municipal Disaster Risk Reduction & Rescue",
+        coordinates: [122.4768, 10.6953],
+        address: "Municipal Hall Compound, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      }
+    ];
 
     // 1. Initialize Map
-    const initialView = [10.7120, 122.5500];
+    const initialView = [10.6951, 122.5000];
     const map = L.map('map', {
-      zoomControl: false
+      zoomControl: false,
+      preferCanvas: true
     }).setView(initialView, 14);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Map Tile Layers
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+    // Ensure map tiles and dimensions resize accurately
+    map.whenReady(function () {
+      setTimeout(function () {
+        map.invalidateSize();
+      }, 100);
+    });
+    window.addEventListener('resize', function () {
+      map.invalidateSize();
     });
 
+    // --- Base Map Tile Layers (all layers found in map.html) ---
+    // 1. Street Map (OpenStreetMap canonical HTTPS URL)
+    const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    });
+
+    // 2. Satellite Imagery (Esri World Imagery)
     const satelliteLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
         maxZoom: 19,
-        attribution: 'Tiles &copy; Esri'
+        attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
       }
     );
 
-    // Default to satellite layer for tactical command look
-    satelliteLayer.addTo(map);
+    // 3. Terrain Map (OpenTopoMap)
+    const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxNativeZoom: 17,
+      maxZoom: 19,
+      subdomains: 'abc',
+      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Map style: &copy; OpenTopoMap'
+    });
 
-    L.control.layers(
-      { 'Satellite Imagery': satelliteLayer, 'Street Map': streetLayer },
-      null,
-      { position: 'bottomright' }
+    // 4. Topographic Map (Esri World Topo Map)
+    const topographicLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri and its data providers'
+      }
+    );
+
+    // 5. Shaded Relief Map (Esri World Shaded Relief)
+    const reliefLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxNativeZoom: 13,
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri, USGS, NOAA'
+      }
+    );
+
+    // Add default base layer: Street Map ensures 100% reliable tile rendering immediately
+    streetLayer.addTo(map);
+
+    // --- Overlay Layers ---
+    // Place Labels & Boundaries Overlay (overlayPane)
+    const placeLabelsLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        pane: 'overlayPane',
+        attribution: 'Labels &copy; Esri'
+      }
     ).addTo(map);
 
-    // Hazard layer group
+    // Live Traffic Overlay (if key is present)
+    let trafficLayer = null;
+    if (esriTrafficApiKey) {
+      trafficLayer = L.tileLayer(
+        'https://traffic.arcgis.com/arcgis/rest/services/World/Traffic/MapServer/tile/{z}/{y}/{x}?token=' +
+        encodeURIComponent(esriTrafficApiKey),
+        {
+          maxZoom: 19,
+          attribution: 'Traffic data &copy; Esri'
+        }
+      );
+    }
+
+    // Live Hazards & Incidents Layer Group
     const hazardLayerGroup = L.featureGroup().addTo(map);
     renderHazards();
 
@@ -923,12 +1288,85 @@
       });
     }
 
+    // Emergency Facilities Layer Groups (from map.html)
+    const ambulanceLayerGroup = L.featureGroup();
+    const policeLayerGroup = L.featureGroup();
+    const fireLayerGroup = L.featureGroup();
+    const rescueLayerGroup = L.featureGroup().addTo(map);
+
+    populateFacilityLayers();
+
+    function populateFacilityLayers() {
+      KNOWN_EMERGENCY_FACILITIES.forEach(function (facility) {
+        const coords = [facility.coordinates[1], facility.coordinates[0]];
+        let targetGroup = rescueLayerGroup;
+        let color = '#d93025';
+        let icon = '🛟';
+
+        if (facility.type === 'ambulance') {
+          targetGroup = ambulanceLayerGroup;
+          color = '#ea4335';
+          icon = '🚑';
+        } else if (facility.type === 'police') {
+          targetGroup = policeLayerGroup;
+          color = '#1a73e8';
+          icon = '🚓';
+        } else if (facility.type === 'fire') {
+          targetGroup = fireLayerGroup;
+          color = '#f29900';
+          icon = '🚒';
+        }
+
+        const markerIcon = L.divIcon({
+          className: 'facility-marker-div',
+          html: '<div class="facility-map-pin" style="background-color:' + color + ';">' + icon + '</div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker(coords, { icon: markerIcon }).addTo(targetGroup);
+        marker.bindPopup(
+          '<strong>' + icon + ' ' + escapeHtml(facility.name) + '</strong><br>' +
+          '<span style="font-size:11px;color:#5f6368;">' + escapeHtml(facility.category) + '</span><br>' +
+          '📍 ' + escapeHtml(facility.address) + '<br>' +
+          (facility.phone ? '📞 ' + escapeHtml(facility.phone) : '')
+        );
+      });
+    }
+
+    // Add Layer Switcher Control
+    const baseLayers = {
+      '🗺️ Street Map': streetLayer,
+      '🛰️ Satellite Imagery': satelliteLayer,
+      '🏔️ Terrain (Topomap)': terrainLayer,
+      '🧭 Topographic Map': topographicLayer,
+      '🌄 Shaded Relief': reliefLayer
+    };
+
+    const overlayLayers = {
+      '🏷️ Place labels': placeLabelsLayer,
+      '⚠️ Hazards & Flood Zones': hazardLayerGroup,
+      '🛟 Disaster Responders': rescueLayerGroup,
+      '🚑 Hospitals & Ambulances': ambulanceLayerGroup,
+      '🚓 Police Facilities': policeLayerGroup,
+      '🚒 Fire Stations': fireLayerGroup
+    };
+
+    if (trafficLayer) {
+      overlayLayers['🚦 Live Traffic'] = trafficLayer;
+    }
+
+    L.control.layers(baseLayers, overlayLayers, {
+      position: 'topright',
+      collapsed: true
+    }).addTo(map);
+
     // 2. State & Markers
     let userMarker = null;
     let responderMarker = null;
     let routeLayers = L.featureGroup().addTo(map);
     let currentServiceType = 'responder';
-    let activeResponderStation = KNOWN_SERVICE_BASES.responder[0];
+    let activeResponderStation = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.type === 'responder'; }) || KNOWN_EMERGENCY_FACILITIES[0];
     let lastTrackedCoords = null;
     let lastRenderedStationId = null;
 
@@ -998,6 +1436,7 @@
             if (data.serviceType && data.serviceType !== currentServiceType) {
               currentServiceType = data.serviceType;
               stateChanged = true;
+              syncServiceLayers(currentServiceType);
             }
 
             if (data.lastAction) {
@@ -1019,37 +1458,38 @@
             // Adapt active station if user specifically selected a facility on map.html
             if (data.targetFacility && Array.isArray(data.targetFacility.coordinates)) {
               activeResponderStation = {
-                id: 'custom-target-' + (data.targetFacility.name || '').replace(/\s+/g, '-'),
                 name: data.targetFacility.name,
-                coords: data.targetFacility.coordinates,
+                coordinates: data.targetFacility.coordinates,
                 address: data.targetFacility.category || 'User Selected Emergency Facility',
                 phone: data.targetFacility.phone || '(033) 333-1111',
-                icon: getServiceIcon(currentServiceType)
+                type: currentServiceType
               };
               stateChanged = true;
             } else if (data.assignedResponder && Array.isArray(data.assignedResponder.coordinates)) {
               activeResponderStation = {
-                id: 'assigned-' + (data.assignedResponder.name || '').replace(/\s+/g, '-'),
                 name: data.assignedResponder.name,
-                coords: data.assignedResponder.coordinates,
+                coordinates: data.assignedResponder.coordinates,
                 address: data.assignedResponder.address || 'Assigned Base Station',
                 phone: data.assignedResponder.phone || '(033) 333-1111',
-                icon: getServiceIcon(currentServiceType)
+                type: currentServiceType
               };
               stateChanged = true;
-            } else if (stateChanged || !activeResponderStation || !activeResponderStation.id.startsWith('custom-target-')) {
-              // Pick closest base for current service type
-              const baseList = KNOWN_SERVICE_BASES[currentServiceType] || KNOWN_SERVICE_BASES.responder;
-              let closestBase = baseList[0];
+            } else if (stateChanged || !activeResponderStation) {
+              // Pick closest base for current service type from KNOWN_EMERGENCY_FACILITIES
+              const matchingFacilities = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+                return f.type === currentServiceType;
+              });
+              const pool = matchingFacilities.length ? matchingFacilities : KNOWN_EMERGENCY_FACILITIES;
+              let closest = pool[0];
               let minD = Infinity;
-              baseList.forEach(function (base) {
-                const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, base.coords[1], base.coords[0]);
+              pool.forEach(function (fac) {
+                const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, fac.coordinates[1], fac.coordinates[0]);
                 if (d < minD) {
                   minD = d;
-                  closestBase = base;
+                  closest = fac;
                 }
               });
-              activeResponderStation = closestBase;
+              activeResponderStation = closest;
             }
           }
         }
@@ -1063,13 +1503,21 @@
         Math.abs(lastTrackedCoords.lat - currentTrackedUser.lat) > 0.0001 ||
         Math.abs(lastTrackedCoords.lng - currentTrackedUser.lng) > 0.0001;
 
-      const stationChanged = lastRenderedStationId !== (activeResponderStation && activeResponderStation.id);
+      const stationChanged = lastRenderedStationId !== (activeResponderStation && activeResponderStation.name);
 
       if (coordsChanged || stationChanged || stateChanged) {
         lastTrackedCoords = { lat: currentTrackedUser.lat, lng: currentTrackedUser.lng };
-        lastRenderedStationId = activeResponderStation ? activeResponderStation.id : null;
+        lastRenderedStationId = activeResponderStation ? activeResponderStation.name : null;
         updateMapMarkersAndRoute();
       }
+    }
+
+    function syncServiceLayers(type) {
+      // Automatically ensure corresponding facility layer is visible
+      if (type === 'ambulance' && !map.hasLayer(ambulanceLayerGroup)) map.addLayer(ambulanceLayerGroup);
+      if (type === 'police' && !map.hasLayer(policeLayerGroup)) map.addLayer(policeLayerGroup);
+      if (type === 'fire' && !map.hasLayer(fireLayerGroup)) map.addLayer(fireLayerGroup);
+      if (type === 'responder' && !map.hasLayer(rescueLayerGroup)) map.addLayer(rescueLayerGroup);
     }
 
     function getServiceIcon(type) {
@@ -1139,7 +1587,7 @@
       document.getElementById('user-scenario-title').textContent = currentTrackedUser.scenario || '🚨 Live Incident Site';
       document.getElementById('user-district-val').textContent = currentTrackedUser.district || 'Caller Zone';
       document.getElementById('user-coords-val').textContent = currentTrackedUser.coordsFormatted;
-      document.getElementById('responder-station-val').textContent = activeResponderStation.name;
+      document.getElementById('responder-station-val').textContent = activeResponderStation ? activeResponderStation.name : 'Emergency Base';
       document.getElementById('user-situation-val').textContent = currentTrackedUser.summary || 'Emergency distress reported';
       document.getElementById('user-advice-val').textContent = currentTrackedUser.tacticalAdvice || 'Stay in safe area and keep line open.';
 
@@ -1205,6 +1653,8 @@
 
     // 5. Update Map Markers and Calculate Response Route
     async function updateMapMarkersAndRoute() {
+      if (!activeResponderStation) return;
+
       // 1. Plot / Update User Marker with Radar Ping
       const userLatLng = [currentTrackedUser.lat, currentTrackedUser.lng];
 
@@ -1230,7 +1680,7 @@
       );
 
       // 2. Plot / Update Responder Station Marker
-      const stationLatLng = [activeResponderStation.coords[1], activeResponderStation.coords[0]];
+      const stationLatLng = [activeResponderStation.coordinates[1], activeResponderStation.coordinates[0]];
       const unitIconSymbol = getServiceIcon(currentServiceType);
 
       if (responderMarker) {
@@ -1251,11 +1701,28 @@
       responderMarker.bindPopup(
         '<strong>' + unitIconSymbol + ' Active Dispatched Unit Base</strong><br>' +
         'Station: <strong>' + activeResponderStation.name + '</strong><br>' +
-        activeResponderStation.address
+        (activeResponderStation.address || '')
       );
 
       // 3. Compute and Draw Fastest Route to User
-      await calculateAndDrawRoute(activeResponderStation.coords, [currentTrackedUser.lng, currentTrackedUser.lat]);
+      await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+    }
+
+    function fitMapBoundsSafely(bounds) {
+      if (!bounds || !bounds.isValid()) return;
+      const size = map.getSize();
+      const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
+      const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
+
+      try {
+        map.fitBounds(bounds, {
+          paddingTopLeft: [padLeft, padTop],
+          paddingBottomRight: [25, 25],
+          maxZoom: 16
+        });
+      } catch (e) {
+        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
+      }
     }
 
     async function calculateAndDrawRoute(startCoords, endCoords) {
@@ -1311,11 +1778,8 @@
           hazardStatusText.textContent = 'Optimal response route verified. Clear thoroughfares.';
         }
 
-        // Fit bounds to show both responder and user
-        map.fitBounds(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds(), {
-          paddingTopLeft: [400, 30],
-          paddingBottomRight: [30, 30]
-        });
+        // Fit bounds safely
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds());
 
       } catch (err) {
         console.warn('Could not calculate OSRM route, falling back to direct metric:', err);
@@ -1333,10 +1797,7 @@
           dashArray: '8, 8'
         }).addTo(routeLayers);
 
-        map.fitBounds(L.featureGroup([userMarker, responderMarker, directLine]).getBounds(), {
-          paddingTopLeft: [400, 30],
-          paddingBottomRight: [30, 30]
-        });
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, directLine]).getBounds());
       }
     }
 
@@ -1357,10 +1818,7 @@
 
     document.getElementById('btn-fit-overview').addEventListener('click', function () {
       if (userMarker && responderMarker) {
-        map.fitBounds(L.featureGroup([userMarker, responderMarker]).getBounds(), {
-          paddingTopLeft: [400, 30],
-          paddingBottomRight: [30, 30]
-        });
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker]).getBounds());
       }
     });
 
