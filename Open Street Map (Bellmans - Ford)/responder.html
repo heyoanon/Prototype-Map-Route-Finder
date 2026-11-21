@@ -1251,13 +1251,7 @@
     });
 
     // --- Base Map Tile Layers (all layers found in map.html) ---
-    // 1. Street Map (OpenStreetMap canonical HTTPS URL)
-    const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-    });
-
-    // 2. Satellite Imagery (Esri World Imagery)
+    // 1. Satellite Imagery (Esri World Imagery)
     const satelliteLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
@@ -1266,7 +1260,7 @@
       }
     );
 
-    // 3. Terrain Map (OpenTopoMap)
+    // 2. Terrain Map (OpenTopoMap)
     const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxNativeZoom: 17,
       maxZoom: 19,
@@ -1274,7 +1268,7 @@
       attribution: 'Map data: &copy; OpenStreetMap, SRTM | Map style: &copy; OpenTopoMap'
     });
 
-    // 4. Topographic Map (Esri World Topo Map)
+    // 3. Topographic Map (Esri World Topo Map)
     const topographicLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
       {
@@ -1283,7 +1277,7 @@
       }
     );
 
-    // 5. Shaded Relief Map (Esri World Shaded Relief)
+    // 4. Shaded Relief Map (Esri World Shaded Relief)
     const reliefLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
       {
@@ -1293,8 +1287,8 @@
       }
     );
 
-    // Add default base layer: Street Map ensures 100% reliable tile rendering immediately
-    streetLayer.addTo(map);
+    // Add default base layer: Satellite Imagery
+    satelliteLayer.addTo(map);
 
     // --- Overlay Layers ---
     // Place Labels & Boundaries Overlay (overlayPane)
@@ -1386,7 +1380,6 @@
 
     // Add Layer Switcher Control
     const baseLayers = {
-      '🗺️ Street Map': streetLayer,
       '🛰️ Satellite Imagery': satelliteLayer,
       '🏔️ Terrain (Topomap)': terrainLayer,
       '🧭 Topographic Map': topographicLayer,
@@ -1456,6 +1449,15 @@
     let activeResponderStation = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.type === 'responder'; }) || KNOWN_EMERGENCY_FACILITIES[0];
     let lastTrackedCoords = null;
     let lastRenderedStationId = null;
+    let isMissionCleared = false;
+    let clearedTimestamp = 0;
+
+    try {
+      const savedClearedTime = localStorage.getItem('responder_cleared_time');
+      if (savedClearedTime) {
+        clearedTimestamp = parseInt(savedClearedTime, 10) || 0;
+      }
+    } catch (e) {}
 
     let currentTrackedUser = {
       lat: 10.7196,
@@ -1486,6 +1488,81 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
+    // Render blank map & standby state when mission is cleared
+    function renderBlankClearedState() {
+      isMissionCleared = true;
+      routeLayers.clearLayers();
+      if (userMarker) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+      }
+      if (responderMarker) {
+        map.removeLayer(responderMarker);
+        responderMarker = null;
+      }
+      lastTrackedCoords = null;
+      lastRenderedStationId = null;
+
+      // Update stepper to Cleared
+      document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.status === 'cleared');
+      });
+
+      // Update HUD to clean Standby / Cleared state
+      const titleEl = document.getElementById('hud-main-title');
+      if (titleEl) titleEl.textContent = 'STANDBY • CLEARED';
+      const badgeEl = document.getElementById('dispatch-badge');
+      if (badgeEl) badgeEl.textContent = 'CLEARED';
+
+      const scenarioEl = document.getElementById('user-scenario-title');
+      if (scenarioEl) scenarioEl.textContent = '⚪ Mission Cleared / Standby';
+      const pingEl = document.getElementById('user-last-ping');
+      if (pingEl) pingEl.textContent = 'Awaiting new input from Map';
+
+      const distEl = document.getElementById('user-district-val');
+      if (distEl) distEl.textContent = 'Standby';
+      const coordsEl = document.getElementById('user-coords-val');
+      if (coordsEl) coordsEl.textContent = '—';
+      const stationEl = document.getElementById('responder-station-val');
+      if (stationEl) stationEl.textContent = 'In Quarters / Ready';
+      const sitEl = document.getElementById('user-situation-val');
+      if (sitEl) sitEl.textContent = 'Mission cleared. Map is in blank standby state until new user input is performed in map.html.';
+      const adviceEl = document.getElementById('user-advice-val');
+      if (adviceEl) adviceEl.textContent = 'Ready for dispatch.';
+
+      const etaEl = document.getElementById('route-eta-val');
+      if (etaEl) etaEl.textContent = '—';
+      const distValEl = document.getElementById('route-dist-val');
+      if (distValEl) distValEl.textContent = '—';
+
+      const hazardStatusText = document.getElementById('hazard-status-text');
+      if (hazardStatusText) hazardStatusText.textContent = 'No active dispatch corridor. Unit in quarters / standby.';
+
+      const summaryEl = document.getElementById('latest-activity-summary');
+      if (summaryEl) summaryEl.textContent = 'Mission marked cleared. Waiting for user input in map.html.';
+
+      const chatContainer = document.getElementById('caller-chat-container');
+      if (chatContainer) chatContainer.style.display = 'none';
+    }
+
+    function setMissionCleared() {
+      clearedTimestamp = Date.now();
+      try {
+        localStorage.setItem('responder_cleared_time', String(clearedTimestamp));
+      } catch (e) {}
+
+      renderBlankClearedState();
+      map.setView([10.6896476, 122.4824483], 13);
+
+      if (window.BroadcastChannel) {
+        try {
+          const bc = new BroadcastChannel('emergency_dispatch');
+          bc.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
+          bc.close();
+        } catch (e) {}
+      }
+    }
+
     // 3. User Location & Activity Syncing Logic
     function loadTrackedUser() {
       let stateChanged = false;
@@ -1494,7 +1571,49 @@
       const params = new URLSearchParams(window.location.search);
       const urlLat = parseFloat(params.get('lat'));
       const urlLng = parseFloat(params.get('lng'));
-      if (Number.isFinite(urlLat) && Number.isFinite(urlLng)) {
+      const hasUrlParams = Number.isFinite(urlLat) && Number.isFinite(urlLng);
+
+      // 2. Check localStorage from map.html
+      let rawData = null;
+      try {
+        const raw = localStorage.getItem('tracked_user_emergency');
+        if (raw) {
+          rawData = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.warn('Could not read user activity sync from localStorage:', e);
+      }
+
+      const dataTimestamp = rawData ? (rawData.timestamp || rawData.lastActionTime || 0) : 0;
+
+      // If mission is currently cleared, stay in blank state unless fresh input from map.html arrives
+      if (clearedTimestamp > 0) {
+        if (dataTimestamp <= clearedTimestamp) {
+          renderBlankClearedState();
+          return;
+        }
+
+        // New input from user in map.html has arrived! Reactivate mission
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try {
+          localStorage.removeItem('responder_cleared_time');
+        } catch (e) {}
+
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.status === 'en-route');
+        });
+        const badge = document.getElementById('dispatch-badge');
+        if (badge) badge.textContent = 'EN ROUTE';
+      }
+
+      // If no active data exists from map.html and no URL parameters, show clean blank state
+      if (!rawData && !hasUrlParams) {
+        renderBlankClearedState();
+        return;
+      }
+
+      if (hasUrlParams) {
         currentTrackedUser.lat = urlLat;
         currentTrackedUser.lng = urlLng;
         currentTrackedUser.coordsFormatted = urlLat.toFixed(4) + '° N, ' + urlLng.toFixed(4) + '° E';
@@ -1505,83 +1624,73 @@
         currentTrackedUser.lastPingTime = new Date();
       }
 
-      // 2. Check localStorage from map.html
-      try {
-        const raw = localStorage.getItem('tracked_user_emergency');
-        if (raw) {
-          const data = JSON.parse(raw);
-          if (Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
-            currentTrackedUser.lat = data.lat;
-            currentTrackedUser.lng = data.lng;
-            currentTrackedUser.district = data.district || currentTrackedUser.district;
-            currentTrackedUser.coordsFormatted = data.coords || (data.lat.toFixed(4) + '° N, ' + data.lng.toFixed(4) + '° E');
-            if (data.scenario) currentTrackedUser.scenario = data.scenario;
-            if (data.summary) currentTrackedUser.summary = data.summary;
-            if (data.tacticalAdvice) currentTrackedUser.tacticalAdvice = data.tacticalAdvice;
-            currentTrackedUser.lastPingTime = new Date(data.timestamp || Date.now());
+      if (rawData && Number.isFinite(rawData.lat) && Number.isFinite(rawData.lng)) {
+        currentTrackedUser.lat = rawData.lat;
+        currentTrackedUser.lng = rawData.lng;
+        currentTrackedUser.district = rawData.district || currentTrackedUser.district;
+        currentTrackedUser.coordsFormatted = rawData.coords || (rawData.lat.toFixed(4) + '° N, ' + rawData.lng.toFixed(4) + '° E');
+        if (rawData.scenario) currentTrackedUser.scenario = rawData.scenario;
+        if (rawData.summary) currentTrackedUser.summary = rawData.summary;
+        if (rawData.tacticalAdvice) currentTrackedUser.tacticalAdvice = rawData.tacticalAdvice;
+        currentTrackedUser.lastPingTime = new Date(rawData.timestamp || Date.now());
 
-            if (data.serviceType && data.serviceType !== currentServiceType) {
-              currentServiceType = data.serviceType;
-              stateChanged = true;
-              syncServiceLayers(currentServiceType);
-            }
+        if (rawData.serviceType && rawData.serviceType !== currentServiceType) {
+          currentServiceType = rawData.serviceType;
+          stateChanged = true;
+          syncServiceLayers(currentServiceType);
+        }
 
-            if (data.lastAction) {
-              currentTrackedUser.lastAction = data.lastAction;
-              currentTrackedUser.lastActionTime = data.lastActionTime || Date.now();
-            }
+        if (rawData.lastAction) {
+          currentTrackedUser.lastAction = rawData.lastAction;
+          currentTrackedUser.lastActionTime = rawData.lastActionTime || Date.now();
+        }
 
-            if (data.userMessage) {
-              currentTrackedUser.chatMessage = data.userMessage;
-            }
+        if (rawData.userMessage) {
+          currentTrackedUser.chatMessage = rawData.userMessage;
+        }
 
-            if (Array.isArray(data.activityLog)) {
-              currentTrackedUser.activityLog = data.activityLog;
-              if (data.activityLog[0] && data.activityLog[0].desc) {
-                currentTrackedUser.latestSummary = data.activityLog[0].desc;
-              }
-            }
-
-            // Adapt active station if user specifically selected a facility on map.html
-            if (data.targetFacility && Array.isArray(data.targetFacility.coordinates)) {
-              activeResponderStation = {
-                name: data.targetFacility.name,
-                coordinates: data.targetFacility.coordinates,
-                address: data.targetFacility.category || 'User Selected Emergency Facility',
-                phone: data.targetFacility.phone || '(033) 333-1111',
-                type: currentServiceType
-              };
-              stateChanged = true;
-            } else if (data.assignedResponder && Array.isArray(data.assignedResponder.coordinates)) {
-              activeResponderStation = {
-                name: data.assignedResponder.name,
-                coordinates: data.assignedResponder.coordinates,
-                address: data.assignedResponder.address || 'Assigned Base Station',
-                phone: data.assignedResponder.phone || '(033) 333-1111',
-                type: currentServiceType
-              };
-              stateChanged = true;
-            } else if (stateChanged || !activeResponderStation) {
-              // Pick closest base for current service type from KNOWN_EMERGENCY_FACILITIES
-              const matchingFacilities = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
-                return f.type === currentServiceType;
-              });
-              const pool = matchingFacilities.length ? matchingFacilities : KNOWN_EMERGENCY_FACILITIES;
-              let closest = pool[0];
-              let minD = Infinity;
-              pool.forEach(function (fac) {
-                const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, fac.coordinates[1], fac.coordinates[0]);
-                if (d < minD) {
-                  minD = d;
-                  closest = fac;
-                }
-              });
-              activeResponderStation = closest;
-            }
+        if (Array.isArray(rawData.activityLog)) {
+          currentTrackedUser.activityLog = rawData.activityLog;
+          if (rawData.activityLog[0] && rawData.activityLog[0].desc) {
+            currentTrackedUser.latestSummary = rawData.activityLog[0].desc;
           }
         }
-      } catch (e) {
-        console.warn('Could not read user activity sync from localStorage:', e);
+
+        // Adapt active station if user specifically selected a facility on map.html
+        if (rawData.targetFacility && Array.isArray(rawData.targetFacility.coordinates)) {
+          activeResponderStation = {
+            name: rawData.targetFacility.name,
+            coordinates: rawData.targetFacility.coordinates,
+            address: rawData.targetFacility.category || 'User Selected Emergency Facility',
+            phone: rawData.targetFacility.phone || '(033) 333-1111',
+            type: currentServiceType
+          };
+          stateChanged = true;
+        } else if (rawData.assignedResponder && Array.isArray(rawData.assignedResponder.coordinates)) {
+          activeResponderStation = {
+            name: rawData.assignedResponder.name,
+            coordinates: rawData.assignedResponder.coordinates,
+            address: rawData.assignedResponder.address || 'Assigned Base Station',
+            phone: rawData.assignedResponder.phone || '(033) 333-1111',
+            type: currentServiceType
+          };
+          stateChanged = true;
+        } else if (stateChanged || !activeResponderStation) {
+          const matchingFacilities = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+            return f.type === currentServiceType;
+          });
+          const pool = matchingFacilities.length ? matchingFacilities : KNOWN_EMERGENCY_FACILITIES;
+          let closest = pool[0];
+          let minD = Infinity;
+          pool.forEach(function (fac) {
+            const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, fac.coordinates[1], fac.coordinates[0]);
+            if (d < minD) {
+              minD = d;
+              closest = fac;
+            }
+          });
+          activeResponderStation = closest;
+        }
       }
 
       updateUI();
@@ -1921,7 +2030,20 @@
         document.querySelectorAll('.dispatch-step-btn').forEach(function (b) { b.classList.remove('active'); });
         btn.classList.add('active');
         const badge = document.getElementById('dispatch-badge');
-        badge.textContent = btn.textContent.toUpperCase();
+        if (badge) badge.textContent = btn.textContent.toUpperCase();
+
+        if (btn.dataset.status === 'cleared') {
+          setMissionCleared();
+        } else {
+          if (isMissionCleared || clearedTimestamp > 0) {
+            isMissionCleared = false;
+            clearedTimestamp = 0;
+            try {
+              localStorage.removeItem('responder_cleared_time');
+            } catch (e) {}
+            loadTrackedUser();
+          }
+        }
       });
     });
 

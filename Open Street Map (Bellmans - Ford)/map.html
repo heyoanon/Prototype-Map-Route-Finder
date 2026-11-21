@@ -1807,9 +1807,6 @@
       color: #9aa0a6;
     }
 
-    #map.dark-street-map .leaflet-tile-pane {
-      filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9);
-    }
 
     /* Assistance Chat Box */
     .assistance-chatbox {
@@ -2708,10 +2705,6 @@
       maxZoom: 19,
       attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
     }).addTo(map);
-    const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-    });
     const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxNativeZoom: 17,
       maxZoom: 19,
@@ -3132,7 +3125,6 @@
     const baseLayers = {
       'Satellite': satelliteLayer,
       'Terrain': terrainLayer,
-      'Street Map': streetLayer,
       'Topographic': topographicLayer,
       'Shaded Relief': reliefLayer
     };
@@ -3143,15 +3135,7 @@
         map.removeLayer(baseLayers[layerName]);
       });
 
-      if (name === 'Street Map') {
-        map.addLayer(streetLayer);
-      } else {
-        map.addLayer(baseLayers[name]);
-      }
-      map.getContainer().classList.toggle(
-        'dark-street-map',
-        name === 'Street Map' && document.documentElement.dataset.theme === 'dark'
-      );
+      map.addLayer(baseLayers[name]);
       activeBaseLayerName = name;
       Object.keys(baseLayerRadios).forEach(function (layerName) {
         baseLayerRadios[layerName].checked = layerName === name;
@@ -3763,37 +3747,148 @@
       }
 
       if (facilityContext && facilityContext.name) {
-        appendBotMessage(
-          '🚨 <strong>Assistance Request for ' + escapeHtml(facilityContext.name) + '</strong><br>' +
-          '(' + escapeHtml(facilityContext.category || 'Facility') + ')<br><br>' +
-          'How can we assist you with this facility right now?',
-          [
-            {
-              label: '🗺️ Route to Facility',
-              action: function () {
-                destinationInput.value = facilityContext.name;
-                searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: 'assistance' });
-                appendUserMessage('Route to ' + facilityContext.name);
-                appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
-              }
-            },
-            (facilityContext.phone ? {
-              label: '📞 Call ' + facilityContext.phone,
-              href: 'tel:' + facilityContext.phone.replace(/[^\d+*#;]/g, '')
-            } : null),
-            {
-              label: '🚑 Request Ambulance',
-              action: function () {
-                handleChatIntent('ambulance');
-              }
-            },
-            {
-              label: '☎️ Emergency Hotlines',
-              action: function () {
-                handleChatIntent('hotlines');
-              }
+        let facilityType = (facilityContext && facilityContext.type) || emergencySearchType || null;
+        if (!facilityType && facilityContext) {
+          const cat = ((facilityContext.category || '') + ' ' + (facilityContext.name || '')).toLowerCase();
+          if (/police|pnp|precinct|patrol|law enforcement/i.test(cat)) {
+            facilityType = 'police';
+          } else if (/fire|bfp|fireman|firefighter/i.test(cat)) {
+            facilityType = 'fire';
+          } else if (/rescue|responder|drrmo|disaster|coast guard|mddrmo|pdrrmo|cdrrmo/i.test(cat)) {
+            facilityType = 'responder';
+          } else if (/ambulance|hospital|medical|clinic|doctor|medic/i.test(cat)) {
+            facilityType = 'ambulance';
+          }
+        }
+
+        const actions = [];
+        let promptTitle = 'Assistance Request';
+        let promptSubtitle = 'How can we assist you with this facility right now?';
+
+        if (facilityType === 'police') {
+          promptTitle = 'Police Assistance Request';
+          promptSubtitle = 'Select <strong>Request a Police</strong> below to request immediate law enforcement assistance, or route directly to this station:';
+          actions.push({
+            label: '🚓 Request a Police',
+            emergency: true,
+            action: function () {
+              appendUserMessage('Request a Police');
+              handleChatIntent('police', 'Requesting police assistance at ' + (facilityContext.name || 'my location'));
             }
-          ].filter(Boolean)
+          });
+        } else if (facilityType === 'fire') {
+          promptTitle = 'Fire Responder Assistance Request';
+          promptSubtitle = 'Select <strong>Request a Fire Responder</strong> below to report a fire or dispatch fire protection units:';
+          actions.push({
+            label: '🚒 Request a Fire Responder',
+            emergency: true,
+            action: function () {
+              appendUserMessage('Request a Fire Responder');
+              handleChatIntent('fire', 'Requesting fire responder assistance at ' + (facilityContext.name || 'my location'));
+            }
+          });
+        } else if (facilityType === 'responder') {
+          promptTitle = 'Disaster & Rescue Assistance Request';
+          promptSubtitle = 'Select <strong>Request Rescue Responder</strong>, call for Police, Fire, or Ambulance support, or report a specific disaster rescue scenario:';
+          actions.push({
+            label: '🛟 Request Rescue Responder',
+            emergency: true,
+            action: function () {
+              appendUserMessage('Request Rescue Responder');
+              handleChatIntent('responder', 'Requesting rescue responder assistance at ' + (facilityContext.name || 'my location'));
+            }
+          });
+          actions.push({
+            label: '🚑 Request Ambulance',
+            action: function () {
+              appendUserMessage('Request Ambulance');
+              handleChatIntent('ambulance');
+            }
+          });
+          actions.push({
+            label: '🚓 Request a Police',
+            action: function () {
+              appendUserMessage('Request a Police');
+              handleChatIntent('police');
+            }
+          });
+          actions.push({
+            label: '🚒 Request a Fire Responder',
+            action: function () {
+              appendUserMessage('Request a Fire Responder');
+              handleChatIntent('fire');
+            }
+          });
+          actions.push({
+            label: '🌊 Flood / Water Rescue',
+            action: function () {
+              appendUserMessage('Flood / Water Rescue');
+              handleChatIntent('responder-scenario:flood');
+            }
+          });
+          actions.push({
+            label: '🚗 Trapped / Crash Rescue',
+            action: function () {
+              appendUserMessage('Trapped / Crash Rescue');
+              handleChatIntent('responder-scenario:accident');
+            }
+          });
+          actions.push({
+            label: '🏚️ Collapse / Debris Rescue',
+            action: function () {
+              appendUserMessage('Structural Collapse Rescue');
+              handleChatIntent('responder-scenario:debris');
+            }
+          });
+          actions.push({
+            label: '🌀 Storm Evacuation',
+            action: function () {
+              appendUserMessage('Storm Evacuation');
+              handleChatIntent('responder-scenario:storm');
+            }
+          });
+        } else {
+          promptTitle = 'Ambulance & Medical Assistance Request';
+          promptSubtitle = 'Select <strong>Request Ambulance</strong> below to dispatch emergency medical services, or route directly to this facility:';
+          actions.push({
+            label: '🚑 Request Ambulance',
+            emergency: true,
+            action: function () {
+              appendUserMessage('Request Ambulance');
+              handleChatIntent('ambulance', 'Requesting ambulance assistance at ' + (facilityContext.name || 'my location'));
+            }
+          });
+        }
+
+        actions.push({
+          label: '🗺️ Route to Facility',
+          action: function () {
+            destinationInput.value = facilityContext.name;
+            searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance' });
+            appendUserMessage('Route to ' + facilityContext.name);
+            appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
+          }
+        });
+
+        if (facilityContext.phone) {
+          actions.push({
+            label: '📞 Call ' + facilityContext.phone,
+            href: 'tel:' + facilityContext.phone.replace(/[^\d+*#;]/g, '')
+          });
+        }
+
+        actions.push({
+          label: '☎️ Emergency Hotlines',
+          action: function () {
+            handleChatIntent('hotlines');
+          }
+        });
+
+        appendBotMessage(
+          '🚨 <strong>' + escapeHtml(promptTitle) + ' for ' + escapeHtml(facilityContext.name) + '</strong><br>' +
+          '(' + escapeHtml(facilityContext.category || 'Emergency Facility') + ')<br><br>' +
+          promptSubtitle,
+          actions
         );
       } else if (!chatboxMessages || chatboxMessages.children.length === 0) {
         appendBotMessage(
@@ -3801,10 +3896,10 @@
           'Hello! I am your 24/7 Assistance Assistant. How can we help you right now?<br>' +
           'Select an emergency service or type your message below.',
           [
-            { label: '🚑 Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🚓 Police', action: function () { handleChatIntent('police'); } },
-            { label: '🚒 Fire Truck', action: function () { handleChatIntent('fire'); } },
-            { label: '🛟 Rescue', action: function () { handleChatIntent('responder'); } },
+            { label: '🚑 Request Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Request a Police', action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Request a Fire Responder', action: function () { handleChatIntent('fire'); } },
+            { label: '🛟 Rescue Responder', action: function () { handleChatIntent('responder'); } },
             { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
           ]
         );
@@ -3866,10 +3961,10 @@
       if (!chatboxQuickChips) return;
       chatboxQuickChips.innerHTML = '';
       const chips = [
-        { label: '🚑 Ambulance', intent: 'ambulance' },
-        { label: '🚓 Police', intent: 'police' },
-        { label: '🚒 Fire Truck', intent: 'fire' },
-        { label: '🛟 Rescue', intent: 'responder' },
+        { label: '🚑 Request Ambulance', intent: 'ambulance' },
+        { label: '🚓 Request a Police', intent: 'police' },
+        { label: '🚒 Request a Fire Responder', intent: 'fire' },
+        { label: '🛟 Rescue Responder', intent: 'responder' },
         { label: '☎️ 911 Hotlines', intent: 'hotlines' },
         { label: '🛣️ Fastest Route', intent: 'route' }
       ];
@@ -3889,8 +3984,8 @@
     function handleChatIntent(intent, userText) {
       if (intent === 'ambulance') {
         appendBotMessage(
-          '🚑 <strong>Searching nearest Ambulance & Medical Facilities...</strong><br>' +
-          'Querying closest hospitals, emergency clinics, and ambulance units.'
+          '🚑 <strong>Requesting Ambulance & Medical Response...</strong><br>' +
+          'Querying closest hospitals, emergency clinics, and ambulance units to your position.'
         );
         findFastestEmergencyService('ambulance');
         setTimeout(function () {
@@ -4142,6 +4237,31 @@
 
     // --- Responder Dispatch & Route Recommendation Controller ---
     let currentResponderScenario = 'flood';
+    // Listen for responder mission status updates (e.g. cleared status)
+    if (window.BroadcastChannel) {
+      try {
+        const rc = new BroadcastChannel('emergency_dispatch');
+        rc.onmessage = function (ev) {
+          if (ev && ev.data && ev.data.type === 'MISSION_CLEARED') {
+            const responderBanner = document.getElementById('responder-dispatch-banner');
+            if (responderBanner) {
+              responderBanner.hidden = true;
+              responderBanner.innerHTML = '';
+            }
+          }
+        };
+      } catch (e) {}
+    }
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'responder_cleared_time') {
+        const responderBanner = document.getElementById('responder-dispatch-banner');
+        if (responderBanner) {
+          responderBanner.hidden = true;
+          responderBanner.innerHTML = '';
+        }
+      }
+    });
+
     let lastResponderDispatchData = null;
 
     function broadcastUserEmergencyActivity(actionType, extraData) {
@@ -5314,11 +5434,11 @@
           action.addEventListener('click', onClick);
         }
         actionBar.appendChild(action);
+        return action;
       };
       const addContactAction = function (label, scheme, number) {
         if (number) {
-          addAction(label, scheme + number);
-          return;
+          return addAction(label, scheme + number);
         }
         const action = document.createElement('button');
         action.type = 'button';
@@ -5327,16 +5447,39 @@
         action.disabled = true;
         action.title = 'No phone number is available for this place.';
         actionBar.appendChild(action);
+        return action;
       };
       addContactAction('Call', 'tel:', actions && actions.callNumber);
       addContactAction('Message', 'sms:', actions && actions.messageNumber);
+
+      let actionType = (actions && actions.type) || emergencySearchType || null;
+      if (!actionType) {
+        const textToMatch = ((name || '') + ' ' + (categoryLabel || '')).toLowerCase();
+        if (/police|pnp|precinct|patrol|law enforcement/i.test(textToMatch)) {
+          actionType = 'police';
+        } else if (/fire|bfp|fireman|firefighter|firehouse|fire truck|fire engine|fire station/i.test(textToMatch)) {
+          actionType = 'fire';
+        } else if (/rescue|responder|drrmo|disaster|coast guard|mddrmo|pdrrmo|cdrrmo/i.test(textToMatch)) {
+          actionType = 'responder';
+        } else if (/ambulance|hospital|medical center|clinic|doctor|medic|infirmary/i.test(textToMatch)) {
+          actionType = 'ambulance';
+        }
+      }
+
       const needAssistanceHandler = (actions && actions.onNeedAssistance) || function () {
         openAssistanceChat({
-          name: title,
-          category: category
+          name: name,
+          category: categoryLabel,
+          phone: actions && (actions.callNumber || actions.phone),
+          coordinates: selectedServiceCoordinates,
+          type: actionType
         });
       };
-      addAction('Need Assistance', '', needAssistanceHandler, 'assistance');
+      const assistanceBtn = addAction('Need Assistance', '', needAssistanceHandler, 'assistance');
+      if (assistanceBtn) {
+        assistanceBtn.title = 'Need Assistance';
+        assistanceBtn.setAttribute('aria-label', 'Need Assistance');
+      }
       serviceDetails.appendChild(actionBar);
 
       details.forEach(function (detail) {
@@ -6378,6 +6521,12 @@
           const osmObjectTypes = { N: 'node', W: 'way', R: 'relation' };
           const osmObjectType = osmObjectTypes[properties.osm_type] || '';
           const osmObjectId = String(properties.osm_id || '');
+          const calculatedType = emergencyServiceType || (
+            serviceGroupName === 'emergencyPolice' ? 'police' :
+            serviceGroupName === 'emergencyFire' ? 'fire' :
+            serviceGroupName === 'emergencyResponders' ? 'responder' :
+            (serviceGroupName === 'emergencyAmbulance' || serviceGroupName === 'healthHospitals' || isHealth) ? 'ambulance' : null
+          );
           const getActions = function () {
             const phoneNumber = normalizePhoneNumber(tags.phone) ||
               normalizePhoneNumber(tags['contact:phone']) ||
@@ -6388,12 +6537,14 @@
             return {
               callNumber: phoneNumber,
               messageNumber: mobileNumber || phoneNumber,
+              type: calculatedType,
               onNeedAssistance: function () {
                 openAssistanceChat({
                   name: name,
                   category: categoryLabel,
                   phone: phoneNumber,
-                  coordinates: [longitude, latitude]
+                  coordinates: [longitude, latitude],
+                  type: calculatedType
                 });
               }
             };
@@ -6515,6 +6666,7 @@
                 coordinates: [longitude, latitude],
                 address: tags['addr:street'] || tags['addr:city'] || '',
                 phone: tags.phone || tags['contact:phone'] || '',
+                type: requestedEmergencyType || emergencyServiceType,
                 selectService: function () {
                   selectService({ emergencyType: requestedEmergencyType });
                 }
@@ -6597,13 +6749,15 @@
                     {
                       callNumber: known.phone,
                       messageNumber: known.phone,
+                      type: known.type,
                       onNeedAssistance: function () {
                         openAssistanceChat({
                           name: known.name,
                           category: known.category,
                           phone: known.phone,
                           coordinates: known.coordinates,
-                          address: known.address
+                          address: known.address,
+                          type: known.type
                         });
                       }
                     }
@@ -6640,13 +6794,15 @@
                     {
                       callNumber: known.phone,
                       messageNumber: known.phone,
+                      type: known.type,
                       onNeedAssistance: function () {
                         openAssistanceChat({
                           name: known.name,
                           category: known.category,
                           phone: known.phone,
                           coordinates: known.coordinates,
-                          address: known.address
+                          address: known.address,
+                          type: known.type
                         });
                       }
                     }
@@ -6738,13 +6894,15 @@
                   {
                     callNumber: known.phone,
                     messageNumber: known.phone,
+                    type: known.type,
                     onNeedAssistance: function () {
                       openAssistanceChat({
                         name: known.name,
                         category: known.category,
                         phone: known.phone,
                         coordinates: known.coordinates,
-                        address: known.address
+                        address: known.address,
+                        type: known.type
                       });
                     }
                   }
@@ -6777,6 +6935,7 @@
       markUserInteracted();
       expandSidebar();
       recordActivity('search', { query: destination });
+      broadcastUserEmergencyActivity('search', { destination: destination, actionDescription: 'Searched destination: ' + destination });
       isSearching = true;
       searchButton.disabled = true;
       setStatus('Searching factor-aware routes...');

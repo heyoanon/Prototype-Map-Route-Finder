@@ -1,5 +1,5 @@
-const CACHE_NAME = 'map-search-shell-v3';
-const TILE_CACHE = 'map-search-tiles-v1';
+const CACHE_NAME = 'map-search-shell-v7';
+const TILE_CACHE = 'map-search-tiles-v2';
 const DATA_CACHE = 'map-search-data-v1';
 const APP_SHELL = [
   './map.html',
@@ -34,7 +34,8 @@ self.addEventListener('activate', function (event) {
       .then(function (cacheNames) {
         return Promise.all(cacheNames
           .filter(function (cacheName) {
-            return cacheName.indexOf('map-search-shell-') === 0 && cacheName !== CACHE_NAME;
+            return (cacheName.indexOf('map-search-shell-') === 0 && cacheName !== CACHE_NAME) ||
+                   (cacheName.indexOf('map-search-tiles-') === 0 && cacheName !== TILE_CACHE);
           })
           .map(function (cacheName) { return caches.delete(cacheName); }));
       })
