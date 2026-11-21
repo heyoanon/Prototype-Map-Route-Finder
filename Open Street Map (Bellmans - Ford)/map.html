@@ -707,7 +707,15 @@
     }
 
     #emergency-open[hidden] {
-      display: none;
+      display: none !important;
+    }
+
+    #map-search-controls.sidebar-expanded #emergency-open {
+      display: none !important;
+    }
+
+    body:has(#emergency-assistance:not([hidden])) #emergency-open {
+      display: none !important;
     }
 
     #emergency-open:hover {
@@ -4994,12 +5002,23 @@
 
     function expandSidebar() {
       isSidebarExpanded = true;
+      const mapSearchControls = document.getElementById('map-search-controls');
+      if (mapSearchControls) {
+        mapSearchControls.classList.add('sidebar-expanded');
+      }
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+      }
       status.classList.toggle('visible', Boolean(status.textContent));
       locationStatus.classList.toggle('visible', Boolean(locationStatus.textContent));
     }
 
     function collapseSidebar() {
       isSidebarExpanded = false;
+      const mapSearchControls = document.getElementById('map-search-controls');
+      if (mapSearchControls) {
+        mapSearchControls.classList.remove('sidebar-expanded');
+      }
       isAssistanceSearch = false;
       emergencySearchType = null;
       serviceRequestId += 1;
@@ -5353,7 +5372,9 @@
         serviceDetails.appendChild(noticeRow);
       }
       serviceDetails.hidden = false;
-      emergencyOpenButton.hidden = false;
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+      }
     }
 
     async function loadOpenStreetMapDetails(
@@ -5790,9 +5811,11 @@
       isAssistanceSearch = true;
       emergencySearchType = null;
       form.hidden = false;
-      emergencyOpenButton.hidden = false;
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+        emergencyOpenButton.setAttribute('aria-expanded', 'true');
+      }
       emergencyAssistance.hidden = false;
-      emergencyOpenButton.setAttribute('aria-expanded', 'true');
 
       // Ensure emergency options are NOT selected as default
       if (emergencyAssistance) {
@@ -5869,6 +5892,9 @@
     }
 
     function renderEmergencyFacilitiesList(candidates, type) {
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+      }
       const typeLabels = {
         ambulance: 'Ambulance',
         responder: 'Rescue / Responder',
@@ -6156,6 +6182,9 @@
       routeOrigin = origin;
       emergencySearchType = type;
       isAssistanceSearch = true;
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+      }
 
       // Update button active state in modal
       if (emergencyAssistance) {
