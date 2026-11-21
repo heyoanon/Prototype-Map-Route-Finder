@@ -2062,34 +2062,7 @@
     }
 
     .assistance-chat-floating-btn {
-      position: fixed;
-      z-index: 1500;
-      right: 20px;
-      bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 10px 16px;
-      background: #d93025;
-      color: #ffffff;
-      border: none;
-      border-radius: 999px;
-      box-shadow: 0 4px 16px rgba(217, 48, 37, 0.36);
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
-    }
-
-    .assistance-chat-floating-btn:hover {
-      background: #b3261e;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(217, 48, 37, 0.45);
-    }
-
-    .assistance-chat-floating-btn[hidden] {
-      display: none;
+      display: none !important;
     }
 
     .emergency-chat-trigger-btn {
@@ -2313,13 +2286,7 @@
     </form>
   </section>
 
-  <!-- Floating chat launcher button (bottom-right) -->
-  <button id="assistance-chat-floating-btn" type="button" class="assistance-chat-floating-btn" aria-label="Open emergency assistance chat" title="Need Assistance? Chat with us">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
-    <span class="chat-floating-label">Need Assistance?</span>
-  </button>
+
   <div id="account-panel" class="account-panel">
     <button id="account-toggle" class="map-tool-button" type="button" aria-label="Account" title="Account"
       aria-expanded="false" aria-controls="account-content">
@@ -3498,7 +3465,6 @@
 
     function closeAssistanceChat() {
       if (assistanceChatBox) assistanceChatBox.hidden = true;
-      if (assistanceChatFloatingBtn) assistanceChatFloatingBtn.hidden = false;
     }
 
     function appendUserMessage(text) {
