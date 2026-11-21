@@ -4367,6 +4367,7 @@
           '</div>' +
           '<div class="responder-actions">' +
             '<button type="button" class="chat-action-btn" data-action="plot-responder-route">🗺️ View Route on Map</button>' +
+            '<a href="responder.html?lat=' + data.userLoc.coords[1] + '&lng=' + data.userLoc.coords[0] + '&district=' + encodeURIComponent(data.userLoc.districtName) + '&scenario=' + encodeURIComponent(data.scenario.title) + '" target="_blank" class="chat-action-btn secondary">📡 Open Responder Tracker</a>' +
             (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary">📞 Call ' + escapeHtml(data.responder.phone) + '</a>' : '') +
             '<a href="tel:911" class="chat-action-btn emergency">🚨 Call 911</a>' +
           '</div>' +
@@ -4399,6 +4400,7 @@
         (data.scenario && data.scenario.tacticalAdvice ? '<div class="assessment-advice-box"><strong>💡 Immediate Safety Advice:</strong><br><span class="advice-text">' + escapeHtml(data.scenario.tacticalAdvice) + '</span></div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
           '<button type="button" class="emergency-facility-route-btn" data-action="plot-responder-route" style="flex:1;">Active Route</button>' +
+          '<a href="responder.html" target="_blank" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;" title="Open live responder console">📡 Tracker</a>' +
           (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;">📞 Call</a>' : '') +
         '</div>'
       );
@@ -4441,6 +4443,28 @@
       lastResponderDispatchData = dispatchData;
 
       updateResponderDispatchBanner(dispatchData);
+
+      // Broadcast and persist tracked user location for responder.html
+      try {
+        const payload = {
+          lat: userLoc.coords[1],
+          lng: userLoc.coords[0],
+          coords: userLoc.formattedCoords || (userLoc.coords[1].toFixed(4) + '° N, ' + userLoc.coords[0].toFixed(4) + '° E'),
+          district: userLoc.districtName,
+          scenario: scenario.title,
+          summary: scenario.summary,
+          tacticalAdvice: scenario.tacticalAdvice,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('tracked_user_emergency', JSON.stringify(payload));
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel('emergency_dispatch');
+          bc.postMessage({ type: 'USER_LOCATION_UPDATE', data: payload });
+          bc.close();
+        }
+      } catch (e) {
+        console.warn('Could not broadcast user emergency to responder:', e);
+      }
 
       return dispatchData;
     }
@@ -5312,6 +5336,22 @@
         map.setView(event.latlng, Math.max(map.getZoom(), 14));
       }
       setLocationStatus('Using device location as the route starting point.');
+
+      // Update broadcast for responder tracker
+      try {
+        const raw = localStorage.getItem('tracked_user_emergency');
+        let current = raw ? JSON.parse(raw) : {};
+        current.lat = event.latlng.lat;
+        current.lng = event.latlng.lng;
+        current.coords = event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E';
+        current.timestamp = Date.now();
+        localStorage.setItem('tracked_user_emergency', JSON.stringify(current));
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel('emergency_dispatch');
+          bc.postMessage({ type: 'USER_LOCATION_UPDATE', data: current });
+          bc.close();
+        }
+      } catch (e) {}
     });
 
     map.on('locationerror', function (event) {

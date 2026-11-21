@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🚨 Responder Dispatch · Live User Tracker</title>
+  <meta name="theme-color" content="#202124">
+  <meta name="description" content="Emergency Responder Dispatch and Live User Location Tracking Console.">
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: dark;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #121316;
+      color: #e8eaed;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1;
+    }
+
+    /* Floating Responder HUD */
+    .responder-hud {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1000;
+      width: 380px;
+      max-width: calc(100vw - 28px);
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      background: rgba(30, 31, 34, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid #4a4d52;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+      transition: all 0.2s ease;
+    }
+
+    :root[data-theme="light"] .responder-hud {
+      background: rgba(255, 255, 255, 0.96);
+      border-color: #dadce0;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      color: #202124;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #3c4043;
+    }
+
+    :root[data-theme="light"] .hud-header {
+      border-bottom-color: #e8eaed;
+    }
+
+    .hud-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: #34a853;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+      animation: pulse-green 1.8s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse-green {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(52, 168, 83, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+      }
+    }
+
+    .hud-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #8ab4f8;
+      text-transform: uppercase;
+    }
+
+    :root[data-theme="light"] .hud-title {
+      color: #1a73e8;
+    }
+
+    .hud-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #492320;
+      color: #f28b82;
+      border: 1px solid #7a3535;
+    }
+
+    :root[data-theme="light"] .hud-badge {
+      background: #fce8e6;
+      color: #b3261e;
+      border-color: #f28b82;
+    }
+
+    /* Tracked User Card */
+    .user-tracker-card {
+      background: #25272a;
+      border: 1.5px solid #d93025;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 2px 10px rgba(217, 48, 37, 0.2);
+    }
+
+    :root[data-theme="light"] .user-tracker-card {
+      background: #fff8f7;
+      border-color: #d93025;
+      box-shadow: 0 2px 10px rgba(217, 48, 37, 0.1);
+    }
+
+    .user-tracker-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #f28b82;
+    }
+
+    :root[data-theme="light"] .user-tracker-title {
+      color: #b3261e;
+    }
+
+    .user-info-row {
+      font-size: 11.5px;
+      line-height: 1.4;
+      display: flex;
+      gap: 6px;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="light"] .user-info-row {
+      color: #3c4043;
+    }
+
+    .user-info-row strong {
+      color: #9aa0a6;
+      min-width: 60px;
+    }
+
+    :root[data-theme="light"] .user-info-row strong {
+      color: #5f6368;
+    }
+
+    .user-info-val {
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Immediate Safety Advice Box */
+    .assessment-advice-box {
+      margin-top: 4px;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: #332704;
+      border: 1.5px solid #ffd54f;
+      color: #fff9c4;
+      font-size: 11.5px;
+      line-height: 1.4;
+      display: block;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    :root[data-theme="light"] .assessment-advice-box {
+      background: #fef7e0;
+      border-color: #f9ab00;
+      color: #202124;
+      box-shadow: none;
+    }
+
+    .assessment-advice-box strong {
+      color: #ffd54f !important;
+      display: inline-block;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    :root[data-theme="light"] .assessment-advice-box strong {
+      color: #b06000 !important;
+    }
+
+    .assessment-advice-box .advice-text {
+      color: #fffde7;
+      font-weight: 500;
+    }
+
+    :root[data-theme="light"] .assessment-advice-box .advice-text {
+      color: #202124;
+    }
+
+    /* Live Route Metrics */
+    .route-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .route-metric-box {
+      background: #25272a;
+      border: 1px solid #3c4043;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    :root[data-theme="light"] .route-metric-box {
+      background: #f8f9fa;
+      border-color: #dadce0;
+    }
+
+    .route-metric-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9aa0a6;
+      font-weight: 700;
+    }
+
+    :root[data-theme="light"] .route-metric-label {
+      color: #5f6368;
+    }
+
+    .route-metric-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #81c995;
+      margin-top: 2px;
+    }
+
+    :root[data-theme="light"] .route-metric-val {
+      color: #188038;
+    }
+
+    .hazard-status-badge {
+      background: #2a1f20;
+      border: 1px solid #5f2b2b;
+      color: #f28b82;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    :root[data-theme="light"] .hazard-status-badge {
+      background: #fce8e6;
+      border-color: #f28b82;
+      color: #b3261e;
+    }
+
+    /* Control Button Groups */
+    .hud-controls-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .hud-btn {
+      flex: 1;
+      min-width: calc(50% - 4px);
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid #5f6368;
+      background: #303134;
+      color: #e8eaed;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      box-sizing: border-box;
+    }
+
+    :root[data-theme="light"] .hud-btn {
+      background: #f1f3f4;
+      border-color: #dadce0;
+      color: #202124;
+    }
+
+    .hud-btn:hover {
+      background: #3c4043;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="light"] .hud-btn:hover {
+      background: #e8eaed;
+      color: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    .hud-btn.primary {
+      background: #1a73e8;
+      border-color: #1a73e8;
+      color: #ffffff;
+    }
+
+    .hud-btn.primary:hover {
+      background: #1557b0;
+    }
+
+    .hud-btn.danger {
+      background: #d93025;
+      border-color: #d93025;
+      color: #ffffff;
+    }
+
+    .hud-btn.danger:hover {
+      background: #b3261e;
+    }
+
+    /* Dispatch Stage Stepper */
+    .dispatch-status-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .dispatch-status-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9aa0a6;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    :root[data-theme="light"] .dispatch-status-label {
+      color: #5f6368;
+    }
+
+    .dispatch-steps {
+      display: flex;
+      gap: 4px;
+    }
+
+    .dispatch-step-btn {
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 6px;
+      border: 1px solid #4a4d52;
+      background: #25272a;
+      color: #9aa0a6;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    :root[data-theme="light"] .dispatch-step-btn {
+      background: #f1f3f4;
+      border-color: #dadce0;
+      color: #5f6368;
+    }
+
+    .dispatch-step-btn.active {
+      background: #188038;
+      border-color: #188038;
+      color: #ffffff;
+      box-shadow: 0 0 0 1px #188038;
+    }
+
+    /* Top-Right Theme Toggle */
+    .top-right-bar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 1000;
+      display: flex;
+      gap: 8px;
+    }
+
+    .theme-toggle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid #4a4d52;
+      background: #25272a;
+      color: #e8eaed;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+
+    :root[data-theme="light"] .theme-toggle-btn {
+      background: #ffffff;
+      border-color: #dadce0;
+      color: #202124;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Pulsing Leaflet Markers */
+    .user-incident-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-incident-pin {
+      width: 38px;
+      height: 38px;
+      background: #d93025;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217, 48, 37, 0.5);
+      position: relative;
+      z-index: 2;
+    }
+
+    .radar-ping {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(217, 48, 37, 0.6);
+      animation: radar-ripple 2s infinite ease-out;
+      z-index: 1;
+    }
+
+    @keyframes radar-ripple {
+      0% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(3.2);
+        opacity: 0;
+      }
+    }
+
+    .responder-unit-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .responder-unit-pin {
+      width: 36px;
+      height: 36px;
+      background: #1a73e8;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <!-- Responder HUD -->
+  <aside id="responder-hud" class="responder-hud" aria-label="Responder Live Tracking HUD">
+    <div class="hud-header">
+      <div class="hud-title-wrap">
+        <span class="hud-pulse-dot"></span>
+        <span class="hud-title">User Tracking Console</span>
+      </div>
+      <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
+    </div>
+
+    <!-- Live Tracked User Location Card -->
+    <div class="user-tracker-card">
+      <div class="user-tracker-title">
+        <span id="user-scenario-title">🚨 Caller Incident Site</span>
+        <span id="user-last-ping" style="font-size: 10.5px; font-weight: normal; color: #9aa0a6;">Live Ping</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Location:</strong>
+        <span id="user-district-val" class="user-info-val">Mandurriao District</span>
+      </div>
+      <div class="user-info-row">
+        <strong>GPS:</strong>
+        <span id="user-coords-val" class="user-info-val" style="font-family: monospace;">10.7196° N, 122.5368° E</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Station:</strong>
+        <span id="responder-station-val" class="user-info-val" style="color: #8ab4f8;">Mandurriao Disaster Response Unit</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Incident:</strong>
+        <span id="user-situation-val" class="user-info-val" style="color: #f28b82;">Flash Flood & Water Evacuation</span>
+      </div>
+      <div id="user-advice-container">
+        <div class="assessment-advice-box">
+          <strong>💡 Immediate Safety Advice:</strong><br>
+          <span id="user-advice-val" class="advice-text">Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Route Metrics -->
+    <div class="route-metrics-grid">
+      <div class="route-metric-box">
+        <div class="route-metric-label">Estimated ETA</div>
+        <div id="route-eta-val" class="route-metric-val">~4 min</div>
+      </div>
+      <div class="route-metric-box">
+        <div class="route-metric-label">Distance to User</div>
+        <div id="route-dist-val" class="route-metric-val">1.8 km</div>
+      </div>
+    </div>
+
+    <div id="hazard-status" class="hazard-status-badge">
+      <span>🛡️</span>
+      <span id="hazard-status-text">Route evaluated: direct corridor clear of impassable hazards.</span>
+    </div>
+
+    <!-- Quick Map & Tracking Actions -->
+    <div class="hud-controls-group">
+      <button id="btn-center-user" type="button" class="hud-btn primary">
+        <span>📍</span> Track User
+      </button>
+      <button id="btn-center-responder" type="button" class="hud-btn">
+        <span>🚑</span> Station Unit
+      </button>
+      <button id="btn-fit-overview" type="button" class="hud-btn">
+        <span>🗺️</span> Fit Both
+      </button>
+      <button id="btn-refresh-user" type="button" class="hud-btn">
+        <span>🔄</span> Refresh
+      </button>
+    </div>
+
+    <!-- Dispatch Status Stepper -->
+    <div class="dispatch-status-selector">
+      <span class="dispatch-status-label">Responder Mission Status</span>
+      <div class="dispatch-steps">
+        <button type="button" class="dispatch-step-btn active" data-status="en-route">En Route</button>
+        <button type="button" class="dispatch-step-btn" data-status="on-scene">On Scene</button>
+        <button type="button" class="dispatch-step-btn" data-status="treating">Treating</button>
+        <button type="button" class="dispatch-step-btn" data-status="transporting">Transport</button>
+        <button type="button" class="dispatch-step-btn" data-status="cleared">Cleared</button>
+      </div>
+    </div>
+
+    <a id="btn-call-caller" href="tel:911" class="hud-btn danger" style="width: 100%;">
+      <span>📞</span> Contact Caller / 911 Hotline
+    </a>
+  </aside>
+
+  <!-- Top-Right Controls -->
+  <div class="top-right-bar">
+    <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle dark/light mode">
+      🌙
+    </button>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="routing-config.js"></script>
+  <script>
+    // --- Tactical Responder Live User Tracking System ---
+
+    const esriTrafficApiKey = (window.OSM_MAP_ROUTING_CONFIG && window.OSM_MAP_ROUTING_CONFIG.esriApiKey) || '';
+
+    // Active live incidents in the area (flood hazard, road closure, roadwork)
+    const liveIncidents = [
+      {
+        id: 'inc-flood-1',
+        name: 'Flash Flood Hazard',
+        type: 'flood',
+        icon: '🌊',
+        color: '#d93025',
+        lat: 10.7080,
+        lng: 122.5620,
+        radius: 200,
+        penaltySeconds: 600,
+        impassable: false
+      },
+      {
+        id: 'inc-closure-1',
+        name: 'Festival / Street Marathon Closure',
+        type: 'closure',
+        icon: '⛔',
+        color: '#b3261e',
+        lat: 10.7010,
+        lng: 122.5550,
+        radius: 240,
+        penaltySeconds: Infinity,
+        impassable: true
+      },
+      {
+        id: 'inc-work-1',
+        name: 'Roadwork & Pipe Repair',
+        type: 'construction',
+        icon: '🚧',
+        color: '#e37400',
+        lat: 10.6965,
+        lng: 122.5480,
+        radius: 170,
+        penaltySeconds: 360,
+        impassable: false
+      }
+    ];
+
+    // Standard responder bases in Iloilo
+    const KNOWN_RESPONDER_BASES = [
+      {
+        id: 'mandurriao-dru',
+        name: 'Mandurriao Disaster Response Unit',
+        coords: [122.5369, 10.7194],
+        address: 'Mandurriao District Office, Iloilo City',
+        phone: '(033) 321-2777'
+      },
+      {
+        id: 'cdrrmo-eoc',
+        name: 'Iloilo City Emergency Operations Center (CDRRMO)',
+        coords: [122.5705, 10.6929],
+        address: 'Iloilo City Hall, Plaza Libertad, Iloilo City',
+        phone: '(033) 333-1111'
+      },
+      {
+        id: 'red-cross',
+        name: 'Philippine Red Cross - Iloilo Chapter',
+        coords: [122.5641, 10.6989],
+        address: 'Bonifacio Drive, Iloilo City',
+        phone: '(033) 337-5976'
+      },
+      {
+        id: 'molo-deru',
+        name: 'Molo District Emergency Response Unit',
+        coords: [122.5460, 10.6979],
+        address: 'Molo Plaza Area, Iloilo City',
+        phone: '(033) 337-3011'
+      },
+      {
+        id: 'coast-guard',
+        name: 'Philippine Coast Guard District Western Visayas',
+        coords: [122.5794, 10.7012],
+        address: 'Bo. Obrero, Lapuz, Iloilo City',
+        phone: '(033) 337-5264'
+      },
+      {
+        id: 'oton-mdrrmo',
+        name: 'Oton MDRRMO Emergency Rescue Unit',
+        coords: [122.4768, 10.6953],
+        address: 'Municipal Hall Compound, Oton, Iloilo',
+        phone: '(033) 336-0911'
+      }
+    ];
+
+    // 1. Initialize Map
+    const initialView = [10.7120, 122.5500];
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView(initialView, 14);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Map Tile Layers
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+
+    const satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri'
+      }
+    );
+
+    // Default to satellite layer for tactical command look
+    satelliteLayer.addTo(map);
+
+    L.control.layers(
+      { 'Satellite Imagery': satelliteLayer, 'Street Map': streetLayer },
+      null,
+      { position: 'bottomright' }
+    ).addTo(map);
+
+    // Hazard layer group
+    const hazardLayerGroup = L.featureGroup().addTo(map);
+    renderHazards();
+
+    function renderHazards() {
+      hazardLayerGroup.clearLayers();
+      liveIncidents.forEach(function (inc) {
+        L.circle([inc.lat, inc.lng], {
+          radius: inc.radius,
+          color: inc.color,
+          fillColor: inc.color,
+          fillOpacity: 0.22,
+          weight: 2,
+          dashArray: inc.impassable ? '6, 6' : null
+        }).bindPopup('<strong>' + inc.icon + ' ' + inc.name + '</strong><br>Radius: ' + inc.radius + 'm' + (inc.impassable ? '<br><span style="color:#d93025;font-weight:700;">Impassable Closure</span>' : '')).addTo(hazardLayerGroup);
+      });
+    }
+
+    // 2. State & Markers
+    let userMarker = null;
+    let responderMarker = null;
+    let routeLayers = L.featureGroup().addTo(map);
+    let activeResponderStation = KNOWN_RESPONDER_BASES[0];
+    let lastTrackedCoords = null;
+
+    let currentTrackedUser = {
+      lat: 10.7196,
+      lng: 122.5368,
+      district: 'Mandurriao District',
+      streetRef: 'Benigno Aquino Ave / Guzman St',
+      coordsFormatted: '10.7196° N, 122.5368° E',
+      scenario: 'Flash Flood & Water Evacuation',
+      summary: 'Severe water rise / flash flooding reported in caller area. Specialized amphibious/high-clearance unit deployed.',
+      tacticalAdvice: 'Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.',
+      callerPhone: '(033) 333-1111',
+      lastPingTime: new Date()
+    };
+
+    // Haversine distance calculator
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // 3. User Location Syncing Logic
+    function loadTrackedUser() {
+      // 1. Check URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const urlLat = parseFloat(params.get('lat'));
+      const urlLng = parseFloat(params.get('lng'));
+      if (Number.isFinite(urlLat) && Number.isFinite(urlLng)) {
+        currentTrackedUser.lat = urlLat;
+        currentTrackedUser.lng = urlLng;
+        currentTrackedUser.coordsFormatted = urlLat.toFixed(4) + '° N, ' + urlLng.toFixed(4) + '° E';
+        if (params.get('district')) currentTrackedUser.district = params.get('district');
+        if (params.get('scenario')) currentTrackedUser.scenario = params.get('scenario');
+        if (params.get('summary')) currentTrackedUser.summary = params.get('summary');
+        if (params.get('advice')) currentTrackedUser.tacticalAdvice = params.get('advice');
+        currentTrackedUser.lastPingTime = new Date();
+      } else {
+        // 2. Check localStorage from map.html
+        try {
+          const raw = localStorage.getItem('tracked_user_emergency');
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
+              currentTrackedUser.lat = data.lat;
+              currentTrackedUser.lng = data.lng;
+              currentTrackedUser.district = data.district || currentTrackedUser.district;
+              currentTrackedUser.coordsFormatted = data.coords || (data.lat.toFixed(4) + '° N, ' + data.lng.toFixed(4) + '° E');
+              currentTrackedUser.scenario = data.scenario || currentTrackedUser.scenario;
+              currentTrackedUser.summary = data.summary || currentTrackedUser.summary;
+              currentTrackedUser.tacticalAdvice = data.tacticalAdvice || currentTrackedUser.tacticalAdvice;
+              currentTrackedUser.lastPingTime = new Date(data.timestamp || Date.now());
+            }
+          }
+        } catch (e) {
+          console.warn('Could not read user location from localStorage:', e);
+        }
+      }
+
+      updateUI();
+
+      const coordsChanged = !lastTrackedCoords ||
+        Math.abs(lastTrackedCoords.lat - currentTrackedUser.lat) > 0.0001 ||
+        Math.abs(lastTrackedCoords.lng - currentTrackedUser.lng) > 0.0001;
+
+      if (coordsChanged) {
+        lastTrackedCoords = { lat: currentTrackedUser.lat, lng: currentTrackedUser.lng };
+
+        // Pick closest responder base to tracked user
+        let closestBase = KNOWN_RESPONDER_BASES[0];
+        let minD = Infinity;
+        KNOWN_RESPONDER_BASES.forEach(function (base) {
+          const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, base.coords[1], base.coords[0]);
+          if (d < minD) {
+            minD = d;
+            closestBase = base;
+          }
+        });
+        activeResponderStation = closestBase;
+
+        updateMapMarkersAndRoute();
+      }
+    }
+
+    // Listen for storage events (real-time sync across browser tabs)
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'tracked_user_emergency') {
+        loadTrackedUser();
+      }
+    });
+
+    // Listen for BroadcastChannel updates from map.html
+    if (window.BroadcastChannel) {
+      const channel = new BroadcastChannel('emergency_dispatch');
+      channel.onmessage = function (event) {
+        if (event && event.data && event.data.type === 'USER_LOCATION_UPDATE') {
+          loadTrackedUser();
+        }
+      };
+    }
+
+    // Polling heartbeat (every 3 seconds) for live location continuity
+    setInterval(function () {
+      loadTrackedUser();
+    }, 3000);
+
+    // 4. Update UI Elements
+    function updateUI() {
+      document.getElementById('user-scenario-title').textContent = currentTrackedUser.scenario || '🚨 Live Incident Site';
+      document.getElementById('user-district-val').textContent = currentTrackedUser.district || 'Caller Zone';
+      document.getElementById('user-coords-val').textContent = currentTrackedUser.coordsFormatted;
+      document.getElementById('responder-station-val').textContent = activeResponderStation.name;
+      document.getElementById('user-situation-val').textContent = currentTrackedUser.summary || 'Emergency distress reported';
+      document.getElementById('user-advice-val').textContent = currentTrackedUser.tacticalAdvice || 'Stay in safe area and keep line open.';
+
+      const timeAgoStr = Math.max(0, Math.round((Date.now() - currentTrackedUser.lastPingTime.getTime()) / 1000));
+      document.getElementById('user-last-ping').textContent = timeAgoStr < 5 ? 'Live Ping Just Now' : timeAgoStr + 's ago';
+
+      if (currentTrackedUser.callerPhone) {
+        const telLink = document.getElementById('btn-call-caller');
+        telLink.href = 'tel:' + currentTrackedUser.callerPhone.replace(/[^\d+*#;]/g, '');
+        telLink.innerHTML = '<span>📞</span> Contact Caller (' + currentTrackedUser.callerPhone + ')';
+      }
+    }
+
+    // 5. Update Map Markers and Calculate Response Route
+    async function updateMapMarkersAndRoute() {
+      // 1. Plot / Update User Marker with Radar Ping
+      const userLatLng = [currentTrackedUser.lat, currentTrackedUser.lng];
+
+      if (userMarker) {
+        userMarker.setLatLng(userLatLng);
+      } else {
+        const userIcon = L.divIcon({
+          className: 'user-incident-icon',
+          html: '<div class="radar-ping"></div><div class="user-incident-pin">📍</div>',
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
+        });
+
+        userMarker = L.marker(userLatLng, { icon: userIcon }).addTo(map);
+      }
+
+      userMarker.bindPopup(
+        '<strong>🚨 Tracked Caller Location</strong><br>' +
+        'District: <strong>' + currentTrackedUser.district + '</strong><br>' +
+        'GPS: ' + currentTrackedUser.coordsFormatted + '<br>' +
+        'Scenario: ' + currentTrackedUser.scenario
+      );
+
+      // 2. Plot / Update Responder Station Marker
+      const stationLatLng = [activeResponderStation.coords[1], activeResponderStation.coords[0]];
+
+      if (responderMarker) {
+        responderMarker.setLatLng(stationLatLng);
+      } else {
+        const responderIcon = L.divIcon({
+          className: 'responder-unit-icon',
+          html: '<div class="responder-unit-pin">🚒</div>',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        });
+
+        responderMarker = L.marker(stationLatLng, { icon: responderIcon }).addTo(map);
+      }
+
+      responderMarker.bindPopup(
+        '<strong>🚑 Responder Base Unit</strong><br>' +
+        'Station: <strong>' + activeResponderStation.name + '</strong><br>' +
+        activeResponderStation.address
+      );
+
+      // 3. Compute and Draw Fastest Route to User
+      await calculateAndDrawRoute(activeResponderStation.coords, [currentTrackedUser.lng, currentTrackedUser.lat]);
+    }
+
+    async function calculateAndDrawRoute(startCoords, endCoords) {
+      routeLayers.clearLayers();
+
+      const coordinatesQuery = [startCoords, endCoords].map(function (c) { return c.join(','); }).join(';');
+
+      try {
+        const response = await fetch(
+          'https://router.project-osrm.org/route/v1/driving/' + coordinatesQuery +
+          '?overview=full&geometries=geojson&steps=true'
+        );
+
+        if (!response.ok) throw new Error('Route network query failed.');
+        const data = await response.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes[0]) throw new Error('No drivable route found.');
+
+        const route = data.routes[0];
+        const distKm = (route.distance / 1000).toFixed(1);
+        const etaMins = Math.max(2, Math.round(route.duration / 60));
+
+        // Evaluate hazard collisions
+        let avoidsFlood = false;
+        let routeColor = '#188038';
+
+        if (Array.isArray(route.geometry && route.geometry.coordinates)) {
+          route.geometry.coordinates.forEach(function (pt) {
+            liveIncidents.forEach(function (inc) {
+              if (haversineMeters(pt[1], pt[0], inc.lat, inc.lng) <= inc.radius) {
+                if (inc.type === 'flood') avoidsFlood = true;
+              }
+            });
+          });
+        }
+
+        // Draw route polyline
+        const routeLayer = L.geoJSON(route.geometry, {
+          style: {
+            color: routeColor,
+            weight: 7,
+            opacity: 0.95
+          }
+        }).addTo(routeLayers);
+
+        // Update HUD Metrics
+        document.getElementById('route-eta-val').textContent = '~' + etaMins + ' min';
+        document.getElementById('route-dist-val').textContent = distKm + ' km';
+
+        const hazardStatusText = document.getElementById('hazard-status-text');
+        if (avoidsFlood) {
+          hazardStatusText.textContent = 'Route corridor passes near active flood zone. Caution advised.';
+        } else {
+          hazardStatusText.textContent = 'Optimal response route verified. Clear thoroughfares.';
+        }
+
+        // Fit bounds to show both responder and user
+        map.fitBounds(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds(), {
+          paddingTopLeft: [400, 30],
+          paddingBottomRight: [30, 30]
+        });
+
+      } catch (err) {
+        console.warn('Could not calculate OSRM route, falling back to direct metric:', err);
+        const dMeters = haversineMeters(startCoords[1], startCoords[0], endCoords[1], endCoords[0]);
+        const distKm = (dMeters / 1000).toFixed(1);
+        const etaMins = Math.max(2, Math.round((dMeters / (35000 / 3600)) / 60));
+
+        document.getElementById('route-eta-val').textContent = '~' + etaMins + ' min';
+        document.getElementById('route-dist-val').textContent = distKm + ' km';
+
+        // Draw direct emergency line
+        const directLine = L.polyline([[startCoords[1], startCoords[0]], [endCoords[1], endCoords[0]]], {
+          color: '#1a73e8',
+          weight: 4,
+          dashArray: '8, 8'
+        }).addTo(routeLayers);
+
+        map.fitBounds(L.featureGroup([userMarker, responderMarker, directLine]).getBounds(), {
+          paddingTopLeft: [400, 30],
+          paddingBottomRight: [30, 30]
+        });
+      }
+    }
+
+    // 6. Action Button Controls
+    document.getElementById('btn-center-user').addEventListener('click', function () {
+      if (userMarker) {
+        map.flyTo(userMarker.getLatLng(), 16);
+        userMarker.openPopup();
+      }
+    });
+
+    document.getElementById('btn-center-responder').addEventListener('click', function () {
+      if (responderMarker) {
+        map.flyTo(responderMarker.getLatLng(), 16);
+        responderMarker.openPopup();
+      }
+    });
+
+    document.getElementById('btn-fit-overview').addEventListener('click', function () {
+      if (userMarker && responderMarker) {
+        map.fitBounds(L.featureGroup([userMarker, responderMarker]).getBounds(), {
+          paddingTopLeft: [400, 30],
+          paddingBottomRight: [30, 30]
+        });
+      }
+    });
+
+    document.getElementById('btn-refresh-user').addEventListener('click', function () {
+      lastTrackedCoords = null; // force re-evaluation
+      loadTrackedUser();
+    });
+
+    // Mission status stepper buttons
+    document.querySelectorAll('.dispatch-step-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        const badge = document.getElementById('dispatch-badge');
+        badge.textContent = btn.textContent.toUpperCase();
+      });
+    });
+
+    // Dark / Light Theme Toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    themeToggleBtn.addEventListener('click', function () {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.documentElement.removeAttribute('data-theme');
+        themeToggleBtn.textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        themeToggleBtn.textContent = '☀️';
+      }
+    });
+
+    // Initial load
+    loadTrackedUser();
+  </script>
+</body>
+
+</html>
