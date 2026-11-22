@@ -1,11 +1,33 @@
 {
   "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/service-worker.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
     { "source": "/map", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
+    { "source": "/map.html", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
     { "source": "/dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
     { "source": "/responder", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
     { "source": "/responder-dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
-    { "source": "/responder.html", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" }
+    { "source": "/responder.html", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
+    { "source": "/service-worker.js", "destination": "/Open Street Map (Bellmans - Ford)/service-worker.js" },
+    { "source": "/manifest.webmanifest", "destination": "/Open Street Map (Bellmans - Ford)/manifest.webmanifest" },
+    { "source": "/supabase-config.js", "destination": "/Open Street Map (Bellmans - Ford)/supabase-config.js" },
+    { "source": "/routing-config.js", "destination": "/Open Street Map (Bellmans - Ford)/routing-config.js" },
+    { "source": "/icons/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/icons/$1" },
+    { "source": "/vendor/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/vendor/$1" }
   ]
 }

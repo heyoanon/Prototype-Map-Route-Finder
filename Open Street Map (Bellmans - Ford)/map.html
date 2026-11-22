@@ -5958,6 +5958,16 @@
           setStatus('Showing a previously saved offline search result.');
           return cached;
         }
+        // Check local emergency facilities directory for offline search
+        const lowerVal = value.trim().toLowerCase();
+        const matchedFacility = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+          return f.name.toLowerCase().includes(lowerVal) || lowerVal.includes(f.name.toLowerCase()) ||
+                 (f.address && f.address.toLowerCase().includes(lowerVal));
+        });
+        if (matchedFacility) {
+          setStatus('Offline Mode: Found ' + matchedFacility.name + ' in offline database.');
+          return matchedFacility.coordinates;
+        }
         throw error;
       }
     }
@@ -7693,6 +7703,47 @@
           });
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
           setStatus('Showing a previously saved offline route.');
+        } else if (end) {
+          // Generate direct offline navigation fallback route so map is never empty
+          const originPoint = L.latLng(start[1], start[0]);
+          const destPoint = L.latLng(end[1], end[0]);
+          const distanceM = Math.round(originPoint.distanceTo(destPoint) * 1.25);
+          const durationSec = Math.max(60, Math.round((distanceM / 1000) / 30 * 3600));
+          const directRoute = {
+            distance: distanceM,
+            duration: durationSec,
+            geometry: {
+              type: 'LineString',
+              coordinates: [start, end]
+            },
+            legs: [{
+              distance: distanceM,
+              duration: durationSec,
+              summary: 'Offline Direct Route',
+              steps: [
+                {
+                  instruction: 'Navigate towards ' + destination + ' (Offline estimate)',
+                  distance: distanceM,
+                  duration: durationSec
+                }
+              ]
+            }],
+            weight_name: 'offline_direct',
+            weight: durationSec
+          };
+          routesElement.replaceChildren();
+          routeLayers.clearLayers();
+          const layer = L.geoJSON(directRoute.geometry, {
+            pane: 'routePane',
+            style: {
+              color: '#1684ff', weight: 8,
+              opacity: 0.98
+            },
+            bubblingMouseEvents: false
+          }).addTo(routeLayers);
+          addRouteCard(directRoute, 0, layer, false, Boolean(routePurpose));
+          fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
+          setStatus('Offline Mode: Displaying estimated direct route path (' + (distanceM / 1000).toFixed(1) + ' km).');
         } else {
           setStatus(error.message || 'Could not find routes. Please try again.');
         }
@@ -7811,9 +7862,12 @@
     initializeAccount();
     loadServices();
 
-    if ('serviceWorker' in navigator && window.isSecureContext) {
+    if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+        const swPath = window.location.pathname.includes('Open Street Map (Bellmans - Ford)')
+          ? './service-worker.js'
+          : '/service-worker.js';
+        navigator.serviceWorker.register(swPath).catch(function (error) {
           console.error('Could not register the offline app shell:', error);
         });
       });
