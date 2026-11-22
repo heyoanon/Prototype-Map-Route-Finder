@@ -4261,21 +4261,84 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* Map Search Controls (Leaves space on right for Account button) */
+      /* Map Search Controls (Top Floating Bar across full width) */
       #map-search-controls {
         top: max(8px, env(safe-area-inset-top, 8px));
         left: 8px;
-        right: auto;
-        width: calc(100vw - 68px);
-        max-width: calc(100vw - 68px);
+        right: 8px;
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
         gap: 8px;
         z-index: 1000;
+        pointer-events: none;
       }
 
-      /* Top-Right Account Button on Mobile (Prominently placed & accessible) */
+      .search-panel {
+        width: 100%;
+        max-height: calc(85vh - 24px);
+        max-height: calc(85dvh - 24px);
+        padding: 8px;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        pointer-events: auto;
+      }
+
+      .search-inputs-wrapper {
+        border-radius: 14px;
+        padding: 5px;
+        gap: 6px;
+      }
+
+      .search-row {
+        padding: 5px 8px;
+        min-height: 44px;
+        gap: 6px;
+      }
+
+      #source-input,
+      #destination,
+      .search-input {
+        font-size: 16px !important; /* Critical: prevents iOS auto-zoom on focus */
+      }
+
+      /* Floating Action Buttons below the Search Panel:
+         Left: Emergency Services (red pulse circle)
+         Right: Account & Profile (blue circle) */
+      #emergency-open {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        pointer-events: auto;
+        align-self: flex-start;
+      }
+
+      #emergency-open[hidden],
+      body.emergency-panel-open #emergency-open,
+      body:has(#emergency-assistance:not([hidden])) #emergency-open,
+      body.chat-open #emergency-open {
+        display: none !important;
+      }
+
+      /* Top-Right Account Button on Mobile (Aligned horizontally with Emergency button) */
+      .leaflet-top.leaflet-right {
+        position: fixed !important;
+        top: calc(max(8px, env(safe-area-inset-top, 8px)) + 128px) !important;
+        right: 8px !important;
+        left: auto !important;
+        bottom: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 1010 !important;
+        pointer-events: none !important;
+      }
+
       .account-control,
       .leaflet-top.leaflet-right .account-control {
-        margin: max(8px, env(safe-area-inset-top, 8px)) 8px 0 0 !important;
+        margin: 0 !important;
         z-index: 1010 !important;
         pointer-events: auto !important;
       }
@@ -4288,8 +4351,8 @@
       #account-toggle {
         display: grid !important;
         place-items: center !important;
-        width: 46px !important;
-        height: 46px !important;
+        width: 44px !important;
+        height: 44px !important;
         border-radius: 50% !important;
         background: #ffffff !important;
         border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
@@ -4306,22 +4369,11 @@
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
       }
 
-      .leaflet-top.leaflet-right {
-        z-index: 1010 !important;
-        pointer-events: none !important;
-      }
-
-      /* Emergency Service Button (visible on mobile, hides when emergency window opens) */
-      #emergency-open {
-        display: grid;
-        width: 44px;
-        height: 44px;
-      }
-
-      #emergency-open[hidden],
-      body.emergency-panel-open #emergency-open,
-      body:has(#emergency-assistance:not([hidden])) #emergency-open,
-      body.chat-open #emergency-open {
+      /* Hide floating buttons when viewing route cards/details or during modals */
+      body.sidebar-expanded .account-control,
+      #map-search-controls.sidebar-expanded ~ * .account-control,
+      body.emergency-panel-open .account-control,
+      body.chat-open .account-control {
         display: none !important;
       }
 
@@ -4337,27 +4389,62 @@
         max-width: 100vw !important;
         max-height: 85vh !important;
         max-height: 85dvh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
         border-radius: 22px 22px 0 0 !important;
-        padding: 16px 18px max(24px, env(safe-area-inset-bottom, 24px)) !important;
+        padding: 14px 18px max(24px, env(safe-area-inset-bottom, 24px)) !important;
         box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.45) !important;
         z-index: 2500 !important;
         animation: auth-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
       }
 
-      .search-panel {
-        max-height: calc(85vh - 24px);
-        max-height: calc(85dvh - 24px);
-        padding: 8px;
-        border-radius: 18px;
+      #emergency-assistance::before {
+        content: '';
+        display: block;
+        width: 42px;
+        height: 5px;
+        border-radius: 999px;
+        background: #dadce0;
+        margin: 0 auto 12px;
       }
 
-      .search-row {
-        padding: 6px 9px;
-        min-height: 44px;
+      :root[data-theme="dark"] #emergency-assistance::before {
+        background: #5f6368;
       }
 
-      .search-input {
-        font-size: 16px !important; /* Prevents unwanted iOS auto-zoom on input focus */
+      .emergency-assistance-header {
+        justify-content: center !important;
+        text-align: center;
+        margin-bottom: 6px;
+      }
+
+      .emergency-assistance-header-title {
+        font-size: 16px !important;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      /* Remove the x button in emergency service on mobile (as requested) */
+      .emergency-assistance-close,
+      #emergency-assistance-close {
+        display: none !important;
+      }
+
+      .emergency-status-text {
+        text-align: center;
+        font-size: 12.5px;
+        margin-bottom: 10px;
+      }
+
+      .emergency-assistance-buttons {
+        gap: 10px;
+      }
+
+      .emergency-assistance-buttons button {
+        min-height: 48px;
+        font-size: 14.5px;
+        font-weight: 600;
+        border-radius: 14px;
       }
 
       /* Mobile Bottom-Sheet Auth Modal */
@@ -4554,7 +4641,31 @@
         min-height: 44px !important;
       }
 
-      /* Category pills touch scrolling */
+      /* Assistance Chatbox Mobile Bottom Sheet */
+      .assistance-chatbox {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 85vh !important;
+        height: 85dvh !important;
+        max-height: 85vh !important;
+        max-height: 85dvh !important;
+        border-radius: 22px 22px 0 0 !important;
+        margin: 0 !important;
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.45) !important;
+        animation: auth-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        z-index: 3000 !important;
+      }
+
+      #chatbox-input {
+        font-size: 16px !important;
+      }
+
+      /* Category pills and layers control on mobile */
       .categories-bar,
       .map-categories-control {
         -webkit-overflow-scrolling: touch;
@@ -4565,10 +4676,47 @@
         display: none;
       }
 
+      .map-categories-control {
+        bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+        left: 8px !important;
+        transform: none !important;
+      }
+
+      .map-categories-panel {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        max-height: 75vh !important;
+        max-height: 75dvh !important;
+        border-radius: 22px 22px 0 0 !important;
+        padding: 16px 18px max(24px, env(safe-area-inset-bottom, 24px)) !important;
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.4) !important;
+        z-index: 2200 !important;
+        animation: auth-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      }
+
+      .map-categories-panel::before {
+        content: '';
+        display: block;
+        width: 42px;
+        height: 5px;
+        border-radius: 999px;
+        background: #dadce0;
+        margin: 0 auto 12px;
+      }
+
+      :root[data-theme="dark"] .map-categories-panel::before {
+        background: #5f6368;
+      }
+
       /* Leaflet zoom controls on mobile */
       .leaflet-bottom.leaflet-right {
-        bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
-        right: 12px !important;
+        bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+        right: 8px !important;
       }
       .leaflet-control-zoom {
         border-radius: 12px !important;
@@ -6389,6 +6537,14 @@
     const emergencyAssistanceClose = document.getElementById('emergency-assistance-close');
     if (emergencyAssistanceClose) {
       emergencyAssistanceClose.addEventListener('click', collapseSidebar);
+    }
+    if (emergencyAssistance) {
+      emergencyAssistance.addEventListener('click', function (e) {
+        const rect = emergencyAssistance.getBoundingClientRect();
+        if (e.clientY - rect.top < 30 && !e.target.closest('button, a, input, select')) {
+          collapseSidebar();
+        }
+      });
     }
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
