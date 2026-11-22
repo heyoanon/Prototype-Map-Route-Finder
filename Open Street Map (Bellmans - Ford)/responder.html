@@ -518,6 +518,15 @@
       gap: 8px;
     }
 
+    @keyframes locatingSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .locating-spin {
+      display: inline-block;
+      animation: locatingSpin 1s linear infinite;
+    }
+
     .hud-btn {
       min-height: 38px;
       padding: 0 12px;
@@ -1011,7 +1020,11 @@
       <button id="btn-refresh-user" type="button" class="hud-btn">
         <span>🔄</span> Refresh
       </button>
+      <button id="btn-device-gps" type="button" class="hud-btn" style="grid-column: 1 / -1;" title="Detect location based on where device is currently located">
+        <span id="btn-gps-icon">🎯</span> <span id="btn-gps-text">Detect Device GPS Location</span>
+      </button>
     </div>
+    <div id="responder-gps-status" style="font-size: 11px; color: #8ab4f8; margin-top: 6px; padding: 4px 8px; border-radius: 6px; background: rgba(138, 180, 248, 0.1); border: 1px solid rgba(138, 180, 248, 0.25); display: none;"></div>
 
     <!-- Dispatch Status Stepper -->
     <div class="dispatch-status-selector">
@@ -1361,8 +1374,9 @@
       }
     ];
 
-    // 1. Initialize Map
-    const initialView = [10.6951, 122.5000];
+    // 1. Initialize Map - anchored to local area, strictly relying on user device GPS when enabled
+    const defaultLocalAnchor = [10.7196, 122.5368];
+    const initialView = defaultLocalAnchor;
     const map = L.map('map', {
       zoomControl: false,
       preferCanvas: true,
@@ -1694,10 +1708,11 @@
       } catch (e) {}
 
       renderBlankClearedState();
+      const resetCenter = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
       if (!userManualZoomActive) {
-        map.setView([10.6896476, 122.4824483], 13);
+        map.setView(resetCenter, 14);
       } else {
-        map.panTo([10.6896476, 122.4824483]);
+        map.panTo(resetCenter);
       }
 
       if (window.BroadcastChannel) {
@@ -1753,8 +1768,27 @@
         if (badge) badge.textContent = 'EN ROUTE';
       }
 
-      // If no active data exists from map.html and no URL parameters, show clean blank state
+      // If no active data exists from map.html and no URL parameters, anchor to device GPS if enabled or show clean standby
       if (!rawData && !hasUrlParams) {
+        if (responderDeviceCoords) {
+          currentTrackedUser.lat = responderDeviceCoords.lat;
+          currentTrackedUser.lng = responderDeviceCoords.lng;
+          currentTrackedUser.coordsFormatted = responderDeviceCoords.lat.toFixed(4) + '° N, ' + responderDeviceCoords.lng.toFixed(4) + '° E';
+          currentTrackedUser.district = 'Detected Device Sector';
+          currentTrackedUser.scenario = '🟢 Live Device GPS Active';
+          currentTrackedUser.summary = 'Responder console positioned at detected device GPS coordinates.';
+          currentTrackedUser.tacticalAdvice = 'System anchored to your device location. Ready for incoming dispatch.';
+          activeResponderStation = {
+            name: "Mobile Unit (My Device GPS)",
+            type: currentServiceType,
+            coordinates: [responderDeviceCoords.lng, responderDeviceCoords.lat],
+            address: "Field Unit GPS Position",
+            phone: "(033) 333-1111"
+          };
+          updateUI();
+          updateMapMarkersAndRoute();
+          return;
+        }
         renderBlankClearedState();
         return;
       }
@@ -1850,6 +1884,19 @@
               closest = fac;
             }
           });
+
+          // If closest facility is > 25km away (user tested device GPS outside Iloilo city),
+          // deploy a local emergency base station nearby so the responder route stays local and never crosses oceans or countries!
+          if (minD > 25000) {
+            closest = {
+              name: "Dispatched Local Field Unit",
+              type: currentServiceType,
+              category: "Mobile Quick-Response Base",
+              coordinates: [currentTrackedUser.lng + 0.009, currentTrackedUser.lat + 0.007],
+              address: "Sector Quick-Response Corridor",
+              phone: "(033) 333-1111"
+            };
+          }
           activeResponderStation = closest;
         }
       }
@@ -2070,6 +2117,23 @@
       if (userManualZoomActive && !force) {
         return;
       }
+      const latDiff = Math.abs(bounds.getNorth() - bounds.getSouth());
+      const lngDiff = Math.abs(bounds.getEast() - bounds.getWest());
+
+      // Guard: strictly keep focus in local sector; never zoom out across oceans or to other countries
+      if (latDiff > 0.35 || lngDiff > 0.35) {
+        if (userMarker) {
+          map.setView(userMarker.getLatLng(), 15);
+        } else if (responderMarker) {
+          map.setView(responderMarker.getLatLng(), 15);
+        } else if (responderDeviceCoords) {
+          map.setView([responderDeviceCoords.lat, responderDeviceCoords.lng], 15);
+        } else {
+          map.setView(defaultLocalAnchor, 15);
+        }
+        return;
+      }
+
       const size = map.getSize();
       const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
       const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
@@ -2077,10 +2141,11 @@
       try {
         map.fitBounds(bounds, {
           paddingTopLeft: [padLeft, padTop],
-          paddingBottomRight: [25, 25]
+          paddingBottomRight: [25, 25],
+          maxZoom: 17
         });
       } catch (e) {
-        map.fitBounds(bounds, { padding: [20, 20] });
+        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 17 });
       }
     }
 
@@ -2165,6 +2230,10 @@
       if (userMarker) {
         map.flyTo(userMarker.getLatLng(), 16);
         userMarker.openPopup();
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 16);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
       }
     });
 
@@ -2172,12 +2241,24 @@
       if (responderMarker) {
         map.flyTo(responderMarker.getLatLng(), 16);
         responderMarker.openPopup();
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 16);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
       }
     });
 
     document.getElementById('btn-fit-overview').addEventListener('click', function () {
       if (userMarker && responderMarker) {
-        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker]).getBounds());
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker]).getBounds(), true);
+      } else if (userMarker) {
+        map.flyTo(userMarker.getLatLng(), 15);
+      } else if (responderMarker) {
+        map.flyTo(responderMarker.getLatLng(), 15);
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 15);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
       }
     });
 
@@ -2185,7 +2266,185 @@
       lastTrackedCoords = null;
       lastRenderedStationId = null;
       loadTrackedUser();
+      if (navigator.geolocation) {
+        requestResponderDeviceLocation({ setView: false, userInitiated: false });
+      }
     });
+
+    const btnDeviceGps = document.getElementById('btn-device-gps');
+    if (btnDeviceGps) {
+      btnDeviceGps.addEventListener('click', function () {
+        requestResponderDeviceLocation({ setView: true, userInitiated: true });
+      });
+    }
+
+    // --- Device Location & Geolocation Detection (Strictly Device GPS; No External IP API; Never Moves to Other Countries) ---
+    let responderDeviceCoords = null;
+    let isLocatingDevice = false;
+
+    function setResponderGpsStatus(msg, isError) {
+      const el = document.getElementById('responder-gps-status');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = 'block';
+      el.textContent = msg;
+      if (isError) {
+        el.style.color = '#f28b82';
+        el.style.background = 'rgba(242, 139, 130, 0.12)';
+        el.style.borderColor = 'rgba(242, 139, 130, 0.3)';
+      } else {
+        el.style.color = '#8ab4f8';
+        el.style.background = 'rgba(138, 180, 248, 0.12)';
+        el.style.borderColor = 'rgba(138, 180, 248, 0.3)';
+      }
+    }
+
+    function onResponderDeviceLocationSuccess(coords, accuracy, options) {
+      isLocatingDevice = false;
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.remove('locating-spin');
+      if (gpsText) gpsText.textContent = 'Device Location Active';
+
+      const lat = coords[1];
+      const lng = coords[0];
+      responderDeviceCoords = { lat: lat, lng: lng, accuracy: accuracy };
+
+      const formatted = lat.toFixed(4) + '° N, ' + lng.toFixed(4) + '° E';
+      setResponderGpsStatus('📍 Device GPS: ' + formatted + ' (±' + Math.round(accuracy || 10) + 'm)');
+
+      const hasStoredEmergency = !!localStorage.getItem('tracked_user_emergency');
+      if (options.setView || isMissionCleared || !hasStoredEmergency) {
+        currentTrackedUser.lat = lat;
+        currentTrackedUser.lng = lng;
+        currentTrackedUser.coordsFormatted = formatted;
+        currentTrackedUser.district = 'Current Device Sector';
+        currentTrackedUser.scenario = '🟢 Live Device GPS Active';
+        currentTrackedUser.summary = 'Device GPS location verified. Console positioned at current coordinates.';
+        currentTrackedUser.tacticalAdvice = 'System anchored to your device location. Ready for incoming dispatch.';
+
+        activeResponderStation = {
+          name: "Mobile Unit (My Device GPS)",
+          type: currentServiceType,
+          category: "Live Device GPS Responder Unit",
+          coordinates: [lng, lat],
+          address: "Real-time Device Coordinates",
+          phone: "(033) 333-1111"
+        };
+
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+
+        updateUI();
+        updateMapMarkersAndRoute();
+
+        if (!userManualZoomActive || options.userInitiated) {
+          map.flyTo([lat, lng], 15);
+        }
+      } else {
+        // If a remote caller is already tracked from map.html:
+        // Position the responder marker right at the responder's device GPS!
+        activeResponderStation = {
+          name: "Mobile Unit (My Device GPS)",
+          type: currentServiceType,
+          category: "Live Device GPS Responder Unit",
+          coordinates: [lng, lat],
+          address: "Real-time Device Coordinates",
+          phone: "(033) 333-1111"
+        };
+        updateUI();
+        updateMapMarkersAndRoute();
+        if (options.userInitiated) {
+          map.flyTo([lat, lng], 15);
+        }
+      }
+    }
+
+    function onResponderDeviceLocationFailure(reason, options) {
+      isLocatingDevice = false;
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.remove('locating-spin');
+      if (gpsText) gpsText.textContent = 'Detect Device GPS Location';
+
+      if (options.userInitiated) {
+        setResponderGpsStatus(reason || 'Device location is not enabled. Please enable location permissions on your device.', true);
+      } else {
+        console.info('Device location not enabled on startup; remaining at default local position.');
+      }
+    }
+
+    function requestResponderDeviceLocation(options) {
+      options = options || {};
+      const isUserInitiated = !!options.userInitiated;
+
+      if (isLocatingDevice) return;
+      isLocatingDevice = true;
+
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.add('locating-spin');
+      if (gpsText && isUserInitiated) gpsText.textContent = 'Detecting Device Location...';
+      if (isUserInitiated) setResponderGpsStatus('Detecting device location via GPS...');
+
+      let resolved = false;
+
+      function resolveSuccess(coords, accuracy) {
+        if (resolved) return;
+        resolved = true;
+        onResponderDeviceLocationSuccess(coords, accuracy, options);
+      }
+
+      function resolveFailure(msg) {
+        if (resolved) return;
+        resolved = true;
+        onResponderDeviceLocationFailure(msg, options);
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            if (pos && pos.coords && Number.isFinite(pos.coords.latitude) && Number.isFinite(pos.coords.longitude)) {
+              resolveSuccess([pos.coords.longitude, pos.coords.latitude], pos.coords.accuracy);
+            } else {
+              resolveFailure('Invalid coordinates received from device.');
+            }
+          },
+          function (err1) {
+            console.warn('High-accuracy GPS timed out or unavailable, trying standard accuracy:', err1.message);
+            navigator.geolocation.getCurrentPosition(
+              function (pos2) {
+                if (pos2 && pos2.coords && Number.isFinite(pos2.coords.latitude) && Number.isFinite(pos2.coords.longitude)) {
+                  resolveSuccess([pos2.coords.longitude, pos2.coords.latitude], pos2.coords.accuracy);
+                } else {
+                  resolveFailure('Invalid coordinates received from device.');
+                }
+              },
+              function (err2) {
+                console.warn('Device geolocation not enabled or unavailable:', err2.message);
+                let errorMsg = 'Device location is not enabled. Please enable location on your device to detect your position.';
+                if (err2 && err2.code === 1) {
+                  errorMsg = 'Location permission denied. Please allow location access in your browser or device settings.';
+                } else if (err2 && err2.code === 2) {
+                  errorMsg = 'Device location is currently unavailable. Please verify GPS or network location is enabled.';
+                } else if (err2 && err2.code === 3) {
+                  errorMsg = 'Location request timed out. Please verify device location is enabled.';
+                }
+                resolveFailure(errorMsg);
+              },
+              { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+            );
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+        );
+      } else {
+        resolveFailure('Geolocation is not supported by your browser.');
+      }
+    }
 
     // Mission status stepper buttons
     document.querySelectorAll('.dispatch-step-btn').forEach(function (btn) {
@@ -2263,6 +2522,11 @@
 
     // Initial load
     loadTrackedUser();
+
+    // Check browser Geolocation API - strictly rely on device geolocation enabled by user
+    if (navigator.geolocation) {
+      requestResponderDeviceLocation({ setView: false, userInitiated: false });
+    }
   </script>
 </body>
 
