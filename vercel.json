@@ -3,6 +3,9 @@
   "rewrites": [
     { "source": "/", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
     { "source": "/map", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
-    { "source": "/responder", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" }
+    { "source": "/dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
+    { "source": "/responder", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
+    { "source": "/responder-dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
+    { "source": "/responder.html", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" }
   ]
 }

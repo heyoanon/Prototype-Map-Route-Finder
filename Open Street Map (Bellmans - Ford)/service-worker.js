@@ -1,8 +1,9 @@
-const CACHE_NAME = 'map-search-shell-v10';
+const CACHE_NAME = 'map-search-shell-v11';
 const TILE_CACHE = 'map-search-tiles-v2';
 const DATA_CACHE = 'map-search-data-v1';
 const APP_SHELL = [
   './map.html',
+  './responder.html',
   './manifest.webmanifest',
   './supabase-config.js',
   './routing-config.js',

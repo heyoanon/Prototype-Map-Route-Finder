@@ -1472,6 +1472,20 @@
       color: #d93025;
     }
 
+    .service-details-action.assistance:hover {
+      background: #fce8e6;
+    }
+
+    .service-details-action.dispatch-link {
+      border-color: #1a73e8;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+
+    .service-details-action.dispatch-link:hover {
+      background: #e8f0fe;
+    }
+
     .service-details-hours {
       font-weight: 700;
     }
@@ -1527,6 +1541,20 @@
     :root[data-theme="dark"] .service-details-action.assistance {
       border-color: #f28b82;
       color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .service-details-action.assistance:hover {
+      background: #492320;
+    }
+
+    :root[data-theme="dark"] .service-details-action.dispatch-link {
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+      font-weight: 600;
+    }
+
+    :root[data-theme="dark"] .service-details-action.dispatch-link:hover {
+      background: rgba(138, 180, 248, 0.18);
     }
 
     :root[data-theme="dark"] .emergency-assistance-buttons button {
@@ -4124,6 +4152,11 @@
           }
         });
 
+        actions.push({
+          label: '🚨 Dispatch Console',
+          href: getDispatchConsoleUrl(facilityContext.name, facilityContext.coordinates, facilityType)
+        });
+
         if (facilityContext.phone) {
           actions.push({
             label: '📞 Call ' + facilityContext.phone,
@@ -4821,7 +4854,7 @@
           '</div>' +
           '<div class="responder-actions">' +
             '<button type="button" class="chat-action-btn" data-action="plot-responder-route">🗺️ View Route on Map</button>' +
-            '<a href="responder.html?lat=' + data.userLoc.coords[1] + '&lng=' + data.userLoc.coords[0] + '&district=' + encodeURIComponent(data.userLoc.districtName) + '&scenario=' + encodeURIComponent(data.scenario.title) + '" target="_blank" class="chat-action-btn secondary">📡 Open Responder Tracker</a>' +
+            '<a href="' + getDispatchConsoleUrl(data.responder.name, data.responder.coordinates, 'responder') + '" target="_blank" rel="noopener noreferrer" class="chat-action-btn secondary">📡 Open Dispatch Console</a>' +
             (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary">📞 Call ' + escapeHtml(data.responder.phone) + '</a>' : '') +
             '<a href="tel:911" class="chat-action-btn emergency">🚨 Call 911</a>' +
           '</div>' +
@@ -4854,7 +4887,7 @@
         (data.scenario && data.scenario.tacticalAdvice ? '<div class="assessment-advice-box"><strong>💡 Immediate Safety Advice:</strong><br><span class="advice-text">' + escapeHtml(data.scenario.tacticalAdvice) + '</span></div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
           '<button type="button" class="emergency-facility-route-btn" data-action="plot-responder-route" style="flex:1;">Active Route</button>' +
-          '<a href="responder.html" target="_blank" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;" title="Open live responder console">📡 Tracker</a>' +
+          '<a href="' + getDispatchConsoleUrl(data.responder.name, data.responder.coordinates, 'responder') + '" target="_blank" rel="noopener noreferrer" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;" title="Open live responder dispatch console on Vercel">📡 Dispatch</a>' +
           (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;">📞 Call</a>' : '') +
         '</div>'
       );
@@ -5663,6 +5696,29 @@
         : '';
     }
 
+    function getDispatchConsoleUrl(facilityName, coords, type) {
+      let base = 'responder.html';
+      const path = (window.location.pathname || '').toLowerCase();
+      if (path === '/' || path === '/map') {
+        base = '/dispatch';
+      }
+      const params = new URLSearchParams();
+      if (facilityName) params.set('station', facilityName);
+      if (coords && coords.length >= 2) {
+        params.set('stationLng', coords[0]);
+        params.set('stationLat', coords[1]);
+      }
+      if (type) params.set('type', type);
+      const userLoc = (typeof getDetectedUserLocation === 'function') ? getDetectedUserLocation() : null;
+      if (userLoc && userLoc.coords) {
+        params.set('lng', userLoc.coords[0]);
+        params.set('lat', userLoc.coords[1]);
+        if (userLoc.districtName) params.set('district', userLoc.districtName);
+      }
+      const qs = params.toString();
+      return qs ? (base + '?' + qs) : base;
+    }
+
     function showServiceDetails(name, categoryLabel, details, color, notice, actions) {
       serviceDetails.replaceChildren();
       serviceDetails.style.setProperty('--service-color', color);
@@ -5738,6 +5794,30 @@
       if (assistanceBtn) {
         assistanceBtn.title = 'Need Assistance';
         assistanceBtn.setAttribute('aria-label', 'Need Assistance');
+      }
+
+      const isEmergencyStation = Boolean(
+        actionType ||
+        (actions && actions.type) ||
+        /police|fire|rescue|responder|ambulance|hospital|station|precinct|drrmo/i.test((name || '') + ' ' + (categoryLabel || ''))
+      );
+
+      if (isEmergencyStation) {
+        const dispatchUrl = getDispatchConsoleUrl(name, selectedServiceCoordinates, actionType);
+        const dispatchBtn = addAction('🚨 Dispatch Console', dispatchUrl, function () {
+          broadcastUserEmergencyActivity('dispatch_console_opened', {
+            facilityName: name,
+            category: categoryLabel,
+            coordinates: selectedServiceCoordinates,
+            actionDescription: 'Opened Dispatch Console for ' + name
+          });
+        }, 'dispatch-link');
+        if (dispatchBtn) {
+          dispatchBtn.setAttribute('target', '_blank');
+          dispatchBtn.setAttribute('rel', 'noopener noreferrer');
+          dispatchBtn.title = 'Open Responder Dispatch Console on Vercel (/dispatch)';
+          dispatchBtn.setAttribute('aria-label', 'Open Responder Dispatch Console on Vercel');
+        }
       }
       serviceDetails.appendChild(actionBar);
 

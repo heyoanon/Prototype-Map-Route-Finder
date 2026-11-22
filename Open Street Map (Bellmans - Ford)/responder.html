@@ -141,6 +141,30 @@
       transition: all 0.3s ease;
     }
 
+    .hud-map-btn {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #1a73e8;
+      color: #ffffff;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .hud-map-btn:hover {
+      background: #1557b0;
+      transform: translateY(-1px);
+    }
+
+    :root[data-theme="light"] .hud-map-btn {
+      background: #1a73e8;
+      color: #ffffff;
+    }
+
     :root[data-theme="light"] .hud-badge {
       background: #fce8e6;
       color: #b3261e;
@@ -795,7 +819,10 @@
         <span class="hud-pulse-dot"></span>
         <span id="hud-main-title" class="hud-title">Responder Live Tracker</span>
       </div>
-      <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
+        <a id="hud-back-map-btn" href="map.html" class="hud-map-btn" title="Back to User Map Interface">🗺️ Map</a>
+      </div>
     </div>
 
     <!-- Live User Activity Feed Card -->
@@ -1637,6 +1664,21 @@
         if (params.get('scenario')) currentTrackedUser.scenario = params.get('scenario');
         if (params.get('summary')) currentTrackedUser.summary = params.get('summary');
         if (params.get('advice')) currentTrackedUser.tacticalAdvice = params.get('advice');
+        if (params.get('station')) {
+          const sLat = parseFloat(params.get('stationLat'));
+          const sLng = parseFloat(params.get('stationLng'));
+          activeResponderStation = {
+            name: params.get('station'),
+            coordinates: [
+              Number.isFinite(sLng) ? sLng : currentTrackedUser.lng,
+              Number.isFinite(sLat) ? sLat : currentTrackedUser.lat
+            ],
+            address: params.get('stationAddress') || 'Dispatched Emergency Station',
+            phone: params.get('phone') || '(033) 333-1111',
+            type: params.get('type') || currentServiceType || 'police'
+          };
+          stateChanged = true;
+        }
         currentTrackedUser.lastPingTime = new Date();
       }
 
