@@ -174,6 +174,87 @@
       display: block;
     }
 
+    .search-inline-button.locating-spin svg {
+      animation: spin-locating 1s linear infinite;
+      color: #1a73e8;
+    }
+
+    @keyframes spin-locating {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Modern Draggable User Device Location Pin */
+    .user-device-location-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-radar-pulse {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(26, 115, 232, 0.35);
+      animation: user-radar-ripple 2.2s infinite ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes user-radar-ripple {
+      0% {
+        transform: scale(0.5);
+        opacity: 0.95;
+      }
+      100% {
+        transform: scale(2.6);
+        opacity: 0;
+      }
+    }
+
+    .user-pin-circle {
+      position: relative;
+      z-index: 2;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #1a73e8;
+      border: 3px solid #ffffff;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+
+    .user-pin-circle:active {
+      cursor: grabbing;
+      transform: scale(1.15);
+    }
+
+    .user-location-popup {
+      font-size: 12.5px;
+      line-height: 1.4;
+      padding: 2px;
+    }
+
+    /* Route path map tooltip */
+    .route-path-tooltip {
+      background: rgba(32, 33, 36, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 5px 9px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
     .factors-toolbar {
       display: flex;
       align-items: center;
@@ -2695,32 +2776,35 @@
     const esriTrafficApiKey = typeof routingConfig.esriApiKey === 'string'
       ? routingConfig.esriApiKey.trim()
       : '';
-    const map = L.map('map', { zoomControl: false }).setView([10.6896476, 122.4824483], 14);
+    const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([10.6896476, 122.4824483], 14);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     map.createPane('routePane');
     map.getPane('routePane').style.zIndex = '650';
     map.getPane('routePane').style.pointerEvents = 'auto';
     const initialCenter = [map.getCenter().lng, map.getCenter().lat];
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      maxNativeZoom: 18,
+      maxZoom: 22,
       attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
     }).addTo(map);
     const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxNativeZoom: 17,
-      maxZoom: 19,
+      maxZoom: 22,
       attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
     });
     const topographicLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      maxNativeZoom: 17,
+      maxZoom: 22,
       attribution: 'Tiles &copy; Esri and its data providers'
     });
     const reliefLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', {
       maxNativeZoom: 13,
-      maxZoom: 19,
+      maxZoom: 22,
       attribution: 'Tiles &copy; Esri, USGS, NOAA'
     });
     const placeLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      maxNativeZoom: 18,
+      maxZoom: 22,
       pane: 'overlayPane',
       attribution: 'Labels &copy; Esri'
     }).addTo(map);
@@ -3147,7 +3231,8 @@
         'https://traffic.arcgis.com/arcgis/rest/services/World/Traffic/MapServer/tile/{z}/{y}/{x}?token=' +
         encodeURIComponent(esriTrafficApiKey),
         {
-          maxZoom: 19,
+          maxNativeZoom: 18,
+          maxZoom: 22,
           attribution: 'Traffic data &copy; Esri'
         }
       );
@@ -3500,16 +3585,19 @@
 
     if (useMyLocationBtn) {
       useMyLocationBtn.addEventListener('click', function () {
-        if (userDeviceCoords) {
+        if (typeof requestDeviceLocation === 'function') {
+          requestDeviceLocation({ setView: true, userInitiated: true, autoSearch: true });
+        } else if (userDeviceCoords) {
           sourceInput.value = 'My device location';
           routeOrigin = userDeviceCoords;
-          map.setView([userDeviceCoords[1], userDeviceCoords[0]], 15);
+          if (!userManualZoomActive) {
+            map.setView([userDeviceCoords[1], userDeviceCoords[0]], 15);
+          } else {
+            map.panTo([userDeviceCoords[1], userDeviceCoords[0]]);
+          }
           if (destinationInput.value.trim()) {
             searchDestination(destinationInput.value.trim());
           }
-        } else {
-          sourceInput.value = 'Finding location...';
-          map.locate({ setView: true, maxZoom: 15, enableHighAccuracy: true });
         }
       });
     }
@@ -3647,6 +3735,172 @@
     });
     let routeOrigin = initialCenter;
     let userLocationMarker = null;
+
+    let userManualZoomActive = false;
+    map.on('zoomstart', function (event) {
+      if (event.originalEvent) {
+        userManualZoomActive = true;
+      }
+    });
+
+    function fitMapBoundsSafely(bounds, force) {
+      if (!bounds || !bounds.isValid()) return;
+      if (userManualZoomActive && !force) {
+        return;
+      }
+      const size = map.getSize();
+      const padLeft = Math.min(380, Math.max(30, Math.floor(size.x * 0.35)));
+      const padTop = Math.min(80, Math.max(30, Math.floor(size.y * 0.15)));
+      try {
+        map.fitBounds(bounds, {
+          paddingTopLeft: [padLeft, padTop],
+          paddingBottomRight: [30, 30]
+        });
+      } catch (e) {
+        map.fitBounds(bounds, { padding: [20, 20] });
+      }
+    }
+
+    function renderUserLocationMarker(latlng, accuracy, sourceDesc) {
+      const accText = accuracy ? ' (±' + Math.round(accuracy) + 'm)' : '';
+      const popupHtml =
+        '<div class="user-location-popup">' +
+        '<strong>📍 Your Location</strong>' + accText + '<br>' +
+        '<span style="font-size:11px;color:#5f6368;">' + (sourceDesc || 'Detected GPS Location') + '</span><br>' +
+        '<small style="display:inline-block;margin-top:4px;color:#1a73e8;font-weight:600;">✋ Drag pin to fine-tune starting point</small>' +
+        '</div>';
+
+      if (userLocationMarker) {
+        userLocationMarker.setLatLng(latlng);
+        userLocationMarker.setPopupContent(popupHtml);
+      } else {
+        const userLocIcon = L.divIcon({
+          className: 'user-device-location-icon',
+          html: '<div class="user-radar-pulse"></div><div class="user-pin-circle">📍</div>',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        userLocationMarker = L.marker(latlng, {
+          icon: userLocIcon,
+          draggable: true,
+          zIndexOffset: 1200
+        }).addTo(map).bindPopup(popupHtml);
+
+        userLocationMarker.on('dragend', function (ev) {
+          const pos = ev.target.getLatLng();
+          userDeviceCoords = [pos.lng, pos.lat];
+          routeOrigin = userDeviceCoords;
+          if (sourceInput) sourceInput.value = 'My device location';
+          setLocationStatus('Using adjusted location pin (' + pos.lat.toFixed(4) + '° N, ' + pos.lng.toFixed(4) + '° E).');
+          broadcastUserEmergencyActivity('location_update', {
+            lat: pos.lat,
+            lng: pos.lng,
+            coords: pos.lat.toFixed(4) + '° N, ' + pos.lng.toFixed(4) + '° E',
+            actionDescription: 'Caller adjusted position pin on map'
+          });
+          if (destinationInput && destinationInput.value.trim()) {
+            searchDestination(destinationInput.value.trim());
+          }
+        });
+      }
+    }
+
+    function applyDetectedLocation(coords, accuracy, sourceDesc, options) {
+      options = options || {};
+      userDeviceCoords = coords;
+      routeOrigin = userDeviceCoords;
+      if (useMyLocationBtn) useMyLocationBtn.classList.remove('locating-spin');
+      if (sourceInput) sourceInput.value = 'My device location';
+
+      renderUserLocationMarker([coords[1], coords[0]], accuracy, sourceDesc);
+
+      if (options.setView || options.userInitiated) {
+        if (!userManualZoomActive) {
+          map.setView([coords[1], coords[0]], 15);
+        } else {
+          map.panTo([coords[1], coords[0]]);
+        }
+      }
+
+      setLocationStatus('Using ' + sourceDesc + ' as starting point.');
+
+      broadcastUserEmergencyActivity('location_update', {
+        lat: coords[1],
+        lng: coords[0],
+        coords: coords[1].toFixed(4) + '° N, ' + coords[0].toFixed(4) + '° E',
+        actionDescription: 'Caller position updated (' + sourceDesc + ')'
+      });
+
+      if (options.autoSearch && destinationInput && destinationInput.value.trim()) {
+        searchDestination(destinationInput.value.trim());
+      }
+    }
+
+    async function requestDeviceLocation(options) {
+      options = options || {};
+      if (useMyLocationBtn) useMyLocationBtn.classList.add('locating-spin');
+      if (sourceInput && (!sourceInput.value || /finding|detecting|my device/i.test(sourceInput.value))) {
+        sourceInput.value = 'Finding location...';
+      }
+      setLocationStatus('Detecting device location...');
+
+      let resolved = false;
+
+      function resolveSuccess(coords, accuracy, desc) {
+        if (resolved) return;
+        resolved = true;
+        applyDetectedLocation(coords, accuracy, desc, options);
+      }
+
+      function resolveFallback() {
+        if (resolved) return;
+        resolved = true;
+        // Default anchor: Mandurriao / Oton corridor (Iloilo City)
+        const fallbackCoords = [122.5368, 10.7196];
+        applyDetectedLocation(fallbackCoords, null, 'Default Location (GPS unavailable - drag pin to adjust)', options);
+      }
+
+      // Check browser Geolocation API
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            resolveSuccess([pos.coords.longitude, pos.coords.latitude], pos.coords.accuracy, 'GPS Location');
+          },
+          function (err1) {
+            console.warn('High-accuracy GPS failed or timed out, trying standard accuracy:', err1.message);
+            navigator.geolocation.getCurrentPosition(
+              function (pos2) {
+                resolveSuccess([pos2.coords.longitude, pos2.coords.latitude], pos2.coords.accuracy, 'Network Location');
+              },
+              async function (err2) {
+                console.warn('Standard geolocation failed, attempting IP fallback:', err2.message);
+                try {
+                  const ctrl = new AbortController();
+                  const tid = setTimeout(function () { ctrl.abort(); }, 3500);
+                  const resp = await fetch('https://ipapi.co/json/', { signal: ctrl.signal });
+                  clearTimeout(tid);
+                  if (resp.ok) {
+                    const ipData = await resp.json();
+                    if (Number.isFinite(ipData.latitude) && Number.isFinite(ipData.longitude)) {
+                      resolveSuccess([ipData.longitude, ipData.latitude], 2500, 'IP Location (' + (ipData.city || 'Region') + ')');
+                      return;
+                    }
+                  }
+                } catch (e) {
+                  console.warn('IP geolocation fetch failed:', e);
+                }
+                resolveFallback();
+              },
+              { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+            );
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+        );
+      } else {
+        resolveFallback();
+      }
+    }
     let hasUserInteracted = false;
     let isSidebarExpanded = false;
     let serviceDetailsRequestId = 0;
@@ -5153,8 +5407,9 @@
       locationStatus.classList.toggle('visible', Boolean(locationStatus.textContent));
     }
 
-    function collapseSidebar() {
+    function collapseSidebar(options) {
       isSidebarExpanded = false;
+      const clearRoutes = options && options.clearRoutes === true;
       const mapSearchControls = document.getElementById('map-search-controls');
       if (mapSearchControls) {
         mapSearchControls.classList.remove('sidebar-expanded');
@@ -5166,12 +5421,8 @@
         serviceRequestController.abort();
         serviceRequestController = null;
       }
-      searchRequestId += 1;
-      isSearching = false;
-      searchButton.disabled = false;
       serviceDetailsRequestId += 1;
       status.classList.remove('visible');
-      status.textContent = '';
       locationStatus.classList.remove('visible');
       form.hidden = false;
       emergencyOpenButton.hidden = false;
@@ -5179,16 +5430,24 @@
       emergencyAssistance.hidden = true;
       emergencyOpenButton.setAttribute('aria-expanded', 'false');
       selectedServiceCoordinates = null;
-      routesElement.replaceChildren();
-      routeLayers.clearLayers();
-      if (destinationMarker) {
-        map.removeLayer(destinationMarker);
-        destinationMarker = null;
+
+      if (clearRoutes) {
+        searchRequestId += 1;
+        isSearching = false;
+        searchButton.disabled = false;
+        status.textContent = '';
+        routesElement.replaceChildren();
+        routeLayers.clearLayers();
+        if (destinationMarker) {
+          map.removeLayer(destinationMarker);
+          destinationMarker = null;
+        }
+        if (originMarker) {
+          map.removeLayer(originMarker);
+          originMarker = null;
+        }
       }
-      if (originMarker) {
-        map.removeLayer(originMarker);
-        originMarker = null;
-      }
+
       document.querySelectorAll('.service-pin.expanded').forEach(function (expandedPin) {
         expandedPin.classList.remove('expanded');
       });
@@ -5576,38 +5835,17 @@
     }
 
     map.on('locationfound', function (event) {
-      userDeviceCoords = [event.latlng.lng, event.latlng.lat];
-      routeOrigin = userDeviceCoords;
-      if (sourceInput && (!sourceInput.value || sourceInput.value.indexOf('location') !== -1)) {
-        sourceInput.value = 'My device location';
-      }
-      if (userLocationMarker) {
-        userLocationMarker.setLatLng(event.latlng);
-      } else {
-        userLocationMarker = L.circleMarker(event.latlng, {
-          radius: 8,
-          color: '#fff',
-          weight: 3,
-          fillColor: '#4285f4',
-          fillOpacity: 1
-        }).addTo(map).bindPopup('Your device location');
-      }
-      if (!hasUserInteracted) {
-        map.setView(event.latlng, Math.max(map.getZoom(), 14));
-      }
-      setLocationStatus('Using device location as the route starting point.');
-
-      broadcastUserEmergencyActivity('location_update', {
-        lat: event.latlng.lat,
-        lng: event.latlng.lng,
-        coords: event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E',
-        actionDescription: 'Caller GPS position updated (' + event.latlng.lat.toFixed(4) + '° N, ' + event.latlng.lng.toFixed(4) + '° E)'
+      applyDetectedLocation([event.latlng.lng, event.latlng.lat], event.accuracy, 'GPS Location', {
+        setView: !hasUserInteracted,
+        autoSearch: false
       });
     });
 
     map.on('locationerror', function (event) {
-      console.warn('Could not determine device location:', event.message);
-      setLocationStatus('');
+      console.warn('Leaflet locate event error:', event.message);
+      if (!userDeviceCoords) {
+        requestDeviceLocation({ setView: false, userInitiated: false, autoSearch: false });
+      }
     });
 
     map.on('dragstart', markUserInteracted);
@@ -5857,15 +6095,19 @@
         directions.appendChild(message);
       }
       card.appendChild(directions);
+
+      if (isFastest) {
+        card.open = true;
+      }
+
       summary.addEventListener('click', function () {
         routesElement.querySelectorAll('.route-card').forEach(function (otherCard) {
           otherCard.classList.remove('selected');
         });
         card.classList.add('selected');
-        map.fitBounds(layer.getBounds(), {
-          paddingTopLeft: [32, 96],
-          paddingBottomRight: [32, 32]
-        });
+        if (layer && typeof layer.bringToFront === 'function') {
+          layer.bringToFront();
+        }
       });
       routesElement.appendChild(card);
     }
@@ -6035,10 +6277,9 @@
         : selectedServiceCoordinates
           ? L.latLng(selectedServiceCoordinates[1], selectedServiceCoordinates[0])
           : map.getCenter();
-      const targetZoom = Math.max(map.getZoom(), 15);
       setStatus('Loading nearby services...');
-      if (map.getZoom() !== targetZoom || map.getCenter().distanceTo(focus) > 10) {
-        map.setView(focus, targetZoom);
+      if (!userManualZoomActive && map.getZoom() < 14) {
+        map.setView(focus, 14);
       } else {
         loadServices();
       }
@@ -6391,9 +6632,8 @@
       if (emergencyStatusEl) emergencyStatusEl.textContent = statusMsg;
 
       const focus = L.latLng(origin[1], origin[0]);
-      const targetZoom = Math.max(map.getZoom(), 14);
-      if (map.getZoom() !== targetZoom || map.getCenter().distanceTo(focus) > 50) {
-        map.setView(focus, targetZoom);
+      if (!userManualZoomActive && map.getZoom() < 14) {
+        map.setView(focus, 14);
       }
       loadServices();
     }
@@ -7190,26 +7430,77 @@
           routes = routes.slice().sort(function (a, b) { return a.duration - b.duration; });
         }
 
-        routes.forEach(function (route, index) {
-          const isPrimary = index === 0;
-          const color = route.isBlocked ? '#d93025' : isPrimary ? '#188038' : ['#1684ff', '#ffb300', '#e04f9b'][index % 3];
+        const routeLayerMap = [];
+        let primaryLayer = null;
+
+        // Render alternative routes first so they sit underneath, then render fastest on top
+        for (let i = routes.length - 1; i >= 0; i--) {
+          const route = routes[i];
+          const isPrimary = (i === 0);
+          const color = route.isBlocked ? '#d93025' : isPrimary ? '#188038' : ['#1684ff', '#ffb300', '#e04f9b'][(i - 1) % 3];
+
+          // High-contrast casing outline for fastest route
+          if (isPrimary) {
+            L.geoJSON(route.geometry, {
+              pane: 'routePane',
+              style: {
+                color: '#ffffff',
+                weight: 12,
+                opacity: 0.92,
+                lineCap: 'round',
+                lineJoin: 'round'
+              },
+              interactive: false
+            }).addTo(routeLayers);
+          }
+
           const layer = L.geoJSON(route.geometry, {
             pane: 'routePane',
             style: {
               color: color,
               weight: isPrimary ? 8 : 5,
-              opacity: isPrimary ? 0.98 : 0.85,
-              dashArray: route.isBlocked ? '6, 6' : null
+              opacity: isPrimary ? 1.0 : 0.65,
+              dashArray: route.isBlocked ? '6, 6' : null,
+              lineCap: 'round',
+              lineJoin: 'round'
             },
-            bubblingMouseEvents: false
+            interactive: true
           }).addTo(routeLayers);
-          addRouteCard(route, index, layer, usesLiveTraffic, Boolean(routePurpose));
+
+          if (isPrimary) {
+            primaryLayer = layer;
+            layer.bringToFront();
+          }
+
+          const tooltipText = (isPrimary ? '⚡ Fastest Route: ' : ('Alternative ' + (i + 1) + ': ')) +
+            formatDuration(route.duration) + ' (' + formatDistance(route.distance) + ')';
+          layer.bindTooltip(tooltipText, { sticky: true, className: 'route-path-tooltip' });
+
+          routeLayerMap[i] = layer;
+        }
+
+        routes.forEach(function (route, index) {
+          const cardLayer = routeLayerMap[index];
+          addRouteCard(route, index, cardLayer, usesLiveTraffic, Boolean(routePurpose));
+          if (cardLayer) {
+            cardLayer.on('click', function (e) {
+              L.DomEvent.stopPropagation(e);
+              const card = routesElement.children[index];
+              if (card) {
+                routesElement.querySelectorAll('.route-card').forEach(function (otherCard) {
+                  otherCard.classList.remove('selected');
+                });
+                card.classList.add('selected');
+                card.open = true;
+                if (typeof cardLayer.bringToFront === 'function') {
+                  cardLayer.bringToFront();
+                }
+              }
+            });
+          }
         });
 
-        map.fitBounds(routeLayers.getBounds(), {
-          paddingTopLeft: [32, 96],
-          paddingBottomRight: [32, 32]
-        });
+        fitMapBoundsSafely(routeLayers.getBounds());
 
         const activeRoute = routes[0];
         let factorStatus = '';
@@ -7255,10 +7546,7 @@
             }).addTo(routeLayers);
             addRouteCard(route, index, layer, false, Boolean(routePurpose));
           });
-          map.fitBounds(routeLayers.getBounds(), {
-            paddingTopLeft: [32, 96],
-            paddingBottomRight: [32, 32]
-          });
+          fitMapBoundsSafely(routeLayers.getBounds());
           setStatus('Showing a previously saved offline route.');
         } else {
           setStatus(error.message || 'Could not find routes. Please try again.');
@@ -7354,21 +7642,27 @@
       searchDestination(destination, [event.latlng.lng, event.latlng.lat]);
     });
 
+    destinationInput.addEventListener('input', function () {
+      if (!destinationInput.value.trim()) {
+        routeLayers.clearLayers();
+        routesElement.replaceChildren();
+        if (destinationMarker) {
+          map.removeLayer(destinationMarker);
+          destinationMarker = null;
+        }
+        setStatus('');
+      }
+    });
+
     map.on('click', function (event) {
       if (isAddingIncident) {
         handleMapClickForIncident(event);
         return;
       }
-      collapseSidebar();
+      collapseSidebar({ clearRoutes: false });
     });
     map.on('moveend', scheduleServiceRefresh);
-    map.locate({
-      setView: false,
-      maxZoom: 16,
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000
-    });
+    requestDeviceLocation({ setView: false, userInitiated: false, autoSearch: false });
     initializeAccount();
     loadServices();
 

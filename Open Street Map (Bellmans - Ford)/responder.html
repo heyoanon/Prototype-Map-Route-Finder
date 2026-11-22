@@ -1235,10 +1235,18 @@
     const initialView = [10.6951, 122.5000];
     const map = L.map('map', {
       zoomControl: false,
-      preferCanvas: true
+      preferCanvas: true,
+      maxZoom: 22
     }).setView(initialView, 14);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    let userManualZoomActive = false;
+    map.on('zoomstart', function (event) {
+      if (event.originalEvent) {
+        userManualZoomActive = true;
+      }
+    });
 
     // Ensure map tiles and dimensions resize accurately
     map.whenReady(function () {
@@ -1255,7 +1263,8 @@
     const satelliteLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
-        maxZoom: 19,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
       }
     );
@@ -1263,7 +1272,7 @@
     // 2. Terrain Map (OpenTopoMap)
     const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxNativeZoom: 17,
-      maxZoom: 19,
+      maxZoom: 22,
       subdomains: 'abc',
       attribution: 'Map data: &copy; OpenStreetMap, SRTM | Map style: &copy; OpenTopoMap'
     });
@@ -1272,7 +1281,8 @@
     const topographicLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
       {
-        maxZoom: 19,
+        maxNativeZoom: 17,
+        maxZoom: 22,
         attribution: 'Tiles &copy; Esri and its data providers'
       }
     );
@@ -1282,7 +1292,7 @@
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
       {
         maxNativeZoom: 13,
-        maxZoom: 19,
+        maxZoom: 22,
         attribution: 'Tiles &copy; Esri, USGS, NOAA'
       }
     );
@@ -1295,7 +1305,8 @@
     const placeLabelsLayer = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
       {
-        maxZoom: 19,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         pane: 'overlayPane',
         attribution: 'Labels &copy; Esri'
       }
@@ -1308,7 +1319,8 @@
         'https://traffic.arcgis.com/arcgis/rest/services/World/Traffic/MapServer/tile/{z}/{y}/{x}?token=' +
         encodeURIComponent(esriTrafficApiKey),
         {
-          maxZoom: 19,
+          maxNativeZoom: 18,
+          maxZoom: 22,
           attribution: 'Traffic data &copy; Esri'
         }
       );
@@ -1552,7 +1564,11 @@
       } catch (e) {}
 
       renderBlankClearedState();
-      map.setView([10.6896476, 122.4824483], 13);
+      if (!userManualZoomActive) {
+        map.setView([10.6896476, 122.4824483], 13);
+      } else {
+        map.panTo([10.6896476, 122.4824483]);
+      }
 
       if (window.BroadcastChannel) {
         try {
@@ -1904,8 +1920,11 @@
       await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
     }
 
-    function fitMapBoundsSafely(bounds) {
+    function fitMapBoundsSafely(bounds, force) {
       if (!bounds || !bounds.isValid()) return;
+      if (userManualZoomActive && !force) {
+        return;
+      }
       const size = map.getSize();
       const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
       const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
@@ -1913,11 +1932,10 @@
       try {
         map.fitBounds(bounds, {
           paddingTopLeft: [padLeft, padTop],
-          paddingBottomRight: [25, 25],
-          maxZoom: 16
+          paddingBottomRight: [25, 25]
         });
       } catch (e) {
-        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
+        map.fitBounds(bounds, { padding: [20, 20] });
       }
     }
 
