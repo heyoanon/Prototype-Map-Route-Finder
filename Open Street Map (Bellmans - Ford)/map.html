@@ -3867,11 +3867,15 @@
 
     async function requestDeviceLocation(options) {
       options = options || {};
-      if (useMyLocationBtn) useMyLocationBtn.classList.add('locating-spin');
-      if (sourceInput && (!sourceInput.value || /finding|detecting|my device/i.test(sourceInput.value))) {
-        sourceInput.value = 'Finding location...';
+      const isUserInitiated = !!options.userInitiated;
+
+      if (isUserInitiated) {
+        if (useMyLocationBtn) useMyLocationBtn.classList.add('locating-spin');
+        if (sourceInput && (!sourceInput.value || /finding|detecting/i.test(sourceInput.value))) {
+          sourceInput.value = 'Detecting device location...';
+        }
+        setLocationStatus('Detecting device location...');
       }
-      setLocationStatus('Detecting device location...');
 
       let resolved = false;
 
@@ -3881,44 +3885,53 @@
         applyDetectedLocation(coords, accuracy, desc, options);
       }
 
-      function resolveFallback() {
+      function resolveFailure(reason) {
         if (resolved) return;
         resolved = true;
-        // Default anchor: Mandurriao / Oton corridor (Iloilo City)
-        const fallbackCoords = [122.5368, 10.7196];
-        applyDetectedLocation(fallbackCoords, null, 'Default Location (GPS unavailable - drag pin to adjust)', options);
+        if (useMyLocationBtn) useMyLocationBtn.classList.remove('locating-spin');
+        if (isUserInitiated) {
+          if (sourceInput && /detecting/i.test(sourceInput.value)) {
+            sourceInput.value = '';
+          }
+          const msg = reason || 'Device location is not enabled. Please enable location permissions on your device to detect your position.';
+          setLocationStatus(msg);
+          setStatus(msg);
+        } else {
+          console.info('Device location not enabled on startup; remaining at default local position.');
+        }
       }
 
-      // Check browser Geolocation API
+      // Check browser Geolocation API - rely strictly on device geolocation enabled by user
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           function (pos) {
-            resolveSuccess([pos.coords.longitude, pos.coords.latitude], pos.coords.accuracy, 'GPS Location');
+            if (pos && pos.coords && Number.isFinite(pos.coords.latitude) && Number.isFinite(pos.coords.longitude)) {
+              resolveSuccess([pos.coords.longitude, pos.coords.latitude], pos.coords.accuracy, 'Device GPS Location');
+            } else {
+              resolveFailure('Invalid coordinates received from device.');
+            }
           },
           function (err1) {
             console.warn('High-accuracy GPS failed or timed out, trying standard accuracy:', err1.message);
             navigator.geolocation.getCurrentPosition(
               function (pos2) {
-                resolveSuccess([pos2.coords.longitude, pos2.coords.latitude], pos2.coords.accuracy, 'Network Location');
-              },
-              async function (err2) {
-                console.warn('Standard geolocation failed, attempting IP fallback:', err2.message);
-                try {
-                  const ctrl = new AbortController();
-                  const tid = setTimeout(function () { ctrl.abort(); }, 3500);
-                  const resp = await fetch('https://ipapi.co/json/', { signal: ctrl.signal });
-                  clearTimeout(tid);
-                  if (resp.ok) {
-                    const ipData = await resp.json();
-                    if (Number.isFinite(ipData.latitude) && Number.isFinite(ipData.longitude)) {
-                      resolveSuccess([ipData.longitude, ipData.latitude], 2500, 'IP Location (' + (ipData.city || 'Region') + ')');
-                      return;
-                    }
-                  }
-                } catch (e) {
-                  console.warn('IP geolocation fetch failed:', e);
+                if (pos2 && pos2.coords && Number.isFinite(pos2.coords.latitude) && Number.isFinite(pos2.coords.longitude)) {
+                  resolveSuccess([pos2.coords.longitude, pos2.coords.latitude], pos2.coords.accuracy, 'Device Network Location');
+                } else {
+                  resolveFailure('Invalid coordinates received from device.');
                 }
-                resolveFallback();
+              },
+              function (err2) {
+                console.warn('Device geolocation not enabled or unavailable:', err2.message);
+                let errorMsg = 'Device location is not enabled. Please enable location on your device to detect your position.';
+                if (err2 && err2.code === 1) {
+                  errorMsg = 'Location permission denied. Please allow location access in your browser or device settings.';
+                } else if (err2 && err2.code === 2) {
+                  errorMsg = 'Device location is currently unavailable. Please verify GPS or network location is enabled.';
+                } else if (err2 && err2.code === 3) {
+                  errorMsg = 'Location request timed out. Please verify device location is enabled.';
+                }
+                resolveFailure(errorMsg);
               },
               { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
             );
@@ -3926,7 +3939,7 @@
           { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
         );
       } else {
-        resolveFallback();
+        resolveFailure('Geolocation is not supported by your browser.');
       }
     }
     let hasUserInteracted = false;
@@ -5898,7 +5911,7 @@
 
     map.on('locationfound', function (event) {
       applyDetectedLocation([event.latlng.lng, event.latlng.lat], event.accuracy, 'GPS Location', {
-        setView: !hasUserInteracted,
+        setView: false,
         autoSearch: false
       });
     });
