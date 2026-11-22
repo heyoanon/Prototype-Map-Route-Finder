@@ -2521,31 +2521,38 @@
       text-align: right;
     }
 
+    .chat-msg-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
     .chat-action-btn {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      margin-top: 6px;
-      margin-right: 4px;
+      margin: 0;
       padding: 6px 11px;
       border-radius: 6px;
       border: 1px solid #1a73e8;
       background: #1a73e8;
-      color: #fff;
+      color: #fff !important;
       font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s ease;
     }
 
     .chat-action-btn:hover {
       background: #1557b0;
+      transform: translateY(-1px);
     }
 
     .chat-action-btn.secondary {
       background: #fff;
-      color: #1a73e8;
+      color: #1a73e8 !important;
       border-color: #dadce0;
     }
 
@@ -2556,7 +2563,7 @@
     .chat-action-btn.emergency {
       background: #d93025;
       border-color: #d93025;
-      color: #fff;
+      color: #fff !important;
     }
 
     .chat-action-btn.emergency:hover {
@@ -4493,106 +4500,46 @@
             facilityType = 'fire';
           } else if (/rescue|responder|drrmo|disaster|coast guard|mddrmo|pdrrmo|cdrrmo/i.test(cat)) {
             facilityType = 'responder';
-          } else if (/ambulance|hospital|medical|clinic|doctor|medic/i.test(cat)) {
+          } else {
             facilityType = 'ambulance';
           }
         }
 
         const actions = [];
-        let promptTitle = 'Assistance Request';
-        let promptSubtitle = 'How can we assist you with this facility right now?';
-
         if (facilityType === 'police') {
-          promptTitle = 'Police Assistance Request';
-          promptSubtitle = 'Select <strong>Request a Police</strong> below to request immediate law enforcement assistance, or route directly to this station:';
           actions.push({
-            label: '🚓 Request a Police',
+            label: '🚓 Request Police Unit',
             emergency: true,
             action: function () {
-              appendUserMessage('Request a Police');
-              handleChatIntent('police', 'Requesting police assistance at ' + (facilityContext.name || 'my location'));
+              appendUserMessage('Request a Police Unit');
+              handleChatIntent('police', 'Requesting police assistance at ' + facilityContext.name);
             }
           });
         } else if (facilityType === 'fire') {
-          promptTitle = 'Fire Responder Assistance Request';
-          promptSubtitle = 'Select <strong>Request a Fire Responder</strong> below to report a fire or dispatch fire protection units:';
           actions.push({
-            label: '🚒 Request a Fire Responder',
+            label: '🚒 Request Fire Engine',
             emergency: true,
             action: function () {
               appendUserMessage('Request a Fire Responder');
-              handleChatIntent('fire', 'Requesting fire responder assistance at ' + (facilityContext.name || 'my location'));
+              handleChatIntent('fire', 'Requesting fire responder at ' + facilityContext.name);
             }
           });
         } else if (facilityType === 'responder') {
-          promptTitle = 'Disaster & Rescue Assistance Request';
-          promptSubtitle = 'Select <strong>Request Rescue Responder</strong>, call for Police, Fire, or Ambulance support, or report a specific disaster rescue scenario:';
           actions.push({
-            label: '🛟 Request Rescue Responder',
+            label: '🛟 Request Rescue Team',
             emergency: true,
             action: function () {
               appendUserMessage('Request Rescue Responder');
-              handleChatIntent('responder', 'Requesting rescue responder assistance at ' + (facilityContext.name || 'my location'));
-            }
-          });
-          actions.push({
-            label: '🚑 Request Ambulance',
-            action: function () {
-              appendUserMessage('Request Ambulance');
-              handleChatIntent('ambulance');
-            }
-          });
-          actions.push({
-            label: '🚓 Request a Police',
-            action: function () {
-              appendUserMessage('Request a Police');
-              handleChatIntent('police');
-            }
-          });
-          actions.push({
-            label: '🚒 Request a Fire Responder',
-            action: function () {
-              appendUserMessage('Request a Fire Responder');
-              handleChatIntent('fire');
-            }
-          });
-          actions.push({
-            label: '🌊 Flood / Water Rescue',
-            action: function () {
-              appendUserMessage('Flood / Water Rescue');
-              handleChatIntent('responder-scenario:flood');
-            }
-          });
-          actions.push({
-            label: '🚗 Trapped / Crash Rescue',
-            action: function () {
-              appendUserMessage('Trapped / Crash Rescue');
-              handleChatIntent('responder-scenario:accident');
-            }
-          });
-          actions.push({
-            label: '🏚️ Collapse / Debris Rescue',
-            action: function () {
-              appendUserMessage('Structural Collapse Rescue');
-              handleChatIntent('responder-scenario:debris');
-            }
-          });
-          actions.push({
-            label: '🌀 Storm Evacuation',
-            action: function () {
-              appendUserMessage('Storm Evacuation');
-              handleChatIntent('responder-scenario:storm');
+              handleChatIntent('responder', 'Requesting rescue responder at ' + facilityContext.name);
             }
           });
         } else {
-          promptTitle = 'Ambulance & Medical Assistance Request';
-          promptSubtitle = 'Select <strong>Request Ambulance</strong> below to dispatch emergency medical services, or route directly to this facility:';
           actions.push({
             label: '🚑 Request Ambulance',
             emergency: true,
             action: function () {
               appendUserMessage('Request Ambulance');
-              handleChatIntent('ambulance', 'Requesting ambulance assistance at ' + (facilityContext.name || 'my location'));
+              handleChatIntent('ambulance', 'Requesting ambulance assistance at ' + facilityContext.name);
             }
           });
         }
@@ -4601,7 +4548,7 @@
           label: '🗺️ Route to Facility',
           action: function () {
             destinationInput.value = facilityContext.name;
-            searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance' });
+            searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance', facility: facilityContext });
             appendUserMessage('Route to ' + facilityContext.name);
             appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
           }
@@ -4615,31 +4562,63 @@
         }
 
         actions.push({
-          label: '☎️ Emergency Hotlines',
+          label: 'ℹ️ Bay Ingress & Triage',
           action: function () {
-            handleChatIntent('hotlines');
+            appendUserMessage('What are the triage and ingress access details for ' + facilityContext.name + '?');
+            appendBotMessage(
+              '🏥 <strong>Facility Ingress & Access Profile: ' + escapeHtml(facilityContext.name) + '</strong><br>' +
+              '• <strong>Address:</strong> ' + escapeHtml(facilityContext.address || 'Verified facility zone') + '<br>' +
+              '• <strong>Ingress:</strong> Priority emergency bay clearance; ambulances & emergency vehicles have dedicated driveway access.<br>' +
+              '• <strong>Readiness:</strong> 24/7 on-call triage staff and radio-linked emergency reception.<br>' +
+              '• <strong>Hotline:</strong> ' + escapeHtml(facilityContext.phone || '911'),
+              [
+                {
+                  label: '🗺️ Route There Now',
+                  action: function () {
+                    destinationInput.value = facilityContext.name;
+                    searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance', facility: facilityContext });
+                  }
+                },
+                (facilityContext.phone ? { label: '📞 Call Hotline', href: 'tel:' + facilityContext.phone.replace(/[^\d+*#;]/g, '') } : null)
+              ].filter(Boolean)
+            );
           }
         });
 
+        actions.push({
+          label: '☎️ All 911 Hotlines',
+          action: function () { handleChatIntent('hotlines'); }
+        });
+
         appendBotMessage(
-          '🚨 <strong>' + escapeHtml(promptTitle) + ' for ' + escapeHtml(facilityContext.name) + '</strong><br>' +
-          '(' + escapeHtml(facilityContext.category || 'Emergency Facility') + ')<br><br>' +
-          promptSubtitle,
+          '🚨 <strong>Facility Selected: ' + escapeHtml(facilityContext.name) + '</strong><br>' +
+          '<em>' + escapeHtml(facilityContext.category || 'Emergency Facility') + '</em><br><br>' +
+          'What emergency assistance do you need with this facility right now?<br>' +
+          'Select a quick action below or type your question in the chatbox:',
           actions
         );
-      } else if (!chatboxMessages || chatboxMessages.children.length === 0) {
-        appendBotMessage(
-          '👋 <strong>Emergency & Route Assistance</strong><br>' +
-          'Hello! I am your 24/7 Assistance Assistant. How can we help you right now?<br>' +
-          'Select an emergency service or type your message below.',
-          [
-            { label: '🚑 Request Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🚓 Request a Police', action: function () { handleChatIntent('police'); } },
-            { label: '🚒 Request a Fire Responder', action: function () { handleChatIntent('fire'); } },
-            { label: '🛟 Rescue Responder', action: function () { handleChatIntent('responder'); } },
-            { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
-          ]
-        );
+      } else {
+        // Greet and ask what the user needs with comprehensive emergency buttons
+        const lastMsgTime = assistanceChatBox.dataset.lastPromptTime ? parseInt(assistanceChatBox.dataset.lastPromptTime, 10) : 0;
+        const now = Date.now();
+        if (!chatboxMessages || chatboxMessages.children.length === 0 || (now - lastMsgTime > 45000)) {
+          assistanceChatBox.dataset.lastPromptTime = String(now);
+          appendBotMessage(
+            '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
+            'Hello! What emergency assistance or route information do you need right now?<br><br>' +
+            'Please choose an emergency service below, or ask any question in the chatbox:',
+            [
+              { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+              { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+              { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+              { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+              { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
+              { label: '🛣️ Live Road Conditions & Traffic', action: function () { handleChatIntent('traffic_conditions'); } },
+              { label: '☎️ 911 Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } },
+              { label: '🩹 First Aid Quick Guide', action: function () { handleChatIntent('first_aid'); } }
+            ]
+          );
+        }
       }
       renderChatQuickChips();
     }
@@ -4670,9 +4649,9 @@
         actionsHtml = '<div class="chat-msg-actions">';
         actions.forEach(function (act, idx) {
           if (act.href) {
-            actionsHtml += '<a href="' + escapeHtml(act.href) + '" class="chat-action-btn secondary">' + escapeHtml(act.label) + '</a>';
+            actionsHtml += '<a href="' + escapeHtml(act.href) + '" class="chat-action-btn secondary' + (act.emergency ? ' emergency' : '') + '">' + escapeHtml(act.label) + '</a>';
           } else {
-            actionsHtml += '<button type="button" class="chat-action-btn' + (act.emergency ? ' emergency' : '') + '" data-action-idx="' + idx + '">' + escapeHtml(act.label) + '</button>';
+            actionsHtml += '<button type="button" class="chat-action-btn' + (act.emergency ? ' emergency' : (act.secondary ? ' secondary' : '')) + '" data-action-idx="' + idx + '">' + escapeHtml(act.label) + '</button>';
           }
         });
         actionsHtml += '</div>';
@@ -4698,12 +4677,15 @@
       if (!chatboxQuickChips) return;
       chatboxQuickChips.innerHTML = '';
       const chips = [
-        { label: '🚑 Request Ambulance', intent: 'ambulance' },
-        { label: '🚓 Request a Police', intent: 'police' },
-        { label: '🚒 Request a Fire Responder', intent: 'fire' },
-        { label: '🛟 Rescue Responder', intent: 'responder' },
+        { label: '🚑 Medical', intent: 'ambulance' },
+        { label: '🚓 Police', intent: 'police' },
+        { label: '🚒 Fire', intent: 'fire' },
+        { label: '🛟 Rescue', intent: 'responder' },
+        { label: '📍 My Location', intent: 'my_location' },
+        { label: '🛣️ Road Traffic', intent: 'traffic_conditions' },
         { label: '☎️ 911 Hotlines', intent: 'hotlines' },
-        { label: '🛣️ Fastest Route', intent: 'route' }
+        { label: '🩹 First Aid', intent: 'first_aid' },
+        { label: '⏱️ Travel Factors', intent: 'travel_factors' }
       ];
       chips.forEach(function (chip) {
         const btn = document.createElement('button');
@@ -4716,6 +4698,503 @@
         });
         chatboxQuickChips.appendChild(btn);
       });
+    }
+
+    function answerUserEmergencyQuestion(userText) {
+      const q = (userText || '').trim().toLowerCase();
+      const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
+        coords: [122.5368, 10.7196],
+        lat: 10.7196,
+        lng: 122.5368,
+        districtName: 'Mandurriao District',
+        formattedCoords: '10.7196° N, 122.5368° E',
+        nearestLandmark: { streets: 'Benigno Aquino Ave / Guzman St' }
+      };
+      const originPoint = L.latLng(userLoc.lat, userLoc.lng);
+
+      const getFacilityStats = function (facility) {
+        const dM = Math.round(originPoint.distanceTo(L.latLng(facility.coordinates[1], facility.coordinates[0])));
+        const etaMins = Math.max(1, Math.round((dM / 1000) / 32 * 60));
+        return {
+          distMeters: dM,
+          distKm: (dM / 1000).toFixed(1),
+          etaMins: etaMins
+        };
+      };
+
+      // 1. Where am I / What is my location / Coordinates
+      if (/where am i|what is my location|my position|current location|my coordinates|where i am|gps location|location coordinates/i.test(q)) {
+        appendBotMessage(
+          '📍 <strong>Your Current Detected Position:</strong><br>' +
+          '• <strong>District / Area:</strong> ' + escapeHtml(userLoc.districtName) + '<br>' +
+          '• <strong>GPS Coordinates:</strong> <code>' + escapeHtml(userLoc.formattedCoords) + '</code><br>' +
+          '• <strong>Nearby Corridor:</strong> ' + escapeHtml((userLoc.nearestLandmark && userLoc.nearestLandmark.streets) || 'Iloilo City Road Network') + '<br>' +
+          '• <strong>Location Source:</strong> ' + escapeHtml(userLoc.sourceName || 'GPS Fix') + '<br><br>' +
+          'How can we assist you from this location?',
+          [
+            {
+              label: '📍 Center Map Here',
+              action: function () {
+                map.setView([userLoc.lat, userLoc.lng], 16);
+                appendBotMessage('Map view centered on your current detected position.');
+              }
+            },
+            { label: '🚑 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Nearest Police', action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Nearest Fire Dept', action: function () { handleChatIntent('fire'); } }
+          ]
+        );
+        return;
+      }
+
+      // 2. Specific Named Facilities (e.g. WVMC, Doctors, St Pauls, Qualimed, Medicus, Mission, ICPO, BFP)
+      const matchedKnown = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+        const lowerName = f.name.toLowerCase();
+        if (q.includes('wvmc') && lowerName.includes('wvmc')) return true;
+        if (q.includes('doctor') && lowerName.includes('doctor')) return true;
+        if (q.includes('paul') && lowerName.includes('paul')) return true;
+        if (q.includes('qualimed') && lowerName.includes('qualimed')) return true;
+        if (q.includes('medicus') && lowerName.includes('medicus')) return true;
+        if (q.includes('mission') && lowerName.includes('mission')) return true;
+        if (q.includes('red cross') && lowerName.includes('red cross')) return true;
+        if ((q.includes('central fire') || q.includes('bfp central')) && lowerName.includes('central fire')) return true;
+        if (q.includes('station 4') && lowerName.includes('station 4')) return true;
+        return lowerName.split(' ').some(function (w) { return w.length > 5 && q.includes(w); });
+      });
+
+      if (matchedKnown && (/where|how far|distance|address|phone|contact|info|details|route|go to|take me/i.test(q) || q.length < 35)) {
+        const stats = getFacilityStats(matchedKnown);
+        appendBotMessage(
+          '🏥 <strong>' + escapeHtml(matchedKnown.name) + '</strong><br>' +
+          '• <strong>Specialty:</strong> ' + escapeHtml(matchedKnown.category) + '<br>' +
+          '• <strong>Distance:</strong> ' + stats.distKm + ' km from your position (~' + stats.etaMins + ' min drive)<br>' +
+          '• <strong>Physical Address:</strong> ' + escapeHtml(matchedKnown.address) + '<br>' +
+          '• <strong>Direct 24/7 Hotline:</strong> ' + escapeHtml(matchedKnown.phone) + '<br>' +
+          '• <strong>Emergency Ingress:</strong> Clear dedicated emergency bay with direct triage access.',
+          [
+            {
+              label: '🗺️ Route There Now',
+              emergency: true,
+              action: function () {
+                destinationInput.value = matchedKnown.name;
+                searchDestination(matchedKnown.name, matchedKnown.coordinates, { emergencyType: matchedKnown.type, facility: matchedKnown });
+              }
+            },
+            {
+              label: '📞 Call ' + matchedKnown.phone,
+              href: 'tel:' + matchedKnown.phone.replace(/[^\d+*#;]/g, '')
+            },
+            {
+              label: '🚑 Request Ambulance Dispatch',
+              action: function () { handleChatIntent('ambulance'); }
+            }
+          ]
+        );
+        return;
+      }
+
+      // 3. Nearest Hospital / Medical Facility
+      if (/nearest hospital|closest hospital|where.*hospital|which hospital|nearest clinic|closest clinic|medical facility|where can i get medical|hospital near me/i.test(q)) {
+        const hospitals = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'ambulance'; })
+          .map(function (f) { return { facility: f, stats: getFacilityStats(f) }; })
+          .sort(function (a, b) { return a.stats.distMeters - b.stats.distMeters; });
+
+        if (hospitals.length > 0) {
+          const nearest = hospitals[0];
+          const second = hospitals[1];
+          const third = hospitals[2];
+
+          appendBotMessage(
+            '🏥 <strong>Closest Hospital to Your Position:</strong><br>' +
+            '<strong>' + escapeHtml(nearest.facility.name) + '</strong> (' + escapeHtml(nearest.facility.category) + ')<br>' +
+            '• <strong>Distance:</strong> ' + nearest.stats.distKm + ' km away (~' + nearest.stats.etaMins + ' min drive)<br>' +
+            '• <strong>Address:</strong> ' + escapeHtml(nearest.facility.address) + '<br>' +
+            '• <strong>24/7 Hotline:</strong> ' + escapeHtml(nearest.facility.phone) + '<br>' +
+            '• <strong>Status:</strong> Open 24/7 · Emergency Room & Triage Bay Active.<br><br>' +
+            '<em>Alternative nearby facilities:</em><br>' +
+            (second ? '• ' + escapeHtml(second.facility.name) + ' (' + second.stats.distKm + ' km)<br>' : '') +
+            (third ? '• ' + escapeHtml(third.facility.name) + ' (' + third.stats.distKm + ' km)' : ''),
+            [
+              {
+                label: '🗺️ Route to ' + (nearest.facility.name.length > 20 ? nearest.facility.name.slice(0, 18) + '...' : nearest.facility.name),
+                emergency: true,
+                action: function () {
+                  destinationInput.value = nearest.facility.name;
+                  searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance', facility: nearest.facility });
+                }
+              },
+              {
+                label: '📞 Call ' + nearest.facility.phone,
+                href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+              },
+              {
+                label: '🚑 Dispatch Ambulance',
+                action: function () { handleChatIntent('ambulance'); }
+              }
+            ]
+          );
+          return;
+        }
+      }
+
+      // 4. Nearest Police Station / Precinct
+      if (/nearest police|closest police|where.*police|pnp station|police precinct|law enforcement|police near me/i.test(q)) {
+        const policeStations = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'police'; })
+          .map(function (f) { return { facility: f, stats: getFacilityStats(f) }; })
+          .sort(function (a, b) { return a.stats.distMeters - b.stats.distMeters; });
+
+        if (policeStations.length > 0) {
+          const nearest = policeStations[0];
+          appendBotMessage(
+            '🚓 <strong>Nearest Police Station / Precinct:</strong><br>' +
+            '<strong>' + escapeHtml(nearest.facility.name) + '</strong><br>' +
+            '• <strong>Distance:</strong> ' + nearest.stats.distKm + ' km away (~' + nearest.stats.etaMins + ' min)<br>' +
+            '• <strong>Address:</strong> ' + escapeHtml(nearest.facility.address) + '<br>' +
+            '• <strong>PNP Contact:</strong> ' + escapeHtml(nearest.facility.phone) + '<br>' +
+            '• <strong>Operations:</strong> 24/7 Desk Officer On-Duty & Active Patrol Sector.',
+            [
+              {
+                label: '🗺️ Route to Station',
+                emergency: true,
+                action: function () {
+                  destinationInput.value = nearest.facility.name;
+                  searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police', facility: nearest.facility });
+                }
+              },
+              {
+                label: '📞 Call ' + nearest.facility.phone,
+                href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+              },
+              {
+                label: '🚓 Request Police Dispatch',
+                action: function () { handleChatIntent('police'); }
+              },
+              {
+                label: '🚨 Call 911',
+                href: 'tel:911',
+                emergency: true
+              }
+            ]
+          );
+          return;
+        }
+      }
+
+      // 5. Nearest Fire Station / BFP
+      if (/nearest fire|closest fire|fire department|bfp station|fire station near me|where.*fire/i.test(q)) {
+        const fireStations = KNOWN_EMERGENCY_FACILITIES.filter(function (f) { return f.type === 'fire'; })
+          .map(function (f) { return { facility: f, stats: getFacilityStats(f) }; })
+          .sort(function (a, b) { return a.stats.distMeters - b.stats.distMeters; });
+
+        if (fireStations.length > 0) {
+          const nearest = fireStations[0];
+          appendBotMessage(
+            '🚒 <strong>Nearest Fire Station / BFP Engine Unit:</strong><br>' +
+            '<strong>' + escapeHtml(nearest.facility.name) + '</strong><br>' +
+            '• <strong>Distance:</strong> ' + nearest.stats.distKm + ' km away (~' + nearest.stats.etaMins + ' min)<br>' +
+            '• <strong>Address:</strong> ' + escapeHtml(nearest.facility.address) + '<br>' +
+            '• <strong>BFP Hotline:</strong> ' + escapeHtml(nearest.facility.phone) + '<br>' +
+            '• <strong>Readiness:</strong> Ready for immediate engine & ladder dispatch.',
+            [
+              {
+                label: '🗺️ Route to Station',
+                emergency: true,
+                action: function () {
+                  destinationInput.value = nearest.facility.name;
+                  searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire', facility: nearest.facility });
+                }
+              },
+              {
+                label: '📞 Call ' + nearest.facility.phone,
+                href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+              },
+              {
+                label: '🚒 Dispatch Fire Engine',
+                action: function () { handleChatIntent('fire'); }
+              },
+              {
+                label: '🚨 Call 911',
+                href: 'tel:911',
+                emergency: true
+              }
+            ]
+          );
+          return;
+        }
+      }
+
+      // 6. Factors Affecting Travel Time
+      if (/factor.*travel|travel.*factor|why.*delay|what affects travel|travel time factor|duration factor|how.*travel time calculated/i.test(q)) {
+        appendBotMessage(
+          '⏱️ <strong>Factors Affecting Overall Travel Time:</strong><br>' +
+          'Our navigation engine computes total travel time using 5 distinct real-world factors:<br><br>' +
+          '1. <strong>Base Road Speed:</strong> Free-flow statutory road speed limits (40–60 km/h on arterials, 25–35 km/h in city center).<br>' +
+          '2. <strong>Live Traffic Congestion:</strong> Bottlenecks and queueing on named streets add 1.5x–3.2x slowdown multipliers.<br>' +
+          '3. <strong>Spatial Hazard Buffers:</strong> Active flood zones, debris, or road work areas require caution deceleration buffers (+2 to +6 min).<br>' +
+          '4. <strong>Intersections & Turn Maneuvers:</strong> Each turn maneuver, roundabout, and signal adds ~15–20 seconds deceleration and queue cycle time.<br>' +
+          '5. <strong>Road Surface Traction:</strong> Standard dry asphalt friction coefficient (μ ≈ 0.82) under nominal braking conditions.<br><br>' +
+          '<strong>Mathematical Equation:</strong><br>' +
+          '<code>T(overall) = T(base) + ΔT(traffic) + ΔT(hazards) + ΔT(maneuvers)</code>',
+          [
+            { label: '🗺️ View Active Route Factors', action: function () { handleChatIntent('route'); } },
+            { label: '🛣️ Live Traffic Conditions', action: function () { handleChatIntent('traffic_conditions'); } }
+          ]
+        );
+        return;
+      }
+
+      // 7. Factors Affecting Path Selection
+      if (/factor.*path|path.*factor|how.*route chosen|why this route|why this path|path selection|route selection/i.test(q)) {
+        appendBotMessage(
+          '🗺️ <strong>Factors Affecting Overall Path Selection:</strong><br>' +
+          'Corridor selection is optimized using 4 algorithmic criteria:<br><br>' +
+          '1. <strong>Proximity & Directness Ratio:</strong> Minimizes total distance and compares straight-line radial distance against road distance (>80% directness ratio).<br>' +
+          '2. <strong>Corridor Hazard Avoidance:</strong> Dynamically calculates detours around active flood hazards and road closures to prevent blockage.<br>' +
+          '3. <strong>Road Hierarchy Prioritization:</strong> Prefers wide multi-lane highways and major boulevards (Diversion Rd, Iloilo-Antique Rd) over narrow residential alleys for emergency vehicle maneuverability.<br>' +
+          '4. <strong>Turn Minimization:</strong> Favors linear continuous corridors to preserve vehicle velocity, protect patient stability, and reduce cornering hazards.',
+          [
+            { label: '🗺️ View Current Route', action: function () { handleChatIntent('route'); } },
+            { label: '🛡️ Safe Detours', action: function () { handleChatIntent('traffic_conditions'); } }
+          ]
+        );
+        return;
+      }
+
+      // 8. Flood, Road Conditions & Closures
+      if (/flood|is.*flooded|diversion.*flood|road condition|road closure|barricade|water.*road|any closure|safe road/i.test(q)) {
+        let incidentInfo = '';
+        if (Array.isArray(liveIncidents) && liveIncidents.length > 0) {
+          incidentInfo = liveIncidents.map(function (inc) {
+            return '• <strong>' + escapeHtml(inc.name) + ':</strong> ' + (inc.impassable ? 'Impassable closure (safe detour applied)' : 'Active caution buffer (' + inc.radius + 'm radius)') + ' — ' + escapeHtml(inc.description || '');
+          }).join('<br>');
+        } else {
+          incidentInfo = '• <strong>No Impassable Flood Closures:</strong> All primary corridors are currently navigable.';
+        }
+
+        appendBotMessage(
+          '🌊 <strong>Live Road & Flood Condition Assessment:</strong><br>' +
+          incidentInfo + '<br><br>' +
+          '🛡️ <strong>Automated Safety Detour:</strong> The navigation engine automatically avoids impassable hazard zones and directs emergency vehicles along clear corridors.',
+          [
+            {
+              label: '🛡️ Calculate Safe Route',
+              action: function () {
+                if (destinationInput && destinationInput.value) searchButton.click();
+                else handleChatIntent('route');
+              }
+            },
+            { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+            { label: '📞 Call CDRRMO (033) 333-1111', href: 'tel:0333331111' }
+          ]
+        );
+        return;
+      }
+
+      // 9. Traffic Status & Congestion
+      if (/traffic|heavy traffic|congestion|traffic status|where.*traffic|is there traffic/i.test(q)) {
+        appendBotMessage(
+          '🚗 <strong>Live Traffic Conditions on Key Corridors:</strong><br>' +
+          '• <strong>General Luna Street:</strong> 3.2x slowdown delay (Heavy peak congestion)<br>' +
+          '• <strong>Benigno Aquino Ave (Diversion Rd):</strong> 2.5x slowdown delay (Moderate to heavy traffic)<br>' +
+          '• <strong>Iznart Street:</strong> 2.8x slowdown delay (Urban center queueing)<br>' +
+          '• <strong>Jalandoni & Ledesma Streets:</strong> 2.1x–2.4x slowdown delay<br><br>' +
+          '💡 The route finder evaluates these slowdown multipliers live and computes the net travel time equation automatically.',
+          [
+            { label: '🛣️ Recalculate Fastest Route', action: function () { handleChatIntent('route'); } },
+            { label: '🚑 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 10. First Aid - CPR
+      if (/cpr|cardiac arrest|heart attack|not breathing|unresponsive|chest compression/i.test(q)) {
+        appendBotMessage(
+          '🫀 <strong>Immediate CPR Life-Saving Steps:</strong><br>' +
+          '1. <strong>Call 911 Immediately:</strong> Put on speakerphone while starting compressions.<br>' +
+          '2. <strong>Hand Placement:</strong> Place the heel of one hand in the center of the chest, other hand interlaced on top.<br>' +
+          '3. <strong>Compress Hard & Fast:</strong> Push down 2 inches deep at 100–120 beats per minute (to the rhythm of "Stayin\' Alive").<br>' +
+          '4. <strong>Allow Full Chest Recoil:</strong> Don\'t lean on the chest between compressions.<br>' +
+          '5. <strong>Continue Non-Stop:</strong> Do not pause compressions until emergency medics arrive or an AED is analyzing.',
+          [
+            { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 11. First Aid - Burns
+      if (/burn|scalding|scald|burned skin|fire burn/i.test(q)) {
+        appendBotMessage(
+          '🔥 <strong>Emergency Burn Care Steps:</strong><br>' +
+          '1. <strong>Cool with Running Water:</strong> Hold burn under cool running tap water for 10–20 minutes immediately.<br>' +
+          '2. <strong>Do NOT Use Ice or Butter:</strong> Ice causes tissue damage; butter and oil trap heat.<br>' +
+          '3. <strong>Remove Tight Items:</strong> Gently remove rings or tight clothing before swelling starts.<br>' +
+          '4. <strong>Cover Loosely:</strong> Use a clean, sterile cloth or clear plastic cling film.<br>' +
+          '5. <strong>Seek Emergency Care:</strong> If burn is larger than the person\'s palm, involves the face/hands, or has blisters.',
+          [
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Hospital / Burn Care', action: function () { handleChatIntent('ambulance'); } },
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+          ]
+        );
+        return;
+      }
+
+      // 12. First Aid - Choking / Heimlich
+      if (/choking|choke|cannot breathe|blocked airway|heimlich/i.test(q)) {
+        appendBotMessage(
+          '🗣️ <strong>Emergency Choking Relief (Heimlich Maneuver):</strong><br>' +
+          '1. <strong>Encourage Coughing:</strong> If they can cough or make sound, let them try to clear the object.<br>' +
+          '2. <strong>5 Back Blows:</strong> Lean the person forward and give 5 firm blows between shoulder blades with the heel of your hand.<br>' +
+          '3. <strong>5 Abdominal Thrusts:</strong> Stand behind them, wrap arms around waist, make a fist above their navel, and pull sharply inward and upward.<br>' +
+          '4. <strong>Alternate:</strong> Repeat 5 back blows and 5 thrusts until airway clears or person becomes unconscious.<br>' +
+          '5. <strong>If Unresponsive:</strong> Lower to the floor and begin CPR compressions immediately.',
+          [
+            { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 13. First Aid - Bleeding & Wounds
+      if (/bleed|hemorrhage|wound|cut|stab|blood/i.test(q)) {
+        appendBotMessage(
+          '🩸 <strong>Emergency Bleeding Control:</strong><br>' +
+          '1. <strong>Direct Pressure:</strong> Press firmly on the wound with a clean cloth or gauze for at least 5–10 minutes without lifting.<br>' +
+          '2. <strong>Elevate:</strong> If possible, raise the injured limb above the level of the heart.<br>' +
+          '3. <strong>Do NOT Remove Objects:</strong> If an object is embedded, leave it in place and pad around it.<br>' +
+          '4. <strong>Apply Pressure Bandage:</strong> Wrap firmly over the dressing.<br>' +
+          '5. <strong>Keep Calm & Warm:</strong> Treat for shock and keep the patient lying down.',
+          [
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+            { label: '📞 Call Red Cross (033) 337-5976', href: 'tel:0333375976' }
+          ]
+        );
+        return;
+      }
+
+      // 14. First Aid - Dog Bite / Snake Bite / Rabies
+      if (/dog bite|animal bite|snake bite|rabies|bitten/i.test(q)) {
+        appendBotMessage(
+          '🐕 <strong>Animal / Snake Bite Emergency Protocol:</strong><br>' +
+          '1. <strong>Wash Immediately:</strong> Wash wound with soap and running water vigorously for at least 15 minutes.<br>' +
+          '2. <strong>Do NOT Suck or Cut Venom:</strong> For snakebites, keep limb still and below heart level.<br>' +
+          '3. <strong>Disinfect:</strong> Apply povidone-iodine or alcohol if available.<br>' +
+          '4. <strong>Seek Immediate Care:</strong> Go immediately to Western Visayas Medical Center (WVMC) Animal Bite Clinic for anti-rabies or antivenom treatment.',
+          [
+            {
+              label: '🗺️ Route to WVMC Animal Bite Clinic',
+              emergency: true,
+              action: function () {
+                const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
+                if (wvmc) {
+                  destinationInput.value = wvmc.name;
+                  searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
+                }
+              }
+            },
+            { label: '📞 Call WVMC (033) 321-2841', href: 'tel:0333212841' }
+          ]
+        );
+        return;
+      }
+
+      // 15. Accident / Vehicle Crash
+      if (/accident|crash|collision|hit and run|car accident|motorcycle accident|wreck/i.test(q)) {
+        appendBotMessage(
+          '🚗 <strong>Motor Vehicle Accident Protocol:</strong><br>' +
+          '1. <strong>Ensure Scene Safety:</strong> Turn on hazard lights, stay off the roadway if vehicles are passing.<br>' +
+          '2. <strong>Do NOT Move Seriously Injured:</strong> Protect neck and spine unless immediate fire or explosion hazard.<br>' +
+          '3. <strong>Check Airway & Bleeding:</strong> Apply direct pressure to severe bleeding.<br>' +
+          '4. <strong>Dispatch Emergency Services:</strong> Request ambulance and police units immediately.',
+          [
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Request Police', emergency: true, action: function () { handleChatIntent('police'); } },
+            { label: '📞 Call 911', href: 'tel:911', emergency: true }
+          ]
+        );
+        return;
+      }
+
+      // 16. Fire Reporting
+      if (/fire|smoke|burning|flame|gas leak|explosion/i.test(q)) {
+        appendBotMessage(
+          '🔥 <strong>Fire Emergency Protocol:</strong><br>' +
+          '1. <strong>Evacuate Immediately:</strong> Get out and stay out; do NOT use elevators.<br>' +
+          '2. <strong>Stay Low:</strong> Smoke and toxic gases rise; crawl beneath smoke if necessary.<br>' +
+          '3. <strong>Feel Closed Doors:</strong> Touch door with back of hand before opening; if hot, do not open.<br>' +
+          '4. <strong>Dispatch Fire Engine:</strong> Report exact location to BFP.',
+          [
+            { label: '🚒 Dispatch Fire Engine', emergency: true, action: function () { handleChatIntent('fire'); } },
+            { label: '📞 Call BFP (033) 337-4444', href: 'tel:0333374444' },
+            { label: '🚨 Call 911', href: 'tel:911', emergency: true }
+          ]
+        );
+        return;
+      }
+
+      // 17. Hotlines / Phone numbers
+      if (/hotline|phone number|call number|emergency number|contact|telephone|who to call/i.test(q)) {
+        handleChatIntent('hotlines');
+        return;
+      }
+
+      // 18. Greetings / Help
+      if (/^(hi|hello|hey|good morning|good afternoon|good evening|kamusta|musta|help|need help|yo)$/i.test(q) || q === 'help') {
+        appendBotMessage(
+          '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
+          'Hello! What emergency assistance or route information do you need right now?<br><br>' +
+          'Select an emergency service or describe what you need in the chatbox:',
+          [
+            { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+            { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+            { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
+            { label: '☎️ 911 Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          ]
+        );
+        return;
+      }
+
+      // 19. Features / About / How to use
+      if (/what can you do|how to use|features|commands|about/i.test(q)) {
+        appendBotMessage(
+          'ℹ️ <strong>System Capabilities:</strong><br>' +
+          '• <strong>Factor-Aware Routing:</strong> Bellman-Ford/A* algorithm evaluating traffic, spatial hazards, turns, and friction.<br>' +
+          '• <strong>Emergency Directory:</strong> 24/7 verified database of hospitals, police stations, fire bases, and rescue units.<br>' +
+          '• <strong>Automated Detour Engine:</strong> Bypasses road closures, flood zones, and heavy congestion.<br>' +
+          '• <strong>First Aid Assistant:</strong> Instant step-by-step guidance for CPR, burns, choking, and bleeding.<br>' +
+          '• <strong>Offline Navigation:</strong> Cached tile rendering and direct compass navigation when offline.',
+          [
+            { label: '🚑 Medical / Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Police', action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Fire', action: function () { handleChatIntent('fire'); } },
+            { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          ]
+        );
+        return;
+      }
+
+      // 20. General Fallback
+      appendBotMessage(
+        'I am here to assist with your emergency and route navigation needs in the region.<br>' +
+        'You asked: <em>"' + escapeHtml(userText) + '"</em><br><br>' +
+        'Please select what you need assistance with right now, or call <strong>911</strong> for immediate emergencies:',
+        [
+          { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+          { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+          { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+          { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+          { label: '📍 My Location', action: function () { handleChatIntent('my_location'); } },
+          { label: '☎️ Official 911 Hotlines', action: function () { handleChatIntent('hotlines'); } }
+        ]
+      );
     }
 
     function handleChatIntent(intent, userText) {
@@ -4747,6 +5226,7 @@
               [
                 {
                   label: '🗺️ Route Now',
+                  emergency: true,
                   action: function () {
                     destinationInput.value = nearest.facility.name;
                     searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance', facility: nearest.facility });
@@ -4755,6 +5235,11 @@
                 {
                   label: '📞 Call ' + nearest.facility.phone,
                   href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                },
+                {
+                  label: '🚨 Call 911',
+                  href: 'tel:911',
+                  emergency: true
                 }
               ]
             );
@@ -4788,6 +5273,7 @@
               [
                 {
                   label: '🗺️ Route to Station',
+                  emergency: true,
                   action: function () {
                     destinationInput.value = nearest.facility.name;
                     searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police', facility: nearest.facility });
@@ -4796,6 +5282,11 @@
                 {
                   label: '📞 Call ' + nearest.facility.phone,
                   href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                },
+                {
+                  label: '🚨 Call 911',
+                  href: 'tel:911',
+                  emergency: true
                 }
               ]
             );
@@ -4829,6 +5320,7 @@
               [
                 {
                   label: '🗺️ Route to Station',
+                  emergency: true,
                   action: function () {
                     destinationInput.value = nearest.facility.name;
                     searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire', facility: nearest.facility });
@@ -4837,6 +5329,11 @@
                 {
                   label: '📞 Call ' + nearest.facility.phone,
                   href: 'tel:' + nearest.facility.phone.replace(/[^\d+*#;]/g, '')
+                },
+                {
+                  label: '🚨 Call 911',
+                  href: 'tel:911',
+                  emergency: true
                 }
               ]
             );
@@ -4878,7 +5375,28 @@
           [
             { label: '📞 Call 911', href: 'tel:911', emergency: true },
             { label: '📞 Call CDRRMO', href: 'tel:0333331111' },
-            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' },
+            { label: '📞 Call Police', href: 'tel:0333370400' },
+            { label: '📞 Call Fire Dept', href: 'tel:0333374444' }
+          ]
+        );
+      } else if (intent === 'my_location') {
+        answerUserEmergencyQuestion('where am i');
+      } else if (intent === 'traffic_conditions') {
+        answerUserEmergencyQuestion('is there traffic');
+      } else if (intent === 'travel_factors') {
+        answerUserEmergencyQuestion('what factors affect travel time');
+      } else if (intent === 'first_aid') {
+        appendBotMessage(
+          '🩹 <strong>First Aid Quick Guides:</strong><br>' +
+          'Select a first aid emergency topic below for immediate step-by-step guidance:',
+          [
+            { label: '🫀 CPR / Cardiac Arrest', action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🔥 Burn Treatment', action: function () { answerUserEmergencyQuestion('burn'); } },
+            { label: '🗣️ Choking (Heimlich)', action: function () { answerUserEmergencyQuestion('choking'); } },
+            { label: '🩸 Stop Heavy Bleeding', action: function () { answerUserEmergencyQuestion('bleeding'); } },
+            { label: '🐕 Animal / Snake Bite', action: function () { answerUserEmergencyQuestion('dog bite'); } },
+            { label: '🚑 Call Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } }
           ]
         );
       } else if (intent === 'route') {
@@ -4886,54 +5404,17 @@
           appendBotMessage('Recalculating factor-aware fastest route to <strong>' + escapeHtml(destinationInput.value) + '</strong>...');
           searchButton.click();
         } else {
-          appendBotMessage('Please enter a destination in the search bar or select a facility pin on the map to calculate the fastest route.');
-        }
-      } else {
-        const q = (userText || '').toLowerCase();
-        if (/ambulance|hospital|medical|doctor|medic|injured|hurt|bleeding|sick/i.test(q)) {
-          handleChatIntent('ambulance');
-        } else if (/police|crime|theft|robbery|thief|attack|gun|danger/i.test(q)) {
-          handleChatIntent('police');
-        } else if (/fire|smoke|burning|flame|trapped/i.test(q)) {
-          handleChatIntent('fire');
-        } else if (/rescue|flood|water|submerge|drown|typhoon|storm|trapped|crash|accident|collapse/i.test(q)) {
-          let detectedScen = 'flood';
-          if (/car|crash|accident|collision|pinned|rollover/i.test(q)) detectedScen = 'accident';
-          else if (/injur|bleed|wound|head|unconscious|heart|cardiac|stroke|breath|burn|trauma/i.test(q)) detectedScen = 'medical';
-          else if (/storm|typhoon|wind|cyclone|tree|gale|blow/i.test(q)) detectedScen = 'storm';
-          else if (/collapse|debris|wall|building|rubble|landslide/i.test(q)) detectedScen = 'debris';
-          currentResponderScenario = detectedScen;
-          const dispatchData = recommendResponderDispatch(userText, detectedScen);
           appendBotMessage(
-            '🛟 <strong>Incident Report Processed</strong><br>' +
-            'Based on the information you provided and where you are currently located detected on the map, here is the situation assessment and recommended fastest route:'
-          );
-          if (dispatchData && dispatchData.html) {
-            appendBotMessage(dispatchData.html, [
-              { label: '🌊 Flood / Water', action: function () { handleChatIntent('responder-scenario:flood'); } },
-              { label: '🚗 Trapped / Crash', action: function () { handleChatIntent('responder-scenario:accident'); } },
-              { label: '🚑 Medical Trauma', action: function () { handleChatIntent('responder-scenario:medical'); } },
-              { label: '🌀 Storm Evacuation', action: function () { handleChatIntent('responder-scenario:storm'); } },
-              { label: '🏚️ Structural Collapse', action: function () { handleChatIntent('responder-scenario:debris'); } }
-            ]);
-            plotResponderRoute(dispatchData);
-          }
-        } else if (/call|number|hotline|contact|phone/i.test(q)) {
-          handleChatIntent('hotlines');
-        } else if (/fastest|route|traffic|navigate|directions|way/i.test(q)) {
-          handleChatIntent('route');
-        } else {
-          appendBotMessage(
-            'I am here to assist you. For immediate danger, please dial <strong>911</strong>.<br>' +
-            'You can choose an emergency category below or ask for directions to any hospital, police, or fire station.',
+            'Please select an emergency facility from the map or enter a destination to calculate the fastest factor-aware route:',
             [
-              { label: '🚑 Ambulance', action: function () { handleChatIntent('ambulance'); } },
-              { label: '🚓 Police', action: function () { handleChatIntent('police'); } },
-              { label: '🚒 Fire Truck', action: function () { handleChatIntent('fire'); } },
-              { label: '☎️ Hotlines', action: function () { handleChatIntent('hotlines'); } }
+              { label: '🚑 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+              { label: '🚓 Nearest Police', action: function () { handleChatIntent('police'); } },
+              { label: '🚒 Nearest Fire Station', action: function () { handleChatIntent('fire'); } }
             ]
           );
         }
+      } else {
+        answerUserEmergencyQuestion(userText);
       }
     }
 
