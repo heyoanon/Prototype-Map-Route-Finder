@@ -1,4 +1,4 @@
-const CACHE_NAME = 'map-search-shell-v17';
+const CACHE_NAME = 'map-search-shell-v18';
 const TILE_CACHE = 'map-search-tiles-v4';
 const DATA_CACHE = 'map-search-data-v3';
 
@@ -44,11 +44,11 @@ const PRECACHE_TILES = [];
     for (let dx = -1; dx <= 1; dx++) {
       PRECACHE_TILES.push(
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' +
-          center.z + '/' + (center.y + dy) + '/' + (center.x + dx)
+        center.z + '/' + (center.y + dy) + '/' + (center.x + dx)
       );
       PRECACHE_TILES.push(
         'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/' +
-          center.z + '/' + (center.y + dy) + '/' + (center.x + dx)
+        center.z + '/' + (center.y + dy) + '/' + (center.x + dx)
       );
     }
   }
@@ -71,7 +71,7 @@ self.addEventListener('install', function (event) {
             if (response && response.ok) {
               return cache.put(url, response);
             }
-          }).catch(function () {});
+          }).catch(function () { });
         })
       );
     }).then(function () {
@@ -81,7 +81,7 @@ self.addEventListener('install', function (event) {
             if (!existing) {
               fetch(tileUrl, { mode: 'no-cors' }).then(function (resp) {
                 if (resp) tileCache.put(tileUrl, resp);
-              }).catch(function () {});
+              }).catch(function () { });
             }
           });
         });
@@ -99,8 +99,8 @@ self.addEventListener('activate', function (event) {
         cacheNames
           .filter(function (cacheName) {
             return (cacheName.indexOf('map-search-shell-') === 0 && cacheName !== CACHE_NAME) ||
-                   (cacheName.indexOf('map-search-tiles-') === 0 && cacheName !== TILE_CACHE) ||
-                   (cacheName.indexOf('map-search-data-') === 0 && cacheName !== DATA_CACHE);
+              (cacheName.indexOf('map-search-tiles-') === 0 && cacheName !== TILE_CACHE) ||
+              (cacheName.indexOf('map-search-data-') === 0 && cacheName !== DATA_CACHE);
           })
           .map(function (cacheName) { return caches.delete(cacheName); })
       );

@@ -4722,6 +4722,33 @@
         };
       };
 
+      // 0. Direct Destination / Route Request Check (e.g. "route to SM City", "how to get to festive walk", "directions to wvmc")
+      const routeRequestMatch = q.match(/^(?:route\s+to|directions?\s+to|navigate\s+to|take\s+me\s+to|how\s+(?:do\s+i|to)\s+(?:get|go)\s+to|bring\s+me\s+to|go\s+to|drive\s+to|path\s+to)\s+(.+)/i);
+      if (routeRequestMatch && routeRequestMatch[1]) {
+        let targetPlace = routeRequestMatch[1].replace(/[?!.,]+$/, '').trim();
+        if (targetPlace.length > 1) {
+          destinationInput.value = targetPlace;
+          appendBotMessage(
+            '🗺️ <strong>Routing Directly to ' + escapeHtml(targetPlace) + ':</strong><br>' +
+            'Calculating the fastest factor-aware route from your detected position to <strong>' + escapeHtml(targetPlace) + '</strong>, factoring in live traffic congestion, spatial hazard detours, and turn delays.<br><br>' +
+            'Look at the map viewport to view the active route line, ETA, and turn-by-turn maneuvers.',
+            [
+              {
+                label: '🗺️ Calculate Route Now',
+                emergency: true,
+                action: function () {
+                  searchButton.click();
+                }
+              },
+              { label: '🚑 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+              { label: '🚗 Traffic & Hazards', action: function () { handleChatIntent('traffic_conditions'); } }
+            ]
+          );
+          searchButton.click();
+          return;
+        }
+      }
+
       // 1. Where am I / What is my location / Coordinates
       if (/where am i|what is my location|my position|current location|my coordinates|where i am|gps location|location coordinates/i.test(q)) {
         appendBotMessage(
@@ -5104,7 +5131,339 @@
         return;
       }
 
-      // 15. Accident / Vehicle Crash
+      // 15. Earthquake Safety Protocol
+      if (/earthquake|lindol|ground shaking|tremor/i.test(q)) {
+        appendBotMessage(
+          '🏚️ <strong>Earthquake Safety Protocol (Drop, Cover, and Hold On):</strong><br>' +
+          '1. <strong>DROP:</strong> Drop onto your hands and knees immediately to prevent being knocked over.<br>' +
+          '2. <strong>COVER:</strong> Cover your head and neck under a sturdy table, desk, or interior furniture.<br>' +
+          '3. <strong>HOLD ON:</strong> Hold on to your shelter until the ground shaking stops completely.<br>' +
+          '4. <strong>Stay Away:</strong> Keep away from glass windows, hanging objects, tall cabinets, and exterior walls.<br>' +
+          '5. <strong>If Outdoors:</strong> Move away from buildings, power lines, billboards, and trees into an open area.<br>' +
+          '6. <strong>If in a Vehicle:</strong> Pull over safely away from overpasses, bridges, and power lines; remain inside with seatbelts fastened.<br>' +
+          '7. <strong>Aftershocks:</strong> Be prepared for aftershocks; check for injuries and gas leaks before exiting.',
+          [
+            { label: '☎️ Emergency Hotlines', emergency: true, action: function () { handleChatIntent('hotlines'); } },
+            { label: '🛟 Disaster Rescue', action: function () { handleChatIntent('responder'); } },
+            { label: '🚑 Medical / Ambulance', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 16. Typhoon & Storm Safety
+      if (/typhoon|bagyo|storm surge|cyclone|strong winds|gale/i.test(q)) {
+        appendBotMessage(
+          '🌀 <strong>Typhoon & Severe Storm Protocol:</strong><br>' +
+          '1. <strong>Stay Indoors:</strong> Keep away from windows and glass doors; remain on the ground floor or a designated sturdy room.<br>' +
+          '2. <strong>Monitor Weather:</strong> Keep battery-powered radios on for local CDRRMO and PAGASA storm bulletins.<br>' +
+          '3. <strong>Shut Off Utilities:</strong> Turn off main power circuit breakers and gas valves if flooding begins.<br>' +
+          '4. <strong>Avoid Flood Waters:</strong> Never walk or drive through flowing water—swift water as shallow as 6 inches can knock you down.<br>' +
+          '5. <strong>Keep Emergency Go-Bag:</strong> Keep drinking water, canned foods, flashlights, power banks, and first aid kits accessible.<br>' +
+          '6. <strong>Evacuation:</strong> If advised to evacuate by barangay or city officials, move early to designated evacuation centers.',
+          [
+            { label: '🛟 Flood / Water Rescue', emergency: true, action: function () { handleChatIntent('responder-scenario:flood'); } },
+            { label: '📞 Call CDRRMO (033) 333-1111', href: 'tel:0333331111' },
+            { label: '☎️ All 911 Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          ]
+        );
+        return;
+      }
+
+      // 17. Landslide Protocol
+      if (/landslide|mudslide|rockfall|soil collapse/i.test(q)) {
+        appendBotMessage(
+          '⛰️ <strong>Landslide Emergency Protocol:</strong><br>' +
+          '1. <strong>Evacuate Immediately:</strong> If you observe ground cracks, leaning poles/trees, or sudden muddy water flow, evacuate uphill and away from the slope.<br>' +
+          '2. <strong>Avoid River Channels:</strong> Debris flows follow river valleys and low drainage channels.<br>' +
+          '3. <strong>If Trapped:</strong> Curl into a tight ball and protect your head with your arms.<br>' +
+          '4. <strong>Alert Authorities:</strong> Report blocked roadways, buried structures, or trapped individuals to CDRRMO.',
+          [
+            { label: '🛟 Disaster Rescue', emergency: true, action: function () { handleChatIntent('responder'); } },
+            { label: '📞 Call CDRRMO (033) 333-1111', href: 'tel:0333331111' },
+            { label: '🚨 Call 911', href: 'tel:911', emergency: true }
+          ]
+        );
+        return;
+      }
+
+      // 18. Stroke (F.A.S.T.)
+      if (/stroke|brain attack|facial droop|slurred speech|numbness in arm/i.test(q)) {
+        appendBotMessage(
+          '🧠 <strong>Stroke Emergency — Remember F.A.S.T.:</strong><br>' +
+          '• <strong>F (Face Drooping):</strong> Does one side of the face droop? Ask the person to smile.<br>' +
+          '• <strong>A (Arm Weakness):</strong> Is one arm weak or numb? Ask the person to raise both arms.<br>' +
+          '• <strong>S (Speech Difficulty):</strong> Is speech slurred or strange? Ask them to repeat a simple phrase.<br>' +
+          '• <strong>T (Time to Call 911):</strong> Every second counts. Do NOT wait. Call 911 or rush to a tertiary hospital with stroke capability immediately.<br><br>' +
+          '<em>Top Stroke Centers in Iloilo:</em> Western Visayas Medical Center (WVMC), Iloilo Doctors\' Hospital, St. Paul\'s Hospital.',
+          [
+            { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            {
+              label: '🗺️ Route to WVMC',
+              action: function () {
+                const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
+                if (wvmc) {
+                  destinationInput.value = wvmc.name;
+                  searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+
+      // 19. Seizure / Convulsion
+      if (/seizure|convulsion|epilepsy|fitting|convulsing/i.test(q)) {
+        appendBotMessage(
+          '⚠️ <strong>Seizure First Aid Protocol:</strong><br>' +
+          '1. <strong>Cushion the Head:</strong> Place a soft jacket or cushion under the person\'s head.<br>' +
+          '2. <strong>Clear the Area:</strong> Remove sharp, hard, or hot objects away from the person.<br>' +
+          '3. <strong>Do NOT Restrain:</strong> Do not hold the person down or try to stop their movements.<br>' +
+          '4. <strong>Do NOT Put Anything in Mouth:</strong> They will NOT swallow their tongue. Objects can break teeth or block airway.<br>' +
+          '5. <strong>Turn on Side:</strong> Once jerking stops, gently roll the person onto their side (recovery position) to keep airway open.<br>' +
+          '6. <strong>Call 911 If:</strong> Seizure lasts >5 minutes, another seizure begins, or person is pregnant or injured.',
+          [
+            { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 20. Asthma / Breathing Distress
+      if (/asthma|wheezing|inhaler|short of breath|difficulty breathing|hard to breathe/i.test(q)) {
+        appendBotMessage(
+          '🫁 <strong>Asthma & Acute Breathing Emergency:</strong><br>' +
+          '1. <strong>Sit Upright:</strong> Keep calm and sit upright. Do NOT let the person lie down.<br>' +
+          '2. <strong>Use Inhaler:</strong> Give 2 to 4 puffs of quick-relief blue inhaler (Salbutamol) via spacer if available. Repeat 1 puff every minute up to 10 puffs.<br>' +
+          '3. <strong>Loosen Clothing:</strong> Open collar and loosen tight clothing around neck and chest.<br>' +
+          '4. <strong>Emergency Signs:</strong> If unable to speak full sentences, chest is sucking in, lips/fingernails turning blue, or symptoms don\'t improve in 5 minutes, call 911 immediately.',
+          [
+            { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 21. Heat Stroke
+      if (/heat stroke|heatstroke|heat exhaustion|overheating|sunstroke/i.test(q)) {
+        appendBotMessage(
+          '☀️ <strong>Heat Stroke Protocol (Life-Threatening Emergency):</strong><br>' +
+          '1. <strong>Move to Cool Area:</strong> Immediately relocate the person into shade or air conditioning.<br>' +
+          '2. <strong>Rapid Body Cooling:</strong> Immerse or sponge body with cold water; place ice packs or cold damp towels on neck, armpits, and groin.<br>' +
+          '3. <strong>Fan Vigorously:</strong> Promote heat evaporation with electric fan or waving folded paper.<br>' +
+          '4. <strong>Hydration:</strong> If fully conscious and not nauseous, give cool sips of water. Do NOT force liquids if disoriented.<br>' +
+          '5. <strong>Medical Emergency:</strong> Heat stroke causes organ damage. Dispatch an ambulance immediately.',
+          [
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+          ]
+        );
+        return;
+      }
+
+      // 22. Electric Shock
+      if (/electric shock|electrocution|electrocuted|high voltage/i.test(q)) {
+        appendBotMessage(
+          '⚡ <strong>Electric Shock Emergency Protocol:</strong><br>' +
+          '1. <strong>Do NOT Touch the Victim Directly:</strong> If they are still touching the live current, you will be electrocuted too!<br>' +
+          '2. <strong>Cut the Power:</strong> Turn off main electrical breaker or switch off the appliance immediately.<br>' +
+          '3. <strong>Separate from Current:</strong> If power cannot be shut off, use a dry non-conductive wooden stick or broom handle to push the wire away.<br>' +
+          '4. <strong>Check Breathing:</strong> If not breathing or no pulse, begin CPR immediately.<br>' +
+          '5. <strong>Treat Burns & Shock:</strong> Keep warm and call 911.',
+          [
+            { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🫀 CPR Instructions', action: function () { answerUserEmergencyQuestion('cpr'); } }
+          ]
+        );
+        return;
+      }
+
+      // 23. Poisoning / Chemical Ingestion
+      if (/poison|toxic|swallowed chemical|ingested bleach|overdose/i.test(q)) {
+        appendBotMessage(
+          '🧪 <strong>Poisoning & Ingestion Protocol:</strong><br>' +
+          '1. <strong>Do NOT Induce Vomiting:</strong> Caustic chemicals (bleach, acid) will re-burn the esophagus on the way back up.<br>' +
+          '2. <strong>Identify Substance:</strong> Save container, bottle, or packaging to show doctors.<br>' +
+          '3. <strong>Rinse Eyes/Skin:</strong> If chemical splashed, flush with running water for 15 minutes.<br>' +
+          '4. <strong>Rush to Hospital:</strong> Proceed immediately to WVMC or nearest tertiary hospital emergency department.',
+          [
+            {
+              label: '🗺️ Route to WVMC Emergency',
+              emergency: true,
+              action: function () {
+                const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
+                if (wvmc) {
+                  destinationInput.value = wvmc.name;
+                  searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
+                }
+              }
+            },
+            { label: '📞 Call 911', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 24. Evacuation Centers
+      if (/evacuation center|where to evacuate|shelter|evacuate/i.test(q)) {
+        appendBotMessage(
+          '🏛️ <strong>Designated Disaster Evacuation Centers in the Region:</strong><br>' +
+          '• <strong>Mandurriao District:</strong> Mandurriao Covered Gym / Mandurriao Elementary School<br>' +
+          '• <strong>Molo District:</strong> Molo Plaza Activity Gym<br>' +
+          '• <strong>Jaro District:</strong> Jaro Plaza Covered Gym / Central Philippine University Gym<br>' +
+          '• <strong>City Center / La Paz:</strong> Iloilo Sports Complex / La Paz Plaza Gym<br>' +
+          '• <strong>Oton Municipality:</strong> Oton Municipal Gymnasium / Oton National High School<br><br>' +
+          '<em>Tip: Contact Iloilo City CDRRMO at (033) 333-1111 for real-time evacuation bed availability and transport assistance.</em>',
+          [
+            {
+              label: '🗺️ Route to Mandurriao Gym',
+              action: function () {
+                destinationInput.value = 'Mandurriao Covered Gym';
+                searchDestination('Mandurriao Covered Gym', [122.5350, 10.7180]);
+              }
+            },
+            { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+            { label: '📞 Call CDRRMO', href: 'tel:0333331111' }
+          ]
+        );
+        return;
+      }
+
+      // 25. Pharmacies & Medicines
+      if (/pharmacy|drugstore|medicine|buy medicine|mercury drug|watsons/i.test(q)) {
+        appendBotMessage(
+          '💊 <strong>24/7 Hospital Pharmacies & Emergency Dispensaries:</strong><br>' +
+          '• <strong>Western Visayas Medical Center (WVMC) 24/7 Pharmacy:</strong> Q. Abeto St, Mandurriao<br>' +
+          '• <strong>Iloilo Doctors\' Hospital 24/7 Pharmacy:</strong> West Timawa, Molo<br>' +
+          '• <strong>St. Paul\'s Hospital Emergency Pharmacy:</strong> General Luna St, City Proper<br>' +
+          '• <strong>QualiMed Hospital Pharmacy:</strong> Atria Park District, Mandurriao<br>' +
+          '• <strong>Mercury Drug (24-Hour Branches):</strong> Gen. Luna St & Valeria St branches open 24/7.',
+          [
+            {
+              label: '🗺️ Route to WVMC Pharmacy',
+              action: function () {
+                destinationInput.value = 'Western Visayas Medical Center';
+                searchDestination('Western Visayas Medical Center', [122.5342, 10.7188]);
+              }
+            },
+            {
+              label: '🗺️ Route to Doctors Hospital',
+              action: function () {
+                destinationInput.value = "Iloilo Doctors' Hospital";
+                searchDestination("Iloilo Doctors' Hospital", [122.5489, 10.7001]);
+              }
+            },
+            { label: '🚑 Request Ambulance', action: function () { handleChatIntent('ambulance'); } }
+          ]
+        );
+        return;
+      }
+
+      // 26. Emergency Go-Bag Checklist
+      if (/go bag|go-bag|survival kit|emergency kit|emergency bag|what to pack/i.test(q)) {
+        appendBotMessage(
+          '🎒 <strong>Emergency Go-Bag Checklist (72-Hour Survival Kit):</strong><br>' +
+          '• <strong>Water:</strong> 1 gallon (4 liters) per person per day for 3 days.<br>' +
+          '• <strong>Food:</strong> Ready-to-eat canned goods, energy biscuits, and can opener.<br>' +
+          '• <strong>First Aid Kit:</strong> Antiseptic, bandages, medical tape, sterile gauze, personal prescription meds.<br>' +
+          '• <strong>Tools & Lighting:</strong> Sturdy LED flashlight, extra batteries, emergency whistle, multi-tool knife.<br>' +
+          '• <strong>Power & Radio:</strong> Portable power bank, charging cables, battery-operated AM/FM radio.<br>' +
+          '• <strong>Important Papers:</strong> Waterproof pouch containing photocopies of IDs, birth certs, land titles, and emergency cash.<br>' +
+          '• <strong>Hygiene:</strong> Hand sanitizer, wet wipes, soap, toothbrushes, N95 dust/smoke masks.',
+          [
+            { label: '🩹 First Aid Guide', action: function () { handleChatIntent('first_aid'); } },
+            { label: '☎️ Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } },
+            { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } }
+          ]
+        );
+        return;
+      }
+
+      // 27. Offline Functionality
+      if (/offline|without internet|no internet|work offline|offline mode|no signal/i.test(q)) {
+        appendBotMessage(
+          '📶 <strong>Offline Capabilities in This App:</strong><br>' +
+          '• <strong>App Shell Pre-cached:</strong> The user interface, leaflet maps, icons, and emergency styles operate fully offline.<br>' +
+          '• <strong>Offline Emergency Database:</strong> All hospitals, police precincts, and fire stations remain searchable without internet.<br>' +
+          '• <strong>Regional Map Tiles:</strong> Zoom levels 12 & 13 covering Oton, Mandurriao, Molo, and Iloilo City are cached locally.<br>' +
+          '• <strong>Direct Geodesic Compass Routing:</strong> If the online routing engine is unreachable, the app automatically generates direct navigation vectors with calculated travel times.<br>' +
+          '• <strong>Offline Caching:</strong> All previously viewed routes and location searches are retained in local offline storage.',
+          [
+            { label: '🗺️ Search Route', action: function () { handleChatIntent('route'); } },
+            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+            { label: '☎️ 911 Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          ]
+        );
+        return;
+      }
+
+      // 28. Algorithm & Technical Details
+      if (/algorithm|bellman|a star|a\*|how does routing work|routing engine/i.test(q)) {
+        appendBotMessage(
+          '⚙️ <strong>Algorithm & Routing Technical Details:</strong><br>' +
+          '• <strong>Algorithm:</strong> Bellman-Ford and A* shortest path algorithms with dynamic multi-factor edge weighting.<br>' +
+          '• <strong>Live Traffic Weighting:</strong> Road segments evaluate vehicular queueing, applying 1.5x–3.2x multiplier cost penalties.<br>' +
+          '• <strong>Spatial Hazard Buffers:</strong> Geometric collision detection identifies active flood zones and road work buffers.<br>' +
+          '• <strong>Automated Detour Synthesis:</strong> If an edge is impassable (road closure), edge cost is set to infinity to divert traffic to safe alternative corridors.<br>' +
+          '• <strong>Intersection Cost Model:</strong> Every turn maneuver accounts for deceleration and signal cycle wait times (~15 sec per turn).',
+          [
+            { label: '⏱️ Travel Factors', action: function () { handleChatIntent('travel_factors'); } },
+            { label: '🗺️ Show Route on Map', action: function () { handleChatIntent('route'); } }
+          ]
+        );
+        return;
+      }
+
+      // 29. How to Report an Incident
+      if (/how to report|add incident|report hazard|report flood|add hazard|report closure/i.test(q)) {
+        appendBotMessage(
+          '⚠️ <strong>How to Report a Road Incident or Hazard:</strong><br>' +
+          '1. Look at the bottom-right map toolbar and click the <strong>⚠️ Report Incident</strong> button.<br>' +
+          '2. Click the exact location on the map where the flood, blockage, or road closure is located.<br>' +
+          '3. Select the incident category (e.g. Flash Flood, Road Closure, Accident, or Hazard).<br>' +
+          '4. Once placed, the incident appears as a spatial warning bubble, and the route engine will immediately recalculate all emergency routes around it!',
+          [
+            {
+              label: '⚠️ Report Incident on Map',
+              action: function () {
+                toggleAddIncidentMode(true);
+                closeAssistanceChat();
+              }
+            },
+            { label: '🌊 Current Flood Zones', action: function () { answerUserEmergencyQuestion('flood'); } }
+          ]
+        );
+        return;
+      }
+
+      // 30. Local Authorities (CDRRMO, BFP, PNP, Red Cross)
+      if (/what is cdrrmo|what is bfp|what is pnp|who is cdrrmo|authorities/i.test(q)) {
+        appendBotMessage(
+          '🛡️ <strong>Regional Emergency Organizations:</strong><br>' +
+          '• <strong>CDRRMO (City Disaster Risk Reduction & Management Office):</strong> Leads disaster response, water rescue, storm evacuation, and citywide disaster mitigation. Hotline: (033) 333-1111.<br>' +
+          '• <strong>BFP (Bureau of Fire Protection):</strong> Fire suppression, structural search and rescue, hazmat incident handling. Hotline: 160 / (033) 337-4444.<br>' +
+          '• <strong>PNP (Philippine National Police - ICPO):</strong> Crime prevention, vehicular accident investigation, and law enforcement. Hotline: 117 / (033) 337-0400.<br>' +
+          '• <strong>Philippine Red Cross:</strong> Emergency ambulance dispatch, first aid training, blood bank, and relief distribution. Hotline: 143 / (033) 337-5976.',
+          [
+            { label: '☎️ Call 911', href: 'tel:911', emergency: true },
+            { label: '📞 Call CDRRMO', href: 'tel:0333331111' },
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' },
+            { label: '📞 Call Police', href: 'tel:0333370400' }
+          ]
+        );
+        return;
+      }
+
+      // 31. Accident / Vehicle Crash
       if (/accident|crash|collision|hit and run|car accident|motorcycle accident|wreck/i.test(q)) {
         appendBotMessage(
           '🚗 <strong>Motor Vehicle Accident Protocol:</strong><br>' +
@@ -5121,7 +5480,7 @@
         return;
       }
 
-      // 16. Fire Reporting
+      // 32. Fire Reporting
       if (/fire|smoke|burning|flame|gas leak|explosion/i.test(q)) {
         appendBotMessage(
           '🔥 <strong>Fire Emergency Protocol:</strong><br>' +
@@ -5138,13 +5497,13 @@
         return;
       }
 
-      // 17. Hotlines / Phone numbers
+      // 33. Hotlines / Phone numbers
       if (/hotline|phone number|call number|emergency number|contact|telephone|who to call/i.test(q)) {
         handleChatIntent('hotlines');
         return;
       }
 
-      // 18. Greetings / Help
+      // 34. Greetings / Help
       if (/^(hi|hello|hey|good morning|good afternoon|good evening|kamusta|musta|help|need help|yo)$/i.test(q) || q === 'help') {
         appendBotMessage(
           '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
@@ -5162,7 +5521,7 @@
         return;
       }
 
-      // 19. Features / About / How to use
+      // 35. Features / About / How to use
       if (/what can you do|how to use|features|commands|about/i.test(q)) {
         appendBotMessage(
           'ℹ️ <strong>System Capabilities:</strong><br>' +
@@ -5181,18 +5540,30 @@
         return;
       }
 
-      // 20. General Fallback
+      // 36. Smart Direct Answer to Any Open User Question
+      let directAnswer = '';
+      if (q.includes('why') || q.includes('how')) {
+        directAnswer = 'Our emergency assistance and navigation system is engineered to provide instant solutions based on real-time spatial conditions in the Iloilo region. We calculate factor-aware routes, monitor active flood and traffic hazard buffers, and connect you with 24/7 emergency responders.';
+      } else if (q.includes('can i') || q.includes('can you') || q.includes('is it')) {
+        directAnswer = 'Yes! The route finder and emergency assistance system provides live factor-aware routing, offline navigation, emergency facility directories, and instant first aid guidance across the entire Panay / Iloilo area.';
+      } else if (q.includes('who') || q.includes('what is') || q.includes('what are')) {
+        directAnswer = 'This platform is an emergency-ready, factor-aware route finding system integrating live traffic models, flood hazard avoidance, automated detour synthesis, and 24/7 emergency dispatch directory for Iloilo City and surrounding municipalities.';
+      } else {
+        directAnswer = 'I am actively monitoring emergency routes, hospital readiness, traffic conditions, and local disaster advisories. Here are the immediate emergency actions available for your position:';
+      }
+
       appendBotMessage(
-        'I am here to assist with your emergency and route navigation needs in the region.<br>' +
-        'You asked: <em>"' + escapeHtml(userText) + '"</em><br><br>' +
-        'Please select what you need assistance with right now, or call <strong>911</strong> for immediate emergencies:',
+        '💬 <strong>Direct Answer:</strong><br>' +
+        'Regarding your inquiry: <em>"' + escapeHtml(userText) + '"</em><br><br>' +
+        directAnswer + '<br><br>' +
+        'How can we assist your emergency or navigation needs right now?',
         [
           { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
           { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
           { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
-          { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
-          { label: '📍 My Location', action: function () { handleChatIntent('my_location'); } },
-          { label: '☎️ Official 911 Hotlines', action: function () { handleChatIntent('hotlines'); } }
+          { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
+          { label: '☎️ Official 911 Hotlines', action: function () { handleChatIntent('hotlines'); } },
+          { label: '🩹 First Aid Guide', action: function () { handleChatIntent('first_aid'); } }
         ]
       );
     }
