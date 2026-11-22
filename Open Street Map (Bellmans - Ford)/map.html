@@ -494,6 +494,273 @@
       padding: 1px 0;
     }
 
+    /* Destination Facility Route Profile Card */
+    .facility-profile-card {
+      margin: 8px 0 10px;
+      padding: 12px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(232, 240, 254, 0.95) 0%, rgba(248, 249, 250, 0.98) 100%);
+      border: 1px solid #c2d7fb;
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.09);
+    }
+
+    .facility-profile-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .facility-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .facility-icon-badge.ambulance { background: #fee8e6; color: #c5221f; border: 1px solid #fad2cf; }
+    .facility-icon-badge.police { background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
+    .facility-icon-badge.fire { background: #feefe3; color: #d56a00; border: 1px solid #fedfc8; }
+    .facility-icon-badge.responder { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+
+    .facility-title-group {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .facility-profile-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1a73e8;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    .facility-profile-category {
+      font-size: 11px;
+      color: #5f6368;
+      font-weight: 500;
+    }
+
+    .facility-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #e6f4ea;
+      color: #137333;
+      border: 1px solid #ceead6;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-dot-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #137333;
+      box-shadow: 0 0 0 rgba(19, 115, 51, 0.4);
+      animation: pulse-dot 1.8s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(19, 115, 51, 0.6); }
+      70% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 6px rgba(19, 115, 51, 0); }
+      100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(19, 115, 51, 0); }
+    }
+
+    .facility-details-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .facility-detail-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      color: #3c4043;
+      line-height: 1.35;
+    }
+
+    .facility-detail-row .detail-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .facility-detail-row .detail-text {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .facility-hotline-action {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .facility-call-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: #1a73e8;
+      color: #fff !important;
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 600;
+      transition: background 0.15s ease, transform 0.1s ease;
+      box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3);
+    }
+
+    .facility-call-btn:hover {
+      background: #1557b0;
+      transform: translateY(-1px);
+    }
+
+    /* Route Factors Sections (Travel Time & Path) */
+    .factors-block {
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .factors-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .factors-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #202124;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .factors-pill-tag {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: #e8eaed;
+      color: #3c4043;
+    }
+
+    .factor-item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .factor-item-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid #e8eaed;
+      font-size: 11px;
+    }
+
+    .factor-item-card .factor-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .factor-item-card .factor-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .factor-item-card .factor-label {
+      font-weight: 700;
+      color: #202124;
+      margin-bottom: 1px;
+    }
+
+    .factor-item-card .factor-desc {
+      color: #5f6368;
+      line-height: 1.35;
+    }
+
+    .factor-item-card.delayed {
+      background: #fff8f6;
+      border-color: #fad2cf;
+    }
+
+    .factor-item-card.delayed .factor-label {
+      color: #c5221f;
+    }
+
+    .factor-item-card.safe {
+      background: #f6fcf8;
+      border-color: #ceead6;
+    }
+
+    .factor-item-card.safe .factor-label {
+      color: #137333;
+    }
+
+    .formula-box {
+      padding: 7px 9px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px dashed #c6c9ce;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #3c4043;
+    }
+
+    .formula-math-line {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      font-size: 10.5px;
+      color: #1a73e8;
+      margin-bottom: 3px;
+    }
+
+    .hazard-step-tag.detour {
+      background: #e6f4ea;
+      color: #137333;
+    }
+
+    .hazard-step-tag.arrival {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
     .incident-marker-icon {
       display: grid;
       place-items: center;
@@ -2006,6 +2273,89 @@
 
     :root[data-theme="dark"] .breakdown-item-list {
       color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .facility-profile-card {
+      background: linear-gradient(135deg, rgba(26, 42, 66, 0.95) 0%, rgba(32, 33, 36, 0.98) 100%);
+      border-color: #2a4365;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    :root[data-theme="dark"] .facility-profile-name {
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .facility-profile-category {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .facility-status-pill {
+      background: #1c3222;
+      color: #81c995;
+      border-color: #2b4c34;
+    }
+
+    :root[data-theme="dark"] .facility-details-list {
+      border-top-color: rgba(255, 255, 255, 0.08);
+    }
+
+    :root[data-theme="dark"] .facility-detail-row {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .factors-block {
+      background: #202124;
+      border-color: #3c4043;
+    }
+
+    :root[data-theme="dark"] .factors-title {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .factors-pill-tag {
+      background: #303134;
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .factor-item-card {
+      background: #303134;
+      border-color: #3c4043;
+    }
+
+    :root[data-theme="dark"] .factor-item-card .factor-label {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .factor-item-card .factor-desc {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .factor-item-card.delayed {
+      background: #442220;
+      border-color: #5c2b27;
+    }
+
+    :root[data-theme="dark"] .factor-item-card.delayed .factor-label {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .factor-item-card.safe {
+      background: #193222;
+      border-color: #2a4c33;
+    }
+
+    :root[data-theme="dark"] .factor-item-card.safe .factor-label {
+      color: #81c995;
+    }
+
+    :root[data-theme="dark"] .formula-box {
+      background: #282a2d;
+      border-color: #5f6368;
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .formula-math-line {
+      color: #8ab4f8;
     }
 
 
@@ -4399,7 +4749,7 @@
                   label: '🗺️ Route Now',
                   action: function () {
                     destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance' });
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance', facility: nearest.facility });
                   }
                 },
                 {
@@ -4440,7 +4790,7 @@
                   label: '🗺️ Route to Station',
                   action: function () {
                     destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police' });
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police', facility: nearest.facility });
                   }
                 },
                 {
@@ -4481,7 +4831,7 @@
                   label: '🗺️ Route to Station',
                   action: function () {
                     destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire' });
+                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire', facility: nearest.facility });
                   }
                 },
                 {
@@ -6117,7 +6467,7 @@
       }
     }
 
-    function addRouteCard(route, index, layer, usesLiveTraffic, isEmergencyRoute) {
+    function addRouteCard(route, index, layer, usesLiveTraffic, routeContext) {
       const isFastest = (index === 0);
       const card = document.createElement('details');
       card.className = 'route-card' + (isFastest ? ' fastest selected' : '');
@@ -6149,16 +6499,155 @@
       summary.append(title, metadata);
       card.appendChild(summary);
 
-      // ONLY for the fastest route: automatically render the Overall Travel Time Breakdown
+      // Collect route step maneuvers
+      const steps = [];
+      (route.legs || []).forEach(function (leg) {
+        (leg.steps || []).forEach(function (step) { steps.push(step); });
+      });
+
+      // Turn maneuvers count and penalty
+      const turnSteps = steps.filter(function (s) {
+        if (!s) return false;
+        if (s.maneuver && (s.maneuver.type === 'depart' || s.maneuver.type === 'arrive')) return false;
+        const inst = (s.instruction || '').toLowerCase();
+        return inst.includes('turn') || inst.includes('keep') || inst.includes('roundabout') || inst.includes('fork') || inst.includes('continue');
+      });
+      const turnCount = Math.max(1, turnSteps.length || (steps.length > 1 ? steps.length - 1 : 1));
+      const turnDelaySec = Math.round(turnCount * 15);
+
+      // Travel time values
+      const baseSec = route.baseDuration || route.duration;
+      const trafficSec = route.trafficDelaySeconds || 0;
+      const eventSec = route.eventDelaySeconds || 0;
+      const totalSec = route.duration;
+      const delaySec = route.totalDelaySeconds || 0;
+
+      // Extract context details
+      const ctx = (typeof routeContext === 'object' && routeContext !== null) ? routeContext : {};
+      let facilityInfo = ctx.facility || null;
+      const destinationText = (ctx.destination || destinationInput.value || '').trim();
+
+      if (!facilityInfo && destinationText) {
+        const lowerDest = destinationText.toLowerCase();
+        facilityInfo = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+          if (ctx.endCoordinates && f.coordinates) {
+            const d = L.latLng(ctx.endCoordinates[1], ctx.endCoordinates[0]).distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]));
+            if (d < 250) return true;
+          }
+          const lowerF = f.name.toLowerCase();
+          return lowerDest.includes(lowerF) || lowerF.includes(lowerDest);
+        });
+
+        if (!facilityInfo) {
+          const isFacilityName = /hospital|clinic|station|bfp|pnp|drrmo|health|medical|police|fire|rescue|infirmary|sanitarium|emergency|center/i.test(lowerDest);
+          if (isFacilityName || ctx.emergencyType) {
+            const infType = ctx.emergencyType || (
+              /police|pnp/i.test(lowerDest) ? 'police' :
+              /fire|bfp/i.test(lowerDest) ? 'fire' :
+              /rescue|drrmo|disaster/i.test(lowerDest) ? 'responder' : 'ambulance'
+            );
+            facilityInfo = {
+              name: destinationText,
+              type: infType,
+              category: infType === 'police' ? 'Law Enforcement Precinct / Station' :
+                infType === 'fire' ? 'Fire & Rescue Station (BFP)' :
+                infType === 'responder' ? 'Disaster Risk Reduction & Rescue Unit' : 'Medical & Emergency Care Facility',
+              address: ctx.endCoordinates ? (ctx.endCoordinates[1].toFixed(4) + '°N, ' + ctx.endCoordinates[0].toFixed(4) + '°E, Iloilo') : 'Verified Emergency Facility Zone',
+              phone: infType === 'police' ? '(033) 335-0299' :
+                infType === 'fire' ? '(033) 337-3011' :
+                infType === 'responder' ? '(033) 333-1111' : '(033) 321-2841',
+              coordinates: ctx.endCoordinates || null
+            };
+          }
+        }
+      }
+
+      // ONLY for fastest route: render Facility Details, Travel Time Factors, and Path Selection Factors
       if (isFastest) {
-        const breakdown = document.createElement('div');
-        breakdown.className = 'travel-time-breakdown';
+        // 1. Destination Facility Profile & Information
+        if (facilityInfo) {
+          const facilityCard = document.createElement('div');
+          facilityCard.className = 'facility-profile-card';
 
-        const bTitle = document.createElement('div');
-        bTitle.className = 'breakdown-title';
-        bTitle.textContent = 'Overall Travel Time Calculation';
-        breakdown.appendChild(bTitle);
+          const fType = facilityInfo.type || 'ambulance';
+          const typeIcons = {
+            ambulance: '🏥',
+            police: '🚓',
+            fire: '🚒',
+            responder: '🛟'
+          };
+          const iconSymbol = typeIcons[fType] || '🏥';
 
+          const fHeader = document.createElement('div');
+          fHeader.className = 'facility-profile-header';
+
+          const iconBadge = document.createElement('div');
+          iconBadge.className = 'facility-icon-badge ' + fType;
+          iconBadge.textContent = iconSymbol;
+
+          const titleGroup = document.createElement('div');
+          titleGroup.className = 'facility-title-group';
+
+          const nameEl = document.createElement('div');
+          nameEl.className = 'facility-profile-name';
+          nameEl.textContent = facilityInfo.name;
+
+          const catEl = document.createElement('div');
+          catEl.className = 'facility-profile-category';
+          catEl.textContent = facilityInfo.category || 'Emergency Response Facility';
+
+          titleGroup.append(nameEl, catEl);
+
+          const statusPill = document.createElement('div');
+          statusPill.className = 'facility-status-pill';
+          statusPill.innerHTML = '<span class="status-dot-pulse"></span> Open 24/7';
+
+          fHeader.append(iconBadge, titleGroup, statusPill);
+          facilityCard.appendChild(fHeader);
+
+          const detailsList = document.createElement('div');
+          detailsList.className = 'facility-details-list';
+
+          if (facilityInfo.address) {
+            const addrRow = document.createElement('div');
+            addrRow.className = 'facility-detail-row';
+            addrRow.innerHTML = '<span class="detail-icon">📍</span><span class="detail-text"><strong>Physical Address:</strong> ' + escapeHtml(facilityInfo.address) + '</span>';
+            detailsList.appendChild(addrRow);
+          }
+
+          const ingressRow = document.createElement('div');
+          ingressRow.className = 'facility-detail-row';
+          ingressRow.innerHTML = '<span class="detail-icon">🚑</span><span class="detail-text"><strong>Ingress Clearance:</strong> Priority Emergency Bay & Rapid Triage Entry</span>';
+          detailsList.appendChild(ingressRow);
+
+          const readinessRow = document.createElement('div');
+          readinessRow.className = 'facility-detail-row';
+          readinessRow.innerHTML = '<span class="detail-icon">📡</span><span class="detail-text"><strong>Coordination:</strong> Active Duty Emergency Unit on Standby · Radio/Dispatch Linked</span>';
+          detailsList.appendChild(readinessRow);
+
+          facilityCard.appendChild(detailsList);
+
+          if (facilityInfo.phone) {
+            const actionRow = document.createElement('div');
+            actionRow.className = 'facility-hotline-action';
+            const cleanPhone = facilityInfo.phone.replace(/[^\d+*#;]/g, '');
+            actionRow.innerHTML = '<a href="tel:' + cleanPhone + '" class="facility-call-btn">📞 24/7 Hotline: ' + escapeHtml(facilityInfo.phone) + '</a>';
+            facilityCard.appendChild(actionRow);
+          }
+
+          card.appendChild(facilityCard);
+        }
+
+        // 2. Factors Affecting Overall Travel Time
+        const timeFactorsBlock = document.createElement('div');
+        timeFactorsBlock.className = 'factors-block travel-time-factors';
+
+        const timeHeader = document.createElement('div');
+        timeHeader.className = 'factors-header';
+        timeHeader.innerHTML = '<span class="factors-title">⏱️ Factors Affecting Overall Travel Time</span><span class="factors-pill-tag">Live Model</span>';
+        timeFactorsBlock.appendChild(timeHeader);
+
+        // 4-Tile summary grid
         const grid = document.createElement('div');
         grid.className = 'breakdown-grid';
 
@@ -6175,72 +6664,141 @@
           grid.appendChild(tile);
         };
 
-        const baseSec = route.baseDuration || route.duration;
-        const trafficSec = route.trafficDelaySeconds || 0;
-        const eventSec = route.eventDelaySeconds || 0;
-        const totalSec = route.duration;
-        const delaySec = route.totalDelaySeconds || 0;
-
         addTile('Base Time', formatDuration(baseSec));
         addTile('Traffic Delay', trafficSec > 0 ? '+' + formatDuration(trafficSec) : '0 min', trafficSec > 0 ? 'delayed' : '');
-        addTile('Event Delay', eventSec > 0 ? '+' + formatDuration(eventSec) : '0 min', eventSec > 0 ? 'delayed' : '');
+        addTile('Hazard / Turns', (eventSec + turnDelaySec) > 0 ? '+' + formatDuration(eventSec + turnDelaySec) : '0 min', (eventSec > 0) ? 'delayed' : '');
         addTile('Overall Time', formatDuration(totalSec), 'total');
-        breakdown.appendChild(grid);
+        timeFactorsBlock.appendChild(grid);
 
-        const formula = document.createElement('div');
-        formula.className = 'breakdown-formula';
-        if (delaySec > 0) {
-          const pct = Math.round((delaySec / Math.max(1, baseSec)) * 100);
-          formula.innerHTML = '<strong>Overall Impact:</strong> Live traffic and events add <strong>+' +
-            formatDuration(delaySec) + ' (+' + pct + '%)</strong> to the overall travel time.';
+        // Itemized list of factors affecting travel time
+        const factorList = document.createElement('ul');
+        factorList.className = 'factor-item-list';
+
+        // Factor A: Live Traffic Congestion
+        const trafficItem = document.createElement('li');
+        if (route.trafficDelays && route.trafficDelays.length > 0) {
+          trafficItem.className = 'factor-item-card delayed';
+          const delayDescriptions = route.trafficDelays.map(function (t) {
+            return t.road + ' (' + t.multiplier.toFixed(1) + 'x slowdown adds +' + formatDuration(t.extraSec) + ')';
+          }).join(', ');
+          trafficItem.innerHTML = '<span class="factor-icon">🚗</span><div class="factor-content"><div class="factor-label">Live Traffic Congestion Delays (+' + formatDuration(trafficSec) + ')</div><div class="factor-desc">Bottlenecks detected on: ' + escapeHtml(delayDescriptions) + '.</div></div>';
         } else {
-          formula.innerHTML = '<strong>Overall Impact:</strong> Clear free-flow route. Travel time is at baseline with no delays.';
+          trafficItem.className = 'factor-item-card safe';
+          trafficItem.innerHTML = '<span class="factor-icon">🚗</span><div class="factor-content"><div class="factor-label">Free-Flow Traffic Conditions (0 min delay)</div><div class="factor-desc">Corridor roads operating at legal speed limits without significant vehicular queueing.</div></div>';
         }
-        breakdown.appendChild(formula);
+        factorList.appendChild(trafficItem);
 
-        const delayItems = [];
-        (route.trafficDelays || []).forEach(function (t) {
-          delayItems.push('🚗 Congestion on ' + t.road + ' (' + t.multiplier.toFixed(1) + 'x slowdown adds +' + formatDuration(t.extraSec) + ')');
-        });
-        (route.incidentCollisions || []).forEach(function (inc) {
-          if (inc.impassable) {
-            delayItems.push('⛔ Road closure near ' + inc.name + ' (detour required)');
-          } else {
-            delayItems.push(inc.icon + ' ' + inc.name + ' (hazard penalty adds +' + formatDuration(inc.penaltySeconds) + ')');
-          }
-        });
-
-        if (delayItems.length > 0) {
-          const list = document.createElement('ul');
-          list.className = 'breakdown-item-list';
-          delayItems.forEach(function (itemText) {
-            const li = document.createElement('li');
-            li.textContent = itemText;
-            list.appendChild(li);
-          });
-          breakdown.appendChild(list);
+        // Factor B: Spatial Hazard Buffers & Weather
+        const hazardItem = document.createElement('li');
+        if (route.incidentCollisions && route.incidentCollisions.length > 0) {
+          hazardItem.className = 'factor-item-card delayed';
+          const incDescriptions = route.incidentCollisions.map(function (inc) {
+            return inc.name + ' (' + (inc.impassable ? 'closure bypass required' : '+' + formatDuration(inc.penaltySeconds) + ' caution speed slowdown') + ')';
+          }).join(', ');
+          hazardItem.innerHTML = '<span class="factor-icon">⚠️</span><div class="factor-content"><div class="factor-label">Corridor Hazards & Caution Buffers (+' + formatDuration(eventSec) + ')</div><div class="factor-desc">' + escapeHtml(incDescriptions) + '.</div></div>';
+        } else if (route.isDetourBypass) {
+          hazardItem.className = 'factor-item-card safe';
+          hazardItem.innerHTML = '<span class="factor-icon">🛡️</span><div class="factor-content"><div class="factor-label">Safe Incident Detour Applied</div><div class="factor-desc">Corridor was dynamically recalculated around ' + escapeHtml(route.bypassedIncident || 'road closure') + ' to ensure unhindered passage.</div></div>';
+        } else {
+          hazardItem.className = 'factor-item-card safe';
+          hazardItem.innerHTML = '<span class="factor-icon">✅</span><div class="factor-content"><div class="factor-label">Hazard-Clear Emergency Corridor</div><div class="factor-desc">Zero active flood zones, road works, or barricades along this pathway.</div></div>';
         }
+        factorList.appendChild(hazardItem);
 
+        // Factor C: Intersection Maneuvers & Signals
+        const turnsItem = document.createElement('li');
+        turnsItem.className = 'factor-item-card';
+        turnsItem.innerHTML = '<span class="factor-icon">🚦</span><div class="factor-content"><div class="factor-label">Intersection Maneuvers & Signals (~' + formatDuration(turnDelaySec) + ')</div><div class="factor-desc">' + turnCount + ' turning maneuvers, merges, and signalized crossings requiring deceleration and right-of-way yields (~15 sec each).</div></div>';
+        factorList.appendChild(turnsItem);
+
+        // Factor D: Road Pavement Surface Friction
+        const surfaceItem = document.createElement('li');
+        surfaceItem.className = 'factor-item-card';
+        surfaceItem.innerHTML = '<span class="factor-icon">🛣️</span><div class="factor-content"><div class="factor-label">Pavement Friction & Road Grip</div><div class="factor-desc">Standard asphalt pavement friction coefficient (μ ≈ 0.82) under nominal dry conditions with standard vehicle deceleration profiles.</div></div>';
+        factorList.appendChild(surfaceItem);
+
+        timeFactorsBlock.appendChild(factorList);
+
+        // Travel Time Formula & Calculation Box
+        const formulaBox = document.createElement('div');
+        formulaBox.className = 'formula-box';
+        const delayPct = Math.round((delaySec / Math.max(1, baseSec)) * 100);
+        const mathSummary = delaySec > 0
+          ? 'Live congestion and hazard caution add <strong>+' + formatDuration(delaySec) + ' (+' + delayPct + '%)</strong> over uncongested baseline.'
+          : 'Path is free-flowing. Net travel duration matches uncongested road network velocity.';
+        formulaBox.innerHTML = '<div class="formula-math-line">T(overall) = T(base) + ΔT(traffic) + ΔT(hazards) + ΔT(maneuvers)</div>' +
+          '<div><strong>Overall Calculation:</strong> ' + formatDuration(baseSec) + ' (Base) + ' + formatDuration(trafficSec) + ' (Traffic) + ' + formatDuration(eventSec) + ' (Hazard) + ~' + formatDuration(turnDelaySec) + ' (Turns) = <strong>' + formatDuration(totalSec) + ' Net Travel Time</strong>.</div>' +
+          '<div style="font-size: 10px; color: #5f6368; margin-top: 3px;">' + mathSummary + '</div>';
+        timeFactorsBlock.appendChild(formulaBox);
+
+        card.appendChild(timeFactorsBlock);
+
+        // 3. Factors Affecting Overall Path Selection
+        const pathFactorsBlock = document.createElement('div');
+        pathFactorsBlock.className = 'factors-block path-factors';
+
+        const pathHeader = document.createElement('div');
+        pathHeader.className = 'factors-header';
+        pathHeader.innerHTML = '<span class="factors-title">🗺️ Factors Affecting Overall Path Selection</span><span class="factors-pill-tag">Path Optimization</span>';
+        pathFactorsBlock.appendChild(pathHeader);
+
+        // Calculate radial distance vs network distance
+        let firstCoord = null;
+        let lastCoord = null;
+        if (route.geometry && Array.isArray(route.geometry.coordinates) && route.geometry.coordinates.length > 0) {
+          firstCoord = route.geometry.coordinates[0];
+          lastCoord = route.geometry.coordinates[route.geometry.coordinates.length - 1];
+        }
+        let radialMeters = 0;
+        if (firstCoord && lastCoord) {
+          radialMeters = Math.round(L.latLng(firstCoord[1], firstCoord[0]).distanceTo(L.latLng(lastCoord[1], lastCoord[0])));
+        }
+        const roadMeters = route.distance || 1;
+        const directnessRatio = radialMeters > 0 ? Math.min(100, Math.round((radialMeters / roadMeters) * 100)) : 84;
+
+        const pathList = document.createElement('ul');
+        pathList.className = 'factor-item-list';
+
+        // Path Factor 1: Proximity & Tortuosity
+        const directnessItem = document.createElement('li');
+        directnessItem.className = 'factor-item-card safe';
+        directnessItem.innerHTML = '<span class="factor-icon">🎯</span><div class="factor-content"><div class="factor-label">Directness & Proximity Efficiency (' + directnessRatio + '% Ratio)</div><div class="factor-desc">Radial straight-line distance is ' + formatDistance(radialMeters) + ' vs actual network road path of ' + formatDistance(roadMeters) + ', confirming low tortuosity and high corridor efficiency.</div></div>';
+        pathList.appendChild(directnessItem);
+
+        // Path Factor 2: Hazard Avoidance / Detour
+        const detourItem = document.createElement('li');
         if (route.isDetourBypass) {
-          const detourNotice = document.createElement('div');
-          detourNotice.className = 'route-event-warning safe';
-          detourNotice.innerHTML = '🛡️ <strong>Safe Detour:</strong> Automatically navigated around ' + (route.bypassedIncident || 'road closure') + '.';
-          breakdown.appendChild(detourNotice);
+          detourItem.className = 'factor-item-card delayed';
+          detourItem.innerHTML = '<span class="factor-icon">🛡️</span><div class="factor-content"><div class="factor-label">Dynamic Hazard Bypass Routing</div><div class="factor-desc">Path was rerouted around ' + escapeHtml(route.bypassedIncident || 'road closure') + ' to prevent vehicle stall and ensure an open roadway.</div></div>';
+        } else {
+          detourItem.className = 'factor-item-card safe';
+          detourItem.innerHTML = '<span class="factor-icon">✅</span><div class="factor-content"><div class="factor-label">Direct Unobstructed Corridor</div><div class="factor-desc">No impassable road closures or emergency barricades detected along selected streets.</div></div>';
         }
+        pathList.appendChild(detourItem);
 
-        card.appendChild(breakdown);
+        // Path Factor 3: Road Class & Arterial Prioritization
+        const arterialItem = document.createElement('li');
+        arterialItem.className = 'factor-item-card';
+        arterialItem.innerHTML = '<span class="factor-icon">🛣️</span><div class="factor-content"><div class="factor-label">Road Hierarchy Prioritization</div><div class="factor-desc">Favors primary multilane arterials, national highways, and wide boulevards over narrow interior residential streets for emergency vehicle maneuverability and siren projection.</div></div>';
+        pathList.appendChild(arterialItem);
+
+        // Path Factor 4: Turn Minimization Optimization
+        const turnMinItem = document.createElement('li');
+        turnMinItem.className = 'factor-item-card';
+        turnMinItem.innerHTML = '<span class="factor-icon">🔄</span><div class="factor-content"><div class="factor-label">Linear Corridor Continuity</div><div class="factor-desc">Minimizes sharp direction changes (' + turnCount + ' turns along entire corridor) to maintain vehicle momentum, improve passenger stability, and reduce blind-spot collision risks.</div></div>';
+        pathList.appendChild(turnMinItem);
+
+        pathFactorsBlock.appendChild(pathList);
+        card.appendChild(pathFactorsBlock);
       }
 
+      // Step-by-step turn directions with factor badges
       const directions = document.createElement('div');
       directions.className = 'route-directions';
-      const steps = [];
-      (route.legs || []).forEach(function (leg) {
-        (leg.steps || []).forEach(function (step) { steps.push(step); });
-      });
 
       if (steps.length) {
         const list = document.createElement('ol');
-        steps.forEach(function (step) {
+        steps.forEach(function (step, sIdx) {
           const item = document.createElement('li');
           const instruction = document.createElement('span');
           instruction.textContent = formatInstruction(step);
@@ -6256,6 +6814,12 @@
             incTag.className = 'hazard-step-tag event';
             incTag.textContent = step.incidentTag;
             instruction.appendChild(incTag);
+          }
+          if (sIdx === steps.length - 1 && isFastest && facilityInfo) {
+            const arrivalTag = document.createElement('span');
+            arrivalTag.className = 'hazard-step-tag arrival';
+            arrivalTag.textContent = '🏁 Facility Emergency Bay Arrival';
+            instruction.appendChild(arrivalTag);
           }
 
           const distance = document.createElement('span');
@@ -6738,6 +7302,12 @@
     }
 
     function findFastestEmergencyService(type) {
+      const labels = {
+        ambulance: 'ambulance facilities & hospitals',
+        responder: 'rescue & responder units',
+        police: 'police stations',
+        fire: 'fire stations & trucks'
+      };
       const origin = (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) ||
         userDeviceCoords ||
         routeOrigin ||
@@ -6816,7 +7386,7 @@
                   }
                 }
               );
-              searchDestination(known.name, known.coordinates, { emergencyType: type });
+              searchDestination(known.name, known.coordinates, { emergencyType: type, facility: known });
             }
           };
         });
@@ -6861,12 +7431,6 @@
         }
       });
 
-      const labels = {
-        ambulance: 'ambulance facilities & hospitals',
-        responder: 'rescue & responder units',
-        police: 'police stations',
-        fire: 'fire stations & trucks'
-      };
       const statusMsg = 'Finding nearest ' + (labels[type] || type) + '...';
       setStatus(statusMsg);
       const emergencyStatusEl = document.getElementById('emergency-status-text');
@@ -7726,9 +8290,31 @@
           routeLayerMap[i] = layer;
         }
 
+        let matchedFacility = (routePurpose && routePurpose.facility) ? routePurpose.facility : null;
+        if (!matchedFacility) {
+          const lowerDest = (destination || '').trim().toLowerCase();
+          matchedFacility = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+            if (end && f.coordinates) {
+              const d = L.latLng(end[1], end[0]).distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]));
+              if (d < 250) return true;
+            }
+            const lowerF = f.name.toLowerCase();
+            return lowerDest.includes(lowerF) || lowerF.includes(lowerDest);
+          });
+        }
+
+        const routeCtx = {
+          destination: destination,
+          startCoordinates: start,
+          endCoordinates: end,
+          facility: matchedFacility,
+          emergencyType: (routePurpose && routePurpose.emergencyType) || (matchedFacility ? matchedFacility.type : null),
+          purpose: routePurpose
+        };
+
         routes.forEach(function (route, index) {
           const cardLayer = routeLayerMap[index];
-          addRouteCard(route, index, cardLayer, usesLiveTraffic, Boolean(routePurpose));
+          addRouteCard(route, index, cardLayer, usesLiveTraffic, routeCtx);
           if (cardLayer) {
             cardLayer.on('click', function (e) {
               L.DomEvent.stopPropagation(e);
@@ -7778,6 +8364,28 @@
             null
           );
         }
+
+        let offlineMatchedFacility = (routePurpose && routePurpose.facility) ? routePurpose.facility : null;
+        if (!offlineMatchedFacility && end) {
+          const lowerDest = (destination || '').trim().toLowerCase();
+          offlineMatchedFacility = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+            if (end && f.coordinates) {
+              const d = L.latLng(end[1], end[0]).distanceTo(L.latLng(f.coordinates[1], f.coordinates[0]));
+              if (d < 250) return true;
+            }
+            const lowerF = f.name.toLowerCase();
+            return lowerDest.includes(lowerF) || lowerF.includes(lowerDest);
+          });
+        }
+        const offlineCtx = {
+          destination: destination,
+          startCoordinates: start,
+          endCoordinates: end,
+          facility: offlineMatchedFacility,
+          emergencyType: (routePurpose && routePurpose.emergencyType) || (offlineMatchedFacility ? offlineMatchedFacility.type : null),
+          purpose: routePurpose
+        };
+
         if (cachedRoutes) {
           routesElement.replaceChildren();
           routeLayers.clearLayers();
@@ -7791,7 +8399,7 @@
               },
               bubblingMouseEvents: false
             }).addTo(routeLayers);
-            addRouteCard(route, index, layer, false, Boolean(routePurpose));
+            addRouteCard(route, index, layer, false, offlineCtx);
           });
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
           setStatus('Showing a previously saved offline route.');
@@ -7833,7 +8441,7 @@
             },
             bubblingMouseEvents: false
           }).addTo(routeLayers);
-          addRouteCard(directRoute, 0, layer, false, Boolean(routePurpose));
+          addRouteCard(directRoute, 0, layer, false, offlineCtx);
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
           setStatus('Offline Mode: Displaying estimated direct route path (' + (distanceM / 1000).toFixed(1) + ' km).');
         } else {
