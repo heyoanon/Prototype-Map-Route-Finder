@@ -979,6 +979,690 @@
       overflow-wrap: anywhere;
     }
 
+    .map-tool-button.signed-in {
+      position: relative;
+    }
+
+    .map-tool-button.signed-in::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #34a853;
+      border: 2px solid #fff;
+    }
+
+    /* ==========================================================================
+       AUTHENTICATION & SIGN-IN / LOG-IN INTERFACE
+       ========================================================================== */
+    .auth-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+    }
+
+    .auth-modal-overlay[hidden] {
+      display: none !important;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-modal {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      max-height: min(92vh, 680px);
+      overflow-y: auto;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08);
+      padding: 24px 26px 26px;
+      box-sizing: border-box;
+      animation: auth-modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      color: #202124;
+      font-family: inherit;
+    }
+
+    @keyframes auth-modal-pop {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .auth-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .auth-modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .auth-modal-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .auth-modal-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #f1f3f4;
+      color: #5f6368;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .auth-modal-close:hover {
+      background: #e8eaed;
+      color: #202124;
+    }
+
+    .auth-modal-close svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .auth-modal-title-area {
+      margin-bottom: 18px;
+    }
+
+    .auth-modal-title {
+      margin: 0 0 6px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #202124;
+      letter-spacing: -0.3px;
+      line-height: 1.25;
+    }
+
+    .auth-modal-subtitle {
+      margin: 0;
+      font-size: 13px;
+      color: #5f6368;
+      line-height: 1.45;
+    }
+
+    /* Segmented Tab Bar */
+    .auth-tabs {
+      display: flex;
+      background: #f1f3f4;
+      border-radius: 12px;
+      padding: 3px;
+      margin-bottom: 18px;
+      gap: 3px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: #5f6368;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: center;
+    }
+
+    .auth-tab:hover:not(.active) {
+      color: #202124;
+    }
+
+    .auth-tab.active {
+      background: #ffffff;
+      color: #1a73e8;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Alert / Feedback message banner */
+    .auth-modal-status {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      margin-bottom: 16px;
+      border: 1px solid transparent;
+    }
+
+    .auth-modal-status.status-error {
+      background: #fdf2f2;
+      border-color: #f8b4b4;
+      color: #9b1c1c;
+    }
+
+    .auth-modal-status.status-success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .auth-modal-status.status-info {
+      background: #f0f7ff;
+      border-color: #c7dfff;
+      color: #1e40af;
+    }
+
+    .auth-status-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .auth-status-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Form Fields */
+    .auth-modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .auth-field-group[hidden] {
+      display: none !important;
+    }
+
+    .auth-field-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #3c4043;
+    }
+
+    .auth-field-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .auth-text-link {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #1a73e8;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .auth-text-link:hover {
+      text-decoration: underline;
+    }
+
+    .auth-field-hint {
+      font-size: 11px;
+      color: #70757a;
+      font-weight: 400;
+    }
+
+    .auth-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .auth-input-icon {
+      position: absolute;
+      left: 12px;
+      width: 17px;
+      height: 17px;
+      stroke: #70757a;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+      transition: stroke 0.15s;
+    }
+
+    .auth-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px 0 38px;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #202124;
+      font-size: 13.5px;
+      font-family: inherit;
+      box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+    }
+
+    .auth-input-wrapper:focus-within .auth-input-icon {
+      stroke: #1a73e8;
+    }
+
+    .auth-input-password-field {
+      padding-right: 40px !important;
+    }
+
+    .auth-password-toggle {
+      position: absolute;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: transparent;
+      color: #70757a;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .auth-password-toggle:hover {
+      background: #f1f3f4;
+      color: #202124;
+    }
+
+    .auth-password-toggle svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Options / Checkbox */
+    .auth-form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: -2px;
+    }
+
+    .auth-checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #5f6368;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .auth-checkbox-label input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      border-radius: 4px;
+      accent-color: #1a73e8;
+      cursor: pointer;
+    }
+
+    /* Primary Submit Button */
+    .auth-submit-row {
+      margin-top: 6px;
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 11px;
+      background: #1a73e8;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+
+    .auth-submit-btn:hover:not(:disabled) {
+      background: #1557b0;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.35);
+    }
+
+    .auth-submit-btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .auth-submit-btn:disabled {
+      background: #dadce0;
+      color: #80868b;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .auth-btn-icon {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.15s ease;
+    }
+
+    .auth-submit-btn:hover:not(:disabled) .auth-btn-icon {
+      transform: translateX(2px);
+    }
+
+    .auth-btn-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: auth-spin 0.7s linear infinite;
+    }
+
+    @keyframes auth-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Modal Footer */
+    .auth-modal-footer {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #f1f3f4;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .auth-footer-text {
+      font-size: 12.5px;
+      color: #5f6368;
+    }
+
+    .auth-inline-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #1a73e8;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .auth-inline-btn:hover {
+      text-decoration: underline;
+    }
+
+    .auth-offline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: #70757a;
+      background: #f8f9fa;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #e8eaed;
+    }
+
+    .auth-offline-badge svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Account Popover Enhancements */
+    .account-popover-card {
+      padding: 4px;
+    }
+
+    .account-welcome-box {
+      text-align: center;
+      padding: 10px 8px 14px;
+    }
+
+    .account-welcome-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #e8f0fe;
+      color: #1a73e8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .account-welcome-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .account-welcome-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #202124;
+      margin: 0 0 4px 0;
+    }
+
+    .account-welcome-desc {
+      font-size: 12px;
+      color: #5f6368;
+      margin: 0 0 12px 0;
+      line-height: 1.4;
+    }
+
+    .account-cta-primary {
+      width: 100%;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      border-radius: 8px;
+      background: #1a73e8;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+
+    .account-cta-primary:hover {
+      background: #1557b0;
+    }
+
+    .account-cta-secondary {
+      width: 100%;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #1a73e8;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .account-cta-secondary:hover {
+      background: #f8f9fa;
+      border-color: #c7dfff;
+    }
+
+    /* Signed in profile card inside dropdown */
+    .account-profile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f1f3f4;
+      margin-bottom: 12px;
+    }
+
+    .account-avatar-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1a73e8;
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3);
+    }
+
+    .account-profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .account-profile-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #202124;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-profile-email {
+      font-size: 12px;
+      color: #5f6368;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #188038;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .account-sync-badge.offline {
+      color: #e37400;
+    }
+
+    .history-signin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      height: 34px;
+      margin-top: 8px;
+      padding: 0 12px;
+      border: 1px solid #1a73e8;
+      border-radius: 8px;
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .history-signin-btn:hover {
+      background: #d2e3fc;
+    }
+
     .account-history-heading {
       display: flex;
       align-items: center;
@@ -2059,6 +2743,212 @@
 
     :root[data-theme="dark"] .account-content input {
       color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-modal-overlay {
+      background: rgba(0, 0, 0, 0.75);
+    }
+
+    :root[data-theme="dark"] .auth-modal {
+      background: #202124;
+      color: #e8eaed;
+      border: 1px solid #3c4043;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    :root[data-theme="dark"] .auth-modal-title {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-modal-subtitle {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .auth-modal-badge {
+      background: #172b4d;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-modal-close {
+      background: #303134;
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-modal-close:hover {
+      background: #3c4043;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-tabs {
+      background: #303134;
+    }
+
+    :root[data-theme="dark"] .auth-tab {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-tab:hover:not(.active) {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-tab.active {
+      background: #202124;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-modal-status.status-error {
+      background: #3c1e1e;
+      border-color: #771d1d;
+      color: #f8b4b4;
+    }
+
+    :root[data-theme="dark"] .auth-modal-status.status-success {
+      background: #143320;
+      border-color: #1e6b36;
+      color: #86efac;
+    }
+
+    :root[data-theme="dark"] .auth-modal-status.status-info {
+      background: #172b4d;
+      border-color: #1d4ed8;
+      color: #bfdbfe;
+    }
+
+    :root[data-theme="dark"] .auth-field-label {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-field-hint {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-text-link {
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-input {
+      background: #202124;
+      border-color: #5f6368;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-input:focus {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.2);
+    }
+
+    :root[data-theme="dark"] .auth-input-icon {
+      stroke: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-input-wrapper:focus-within .auth-input-icon {
+      stroke: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-password-toggle {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-password-toggle:hover {
+      background: #303134;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-checkbox-label {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .auth-submit-btn {
+      background: #8ab4f8;
+      color: #202124;
+      box-shadow: 0 2px 8px rgba(138, 180, 248, 0.3);
+    }
+
+    :root[data-theme="dark"] .auth-submit-btn:hover:not(:disabled) {
+      background: #aecbfa;
+    }
+
+    :root[data-theme="dark"] .auth-submit-btn:disabled {
+      background: #3c4043;
+      color: #80868b;
+    }
+
+    :root[data-theme="dark"] .auth-modal-footer {
+      border-top-color: #303134;
+    }
+
+    :root[data-theme="dark"] .auth-footer-text {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .auth-inline-btn {
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-offline-badge {
+      background: #303134;
+      border-color: #3c4043;
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .account-welcome-icon {
+      background: #172b4d;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .account-welcome-title {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .account-welcome-desc {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .account-cta-primary {
+      background: #8ab4f8;
+      color: #202124;
+    }
+
+    :root[data-theme="dark"] .account-cta-primary:hover {
+      background: #aecbfa;
+    }
+
+    :root[data-theme="dark"] .account-cta-secondary {
+      background: #202124;
+      border-color: #5f6368;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .account-cta-secondary:hover {
+      background: #303134;
+      border-color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .account-profile-header {
+      border-bottom-color: #303134;
+    }
+
+    :root[data-theme="dark"] .account-profile-name {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .account-profile-email {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .account-avatar-badge {
+      background: #8ab4f8;
+      color: #202124;
+    }
+
+    :root[data-theme="dark"] .history-signin-btn {
+      background: #172b4d;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .history-signin-btn:hover {
+      background: #223f73;
     }
 
     :root[data-theme="dark"] #destination,
@@ -3203,7 +4093,7 @@
 
 
   <div id="account-panel" class="account-panel">
-    <button id="account-toggle" class="map-tool-button" type="button" aria-label="Account" title="Account"
+    <button id="account-toggle" class="map-tool-button" type="button" aria-label="Account" title="Account &amp; Sync"
       aria-expanded="false" aria-controls="account-content">
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <circle cx="12" cy="8" r="4"></circle>
@@ -3212,9 +4102,28 @@
     </button>
     <div id="account-content" class="account-content" hidden>
       <div id="account-status" role="status" aria-live="polite"></div>
-      <div id="account-logged-out">
-        <button id="account-open-form" type="button">Sign in / create account</button>
-        <form id="account-form" hidden>
+      <div id="account-logged-out" class="account-popover-card">
+        <div class="account-welcome-box">
+          <div class="account-welcome-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 21a8 8 0 0 1 16 0"></path>
+            </svg>
+          </div>
+          <h3 class="account-welcome-title">Account &amp; Sync</h3>
+          <p class="account-welcome-desc">Sign in to save search history, bookmark favorite locations, and synchronize preferences.</p>
+          <button id="account-open-signin" class="account-cta-primary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Sign In / Log In
+          </button>
+          <button id="account-open-signup" class="account-cta-secondary" type="button">Create Free Account</button>
+        </div>
+        <button id="account-open-form" type="button" hidden style="display:none;">Sign in / create account</button>
+        <form id="account-form" hidden style="display:none;">
           <label id="signup-name-row" hidden>
             Display name
             <input id="signup-name" type="text" autocomplete="name" maxlength="100">
@@ -3235,13 +4144,25 @@
         </form>
       </div>
       <div id="account-logged-in" hidden>
-        <div id="account-identity"></div>
+        <div class="account-profile-header">
+          <div id="account-avatar-badge" class="account-avatar-badge">U</div>
+          <div class="account-profile-info">
+            <div id="account-profile-name" class="account-profile-name">User</div>
+            <div id="account-identity" class="account-profile-email"></div>
+            <div id="account-sync-status" class="account-sync-badge">
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Cloud Synced</span>
+            </div>
+          </div>
+        </div>
         <label>
           Display name
           <input id="profile-name" type="text" autocomplete="name" maxlength="100">
         </label>
         <div class="account-buttons">
           <button id="save-profile" type="button">Save profile</button>
+          <button id="account-view-history-btn" type="button">View saved history</button>
+          <button id="account-switch-btn" type="button">Switch account</button>
           <button id="account-sign-out" type="button">Sign out</button>
         </div>
       </div>
@@ -3258,13 +4179,204 @@
     </button>
     <div id="history-content" class="history-content" hidden>
       <div id="history-status" role="status" aria-live="polite"></div>
-      <div id="history-logged-out">Sign in with the account icon to view your saved activity.</div>
+      <div id="history-logged-out">
+        <p style="margin: 0 0 8px 0;">Sign in to view and synchronize your saved searches and map activity.</p>
+        <button id="history-open-signin" class="history-signin-btn" type="button">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+          Sign In / Log In
+        </button>
+      </div>
       <div id="history-logged-in" hidden>
         <div class="account-history-heading">
           <h3>Saved activity</h3>
           <button id="clear-history" type="button">Clear history</button>
         </div>
         <ol id="activity-history" aria-label="Saved search and map history"></ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Sign-In / Log-In Modal Interface -->
+  <div id="auth-modal-overlay" class="auth-modal-overlay" hidden aria-hidden="true">
+    <div id="auth-modal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="auth-modal-header">
+        <div class="auth-modal-badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21a8 8 0 0 1 16 0"></path>
+          </svg>
+          <span>Account Access</span>
+        </div>
+        <button id="auth-modal-close" class="auth-modal-close" type="button" aria-label="Close dialog" title="Close (Esc)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="auth-modal-title-area">
+        <h2 id="auth-modal-title" class="auth-modal-title">Welcome Back</h2>
+        <p id="auth-modal-subtitle" class="auth-modal-subtitle">
+          Sign in to access your saved places, recent routes, and sync across devices.
+        </p>
+      </div>
+
+      <div class="auth-tabs" role="tablist" id="auth-tablist">
+        <button type="button" role="tab" id="auth-tab-signin" class="auth-tab active" aria-selected="true">
+          Sign In
+        </button>
+        <button type="button" role="tab" id="auth-tab-signup" class="auth-tab" aria-selected="false">
+          Create Account
+        </button>
+      </div>
+
+      <div id="auth-modal-status" class="auth-modal-status" role="status" aria-live="polite" hidden>
+        <span class="auth-status-icon" id="auth-status-icon" aria-hidden="true"></span>
+        <span class="auth-status-text" id="auth-status-text"></span>
+      </div>
+
+      <form id="auth-modal-form" class="auth-modal-form" novalidate>
+        <!-- Display Name (Sign Up only) -->
+        <div class="auth-field-group" id="auth-field-name-group" hidden>
+          <label for="auth-input-name" class="auth-field-label">
+            <span>Display Name</span>
+            <span class="auth-field-hint">Public alias</span>
+          </label>
+          <div class="auth-input-wrapper">
+            <svg class="auth-input-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input
+              id="auth-input-name"
+              class="auth-input"
+              type="text"
+              autocomplete="name"
+              maxlength="100"
+              placeholder="e.g. Juan Dela Cruz"
+            >
+          </div>
+        </div>
+
+        <!-- Email Address -->
+        <div class="auth-field-group" id="auth-field-email-group">
+          <label for="auth-input-email" class="auth-field-label">
+            <span>Email Address</span>
+          </label>
+          <div class="auth-input-wrapper">
+            <svg class="auth-input-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <input
+              id="auth-input-email"
+              class="auth-input"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="name@example.com"
+            >
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="auth-field-group" id="auth-field-password-group">
+          <div class="auth-field-label-row">
+            <label for="auth-input-password" class="auth-field-label">
+              <span>Password</span>
+            </label>
+            <button type="button" id="auth-forgot-password-link" class="auth-text-link">
+              Forgot password?
+            </button>
+          </div>
+          <div class="auth-input-wrapper">
+            <svg class="auth-input-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input
+              id="auth-input-password"
+              class="auth-input auth-input-password-field"
+              type="password"
+              autocomplete="current-password"
+              minlength="8"
+              required
+              placeholder="Enter your password"
+            >
+            <button type="button" id="auth-toggle-password" class="auth-password-toggle" aria-label="Toggle password visibility" title="Show/Hide password">
+              <svg class="auth-icon-eye" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="auth-icon-eye-off" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+          <div id="auth-password-hint" class="auth-field-hint" hidden>Must be at least 8 characters.</div>
+        </div>
+
+        <!-- Confirm Password Field (Sign Up only) -->
+        <div class="auth-field-group" id="auth-field-confirm-password-group" hidden>
+          <label for="auth-input-confirm-password" class="auth-field-label">
+            <span>Confirm Password</span>
+          </label>
+          <div class="auth-input-wrapper">
+            <svg class="auth-input-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input
+              id="auth-input-confirm-password"
+              class="auth-input auth-input-password-field"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              placeholder="Re-enter your password"
+            >
+          </div>
+        </div>
+
+        <!-- Options row -->
+        <div class="auth-form-options" id="auth-form-options">
+          <label class="auth-checkbox-label">
+            <input type="checkbox" id="auth-remember-me" checked>
+            <span>Remember me on this device</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="auth-submit-row">
+          <button id="auth-modal-submit" class="auth-submit-btn" type="submit">
+            <span class="auth-btn-spinner" id="auth-btn-spinner" aria-hidden="true" hidden></span>
+            <span class="auth-btn-text" id="auth-btn-text">Sign In</span>
+            <svg class="auth-btn-icon" id="auth-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer switch links -->
+      <div class="auth-modal-footer">
+        <div id="auth-footer-toggle" class="auth-footer-text">
+          <span id="auth-footer-question">Don't have an account?</span>
+          <button type="button" id="auth-switch-mode-btn" class="auth-inline-btn">Create one now</button>
+        </div>
+        <div id="auth-footer-reset-back" class="auth-footer-text" hidden>
+          <button type="button" id="auth-back-to-signin-btn" class="auth-inline-btn">← Back to Sign In</button>
+        </div>
+        <div class="auth-offline-badge" id="auth-offline-badge" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"></path></svg>
+          <span>Offline support: local credentials available</span>
+        </div>
       </div>
     </div>
   </div>
@@ -4192,6 +5304,50 @@
     const historyContent = document.getElementById('history-content');
     const historyLoggedOut = document.getElementById('history-logged-out');
     const historyLoggedIn = document.getElementById('history-logged-in');
+
+    // Auth Modal DOM references
+    const authModalOverlay = document.getElementById('auth-modal-overlay');
+    const authModal = document.getElementById('auth-modal');
+    const authModalClose = document.getElementById('auth-modal-close');
+    const authModalTitle = document.getElementById('auth-modal-title');
+    const authModalSubtitle = document.getElementById('auth-modal-subtitle');
+    const authTablist = document.getElementById('auth-tablist');
+    const authTabSignin = document.getElementById('auth-tab-signin');
+    const authTabSignup = document.getElementById('auth-tab-signup');
+    const authModalStatus = document.getElementById('auth-modal-status');
+    const authStatusIcon = document.getElementById('auth-status-icon');
+    const authStatusText = document.getElementById('auth-status-text');
+    const authModalForm = document.getElementById('auth-modal-form');
+    const authFieldNameGroup = document.getElementById('auth-field-name-group');
+    const authInputName = document.getElementById('auth-input-name');
+    const authFieldEmailGroup = document.getElementById('auth-field-email-group');
+    const authInputEmail = document.getElementById('auth-input-email');
+    const authFieldPasswordGroup = document.getElementById('auth-field-password-group');
+    const authInputPassword = document.getElementById('auth-input-password');
+    const authFieldConfirmPasswordGroup = document.getElementById('auth-field-confirm-password-group');
+    const authInputConfirmPassword = document.getElementById('auth-input-confirm-password');
+    const authTogglePassword = document.getElementById('auth-toggle-password');
+    const authPasswordHint = document.getElementById('auth-password-hint');
+    const authForgotPasswordLink = document.getElementById('auth-forgot-password-link');
+    const authFormOptions = document.getElementById('auth-form-options');
+    const authRememberMe = document.getElementById('auth-remember-me');
+    const authModalSubmit = document.getElementById('auth-modal-submit');
+    const authBtnSpinner = document.getElementById('auth-btn-spinner');
+    const authBtnText = document.getElementById('auth-btn-text');
+    const authBtnIcon = document.getElementById('auth-btn-icon');
+    const authFooterToggle = document.getElementById('auth-footer-toggle');
+    const authFooterQuestion = document.getElementById('auth-footer-question');
+    const authSwitchModeBtn = document.getElementById('auth-switch-mode-btn');
+    const authFooterResetBack = document.getElementById('auth-footer-reset-back');
+    const authBackToSigninBtn = document.getElementById('auth-back-to-signin-btn');
+    const authOfflineBadge = document.getElementById('auth-offline-badge');
+    const accountOpenSignin = document.getElementById('account-open-signin');
+    const accountOpenSignup = document.getElementById('account-open-signup');
+    const historyOpenSignin = document.getElementById('history-open-signin');
+    const accountViewHistoryBtn = document.getElementById('account-view-history-btn');
+    const accountSwitchBtn = document.getElementById('account-switch-btn');
+    let currentAuthMode = 'signin';
+
     let supabaseClient = null;
     let currentUser = null;
     let isSignUpMode = false;
@@ -4234,19 +5390,25 @@
       if (!(target instanceof Node)) return;
       const el = target instanceof Element ? target : target.parentElement;
 
+      // Close auth modal when clicking directly on overlay backdrop
+      if (authModalOverlay && !authModalOverlay.hidden && target === authModalOverlay) {
+        closeAuthModal();
+        return;
+      }
+
       // Detect if click is on an interactive element or content
       const isInteractive = Boolean(el && el.closest(
         'input, textarea, select, label, button, a, [role="button"], ' +
         '.service-pin, .service-badge, .service-name, .leaflet-marker-icon, .leaflet-popup, ' +
         '.emergency-facility-card, .route-card, .chatbox-input-form, .chat-msg, .chat-chip, .chat-action-btn, ' +
         '#account-panel, #history-panel, .map-categories-panel, .map-categories-toggle, .leaflet-control, ' +
-        '#assistance-chatbox'
+        '#assistance-chatbox, #auth-modal-overlay, .auth-modal'
       ));
 
       // Check if click was inside any UI panel or modal
       const isInsidePanels = Boolean(el && el.closest(
         '#map-search-controls, #emergency-assistance, #assistance-chatbox, ' +
-        '#account-panel, #history-panel, .map-categories-control, .leaflet-control'
+        '#account-panel, #history-panel, .map-categories-control, .leaflet-control, #auth-modal-overlay, .auth-modal'
       ));
 
       // Collapse panels when clicking at any area that has no buttons or interactive controls
@@ -6709,6 +7871,15 @@
           ? result.data.display_name
           : currentUser.user_metadata && currentUser.user_metadata.display_name || '';
         profileNameInput.value = displayName;
+        const profileNameDisplay = document.getElementById('account-profile-name');
+        const avatarBadge = document.getElementById('account-avatar-badge');
+        if (profileNameDisplay) {
+          profileNameDisplay.textContent = displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+        }
+        if (avatarBadge) {
+          const char = (displayName ? displayName[0] : (currentUser.email ? currentUser.email[0] : 'U')).toUpperCase();
+          avatarBadge.textContent = char;
+        }
         writeOfflineCache('account-profile:' + userId, { display_name: displayName });
         await loadActivityHistory(userId);
       } catch (error) {
@@ -6716,6 +7887,15 @@
         const cachedProfile = readOfflineCache('account-profile:' + userId, null);
         if (cachedProfile) {
           profileNameInput.value = cachedProfile.display_name || '';
+          const profileNameDisplay = document.getElementById('account-profile-name');
+          const avatarBadge = document.getElementById('account-avatar-badge');
+          if (profileNameDisplay) {
+            profileNameDisplay.textContent = cachedProfile.display_name || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+          }
+          if (avatarBadge) {
+            const char = (cachedProfile.display_name ? cachedProfile.display_name[0] : (currentUser.email ? currentUser.email[0] : 'U')).toUpperCase();
+            avatarBadge.textContent = char;
+          }
           setAccountStatus('Showing saved account profile offline.');
         } else {
           setAccountStatus('Could not load profile details: ' + error.message);
@@ -6736,18 +7916,54 @@
       accountLoggedIn.hidden = !isSignedIn;
       historyLoggedOut.hidden = isSignedIn;
       historyLoggedIn.hidden = !isSignedIn;
+
+      const avatarBadge = document.getElementById('account-avatar-badge');
+      const profileNameDisplay = document.getElementById('account-profile-name');
+      const syncStatusPill = document.getElementById('account-sync-status');
+
       if (!isSignedIn) {
         accountForm.hidden = true;
         accountOpenForm.hidden = false;
         accountIdentity.textContent = '';
         profileNameInput.value = '';
         activityHistory.replaceChildren();
+        if (accountToggle) {
+          accountToggle.classList.remove('signed-in');
+          accountToggle.setAttribute('title', 'Account & Sync');
+        }
         return;
       }
 
       accountForm.hidden = true;
-      accountIdentity.textContent = 'Signed in as ' + (currentUser.email || 'user');
+      const email = currentUser.email || '';
+      const initial = (currentUser.user_metadata && currentUser.user_metadata.display_name
+        ? currentUser.user_metadata.display_name[0]
+        : (email ? email[0] : 'U')).toUpperCase();
+
+      if (avatarBadge) avatarBadge.textContent = initial;
+      if (profileNameDisplay) {
+        profileNameDisplay.textContent = (currentUser.user_metadata && currentUser.user_metadata.display_name) ||
+          (email ? email.split('@')[0] : 'User');
+      }
+      accountIdentity.textContent = email;
+      if (accountToggle) {
+        accountToggle.classList.add('signed-in');
+        accountToggle.setAttribute('title', 'Signed in as ' + (currentUser.user_metadata && currentUser.user_metadata.display_name || email));
+      }
+      if (syncStatusPill) {
+        if (navigator.onLine) {
+          syncStatusPill.className = 'account-sync-badge';
+          syncStatusPill.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Cloud Synced</span>';
+        } else {
+          syncStatusPill.className = 'account-sync-badge offline';
+          syncStatusPill.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle></svg><span>Offline Saved</span>';
+        }
+      }
+
       setAccountStatus('Signed in.');
+      if (authModalOverlay && !authModalOverlay.hidden) {
+        closeAuthModal();
+      }
       const userId = currentUser.id;
       window.setTimeout(function () { loadAccountData(userId); }, 0);
     }
@@ -6782,7 +7998,7 @@
     async function initializeAccount() {
       const config = window.OSM_MAP_SUPABASE_CONFIG;
       if (!config || !config.url || !config.anonKey) {
-        accountOpenForm.disabled = true;
+        if (accountOpenForm) accountOpenForm.disabled = true;
         setAccountStatus('Configure the Supabase project URL and public anon key to enable accounts.');
         return;
       }
@@ -6800,7 +8016,7 @@
           if (cachedProfile) profileNameInput.value = cachedProfile.display_name || '';
           renderActivityHistory(readOfflineCache('account-history:' + currentUser.id, []));
         } else {
-          accountOpenForm.disabled = true;
+          if (accountOpenForm) accountOpenForm.disabled = true;
           setAccountStatus('Supabase could not be loaded. Check your connection and reload.');
         }
         return;
@@ -6821,78 +8037,402 @@
           showAccountSession(cachedSession);
           setAccountStatus('Signed in using saved account data offline.');
         } else {
-          accountOpenForm.disabled = true;
+          if (accountOpenForm) accountOpenForm.disabled = true;
           setAccountStatus('Could not connect to account storage: ' + error.message);
         }
       }
     }
 
-    accountOpenForm.addEventListener('click', function () {
-      setAccountFormMode(false);
-      accountForm.hidden = false;
-      accountOpenForm.hidden = true;
-      accountEmailInput.focus();
-    });
-
-    accountModeButton.addEventListener('click', function () {
-      setAccountFormMode(!isSignUpMode);
-      signupNameInput.value = '';
-      setAccountStatus('');
-    });
-
-    document.getElementById('account-cancel').addEventListener('click', function () {
-      accountForm.hidden = true;
-      accountOpenForm.hidden = false;
-      setAccountStatus('');
-    });
-
-    accountForm.addEventListener('submit', async function (event) {
-      event.preventDefault();
-      if (!supabaseClient) return;
-      const email = accountEmailInput.value.trim();
-      accountSubmit.disabled = true;
-      try {
-        const password = accountPasswordInput.value;
-        if (isSignUpMode) {
-          const displayName = signupNameInput.value.trim();
-          if (!displayName) throw new Error('Enter a display name.');
-          const result = await supabaseClient.auth.signUp({
-            email: email,
-            password: password,
-            options: { data: { display_name: displayName } }
-          });
-          if (result.error) throw result.error;
-          accountForm.reset();
-          accountForm.hidden = true;
-          accountOpenForm.hidden = false;
-          setAccountStatus(result.data.session
-            ? 'Account created.'
-            : 'Check your email to confirm the account, then sign in.');
+    /* -------------------------------------------------------------------------
+       Dedicated Sign-In / Log-In Interface Logic
+       ------------------------------------------------------------------------- */
+    function setAuthModalStatus(message, type) {
+      if (!authModalStatus) return;
+      if (!message) {
+        authModalStatus.hidden = true;
+        authModalStatus.className = 'auth-modal-status';
+        if (authStatusText) authStatusText.textContent = '';
+        return;
+      }
+      authModalStatus.hidden = false;
+      const statusType = type || 'info';
+      authModalStatus.className = 'auth-modal-status status-' + statusType;
+      if (authStatusText) authStatusText.textContent = message;
+      if (authStatusIcon) {
+        if (statusType === 'error') {
+          authStatusIcon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        } else if (statusType === 'success') {
+          authStatusIcon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
         } else {
+          authStatusIcon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        }
+      }
+    }
+
+    function setAuthSubmitLoading(loading, label) {
+      if (!authModalSubmit) return;
+      authModalSubmit.disabled = loading;
+      if (authBtnSpinner) authBtnSpinner.hidden = !loading;
+      if (authBtnIcon) authBtnIcon.hidden = loading;
+      if (authBtnText) {
+        if (loading && label) {
+          authBtnText.textContent = label;
+        } else if (!loading) {
+          authBtnText.textContent = currentAuthMode === 'signup'
+            ? 'Create Account'
+            : (currentAuthMode === 'reset' ? 'Send Reset Link' : 'Sign In');
+        }
+      }
+    }
+
+    function openAuthModal(mode) {
+      currentAuthMode = mode || 'signin';
+      if (!authModalOverlay) return;
+
+      setAuthModalStatus('', '');
+      setAuthSubmitLoading(false);
+      if (authInputPassword) authInputPassword.value = '';
+      if (authInputConfirmPassword) authInputConfirmPassword.value = '';
+
+      if (authOfflineBadge) {
+        authOfflineBadge.hidden = navigator.onLine;
+      }
+
+      const lastEmail = readOfflineCache('account-last-email', '');
+      if (lastEmail && authInputEmail && !authInputEmail.value) {
+        authInputEmail.value = lastEmail;
+      }
+
+      if (currentAuthMode === 'signup') {
+        if (authModalTitle) authModalTitle.textContent = 'Create an Account';
+        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign up to bookmark places, save custom routes, and sync preferences across devices.';
+        if (authTablist) authTablist.hidden = false;
+        if (authTabSignin) {
+          authTabSignin.classList.remove('active');
+          authTabSignin.setAttribute('aria-selected', 'false');
+        }
+        if (authTabSignup) {
+          authTabSignup.classList.add('active');
+          authTabSignup.setAttribute('aria-selected', 'true');
+        }
+        if (authFieldNameGroup) authFieldNameGroup.hidden = false;
+        if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = false;
+        if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = false;
+        if (authPasswordHint) authPasswordHint.hidden = false;
+        if (authForgotPasswordLink) authForgotPasswordLink.hidden = true;
+        if (authFormOptions) authFormOptions.hidden = false;
+        if (authBtnText) authBtnText.textContent = 'Create Account';
+        if (authFooterToggle) authFooterToggle.hidden = false;
+        if (authFooterQuestion) authFooterQuestion.textContent = 'Already have an account?';
+        if (authSwitchModeBtn) authSwitchModeBtn.textContent = 'Sign in';
+        if (authFooterResetBack) authFooterResetBack.hidden = true;
+
+        authModalOverlay.hidden = false;
+        authModalOverlay.setAttribute('aria-hidden', 'false');
+        setTimeout(function () {
+          if (authInputName) authInputName.focus();
+        }, 50);
+      } else if (currentAuthMode === 'reset') {
+        if (authModalTitle) authModalTitle.textContent = 'Reset Password';
+        if (authModalSubtitle) authModalSubtitle.textContent = 'Enter your email address and we will send you instructions to reset your password.';
+        if (authTablist) authTablist.hidden = true;
+        if (authFieldNameGroup) authFieldNameGroup.hidden = true;
+        if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = true;
+        if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = true;
+        if (authPasswordHint) authPasswordHint.hidden = true;
+        if (authFormOptions) authFormOptions.hidden = true;
+        if (authBtnText) authBtnText.textContent = 'Send Reset Link';
+        if (authFooterToggle) authFooterToggle.hidden = true;
+        if (authFooterResetBack) authFooterResetBack.hidden = false;
+
+        authModalOverlay.hidden = false;
+        authModalOverlay.setAttribute('aria-hidden', 'false');
+        setTimeout(function () {
+          if (authInputEmail) authInputEmail.focus();
+        }, 50);
+      } else {
+        currentAuthMode = 'signin';
+        if (authModalTitle) authModalTitle.textContent = 'Welcome Back';
+        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign in to access your saved places, recent routes, and sync across devices.';
+        if (authTablist) authTablist.hidden = false;
+        if (authTabSignin) {
+          authTabSignin.classList.add('active');
+          authTabSignin.setAttribute('aria-selected', 'true');
+        }
+        if (authTabSignup) {
+          authTabSignup.classList.remove('active');
+          authTabSignup.setAttribute('aria-selected', 'false');
+        }
+        if (authFieldNameGroup) authFieldNameGroup.hidden = true;
+        if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = false;
+        if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = true;
+        if (authPasswordHint) authPasswordHint.hidden = true;
+        if (authForgotPasswordLink) authForgotPasswordLink.hidden = false;
+        if (authFormOptions) authFormOptions.hidden = false;
+        if (authBtnText) authBtnText.textContent = 'Sign In';
+        if (authFooterToggle) authFooterToggle.hidden = false;
+        if (authFooterQuestion) authFooterQuestion.textContent = "Don't have an account?";
+        if (authSwitchModeBtn) authSwitchModeBtn.textContent = 'Create one now';
+        if (authFooterResetBack) authFooterResetBack.hidden = true;
+
+        authModalOverlay.hidden = false;
+        authModalOverlay.setAttribute('aria-hidden', 'false');
+        setTimeout(function () {
+          if (authInputEmail && !authInputEmail.value) {
+            authInputEmail.focus();
+          } else if (authInputPassword) {
+            authInputPassword.focus();
+          }
+        }, 50);
+      }
+    }
+
+    function closeAuthModal() {
+      if (!authModalOverlay) return;
+      authModalOverlay.hidden = true;
+      authModalOverlay.setAttribute('aria-hidden', 'true');
+      setAuthModalStatus('', '');
+      setAuthSubmitLoading(false);
+    }
+
+    window.openAuthModal = openAuthModal;
+    window.closeAuthModal = closeAuthModal;
+
+    if (authModalForm) {
+      authModalForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const email = authInputEmail ? authInputEmail.value.trim() : '';
+
+        if (currentAuthMode === 'reset') {
+          if (!email) {
+            setAuthModalStatus('Please enter your email address.', 'error');
+            if (authInputEmail) authInputEmail.focus();
+            return;
+          }
+          if (!supabaseClient) {
+            setAuthModalStatus('Password reset requires an active Supabase connection.', 'error');
+            return;
+          }
+          setAuthSubmitLoading(true, 'Sending link...');
+          try {
+            const redirectUrl = window.location.origin + window.location.pathname;
+            const result = await supabaseClient.auth.resetPasswordForEmail(email, {
+              redirectTo: redirectUrl
+            });
+            if (result.error) throw result.error;
+            setAuthModalStatus('Password reset email sent! Check your inbox for instructions.', 'success');
+          } catch (error) {
+            setAuthModalStatus(error.message || 'Could not send reset link.', 'error');
+          } finally {
+            setAuthSubmitLoading(false);
+          }
+          return;
+        }
+
+        const password = authInputPassword ? authInputPassword.value : '';
+
+        if (currentAuthMode === 'signup') {
+          const displayName = authInputName ? authInputName.value.trim() : '';
+          const confirmPassword = authInputConfirmPassword ? authInputConfirmPassword.value : '';
+
+          if (!displayName) {
+            setAuthModalStatus('Please enter your display name.', 'error');
+            if (authInputName) authInputName.focus();
+            return;
+          }
+          if (!email) {
+            setAuthModalStatus('Please enter your email address.', 'error');
+            if (authInputEmail) authInputEmail.focus();
+            return;
+          }
+          if (!password || password.length < 8) {
+            setAuthModalStatus('Password must be at least 8 characters long.', 'error');
+            if (authInputPassword) authInputPassword.focus();
+            return;
+          }
+          if (password !== confirmPassword) {
+            setAuthModalStatus('Passwords do not match. Please re-check.', 'error');
+            if (authInputConfirmPassword) authInputConfirmPassword.focus();
+            return;
+          }
+
+          if (!supabaseClient) {
+            setAuthModalStatus('Account creation requires an active Supabase connection.', 'error');
+            return;
+          }
+
+          setAuthSubmitLoading(true, 'Creating account...');
+          try {
+            const result = await supabaseClient.auth.signUp({
+              email: email,
+              password: password,
+              options: { data: { display_name: displayName } }
+            });
+            if (result.error) throw result.error;
+            if (result.data && result.data.session) {
+              setAuthModalStatus('Account created successfully! Signed in.', 'success');
+              setTimeout(function () {
+                closeAuthModal();
+                setAccountStatus('Account created and signed in.');
+              }, 450);
+            } else {
+              setAuthModalStatus('Account created! Please check your email inbox to confirm, then sign in.', 'success');
+              setTimeout(function () {
+                openAuthModal('signin');
+                if (authInputEmail) authInputEmail.value = email;
+                setAuthModalStatus('Confirmation email sent. Please check your inbox and then sign in.', 'info');
+              }, 2500);
+            }
+          } catch (error) {
+            setAuthModalStatus(error.message || 'Could not create account.', 'error');
+          } finally {
+            setAuthSubmitLoading(false);
+          }
+          return;
+        }
+
+        // Default: Sign In mode
+        if (!email) {
+          setAuthModalStatus('Please enter your email address.', 'error');
+          if (authInputEmail) authInputEmail.focus();
+          return;
+        }
+        if (!password) {
+          setAuthModalStatus('Please enter your password.', 'error');
+          if (authInputPassword) authInputPassword.focus();
+          return;
+        }
+
+        setAuthSubmitLoading(true, 'Signing in...');
+        try {
+          if (!supabaseClient) throw new Error('Account server not connected.');
           const result = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
           });
           if (result.error) throw result.error;
-          accountForm.reset();
-          setAccountStatus('Signed in.');
-        }
-      } catch (error) {
-        if (!navigator.onLine) {
-          const cachedSession = readOfflineCache('account-session-last', null);
-          const cachedEmail = readOfflineCache('account-last-email', '');
-          if (cachedSession && cachedSession.user &&
-            String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
-            showAccountSession(cachedSession);
-            setAccountStatus('Signed in using saved account data offline.');
+          setAuthModalStatus('Signed in successfully!', 'success');
+          setTimeout(function () {
+            closeAuthModal();
+            setAccountStatus('Signed in.');
+          }, 350);
+        } catch (error) {
+          if (!navigator.onLine) {
+            const cachedSession = readOfflineCache('account-session-last', null);
+            const cachedEmail = readOfflineCache('account-last-email', '');
+            if (cachedSession && cachedSession.user &&
+              String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
+              showAccountSession(cachedSession);
+              setAuthModalStatus('Signed in using saved account data offline.', 'info');
+              setTimeout(function () {
+                closeAuthModal();
+                setAccountStatus('Signed in using saved account data offline.');
+              }, 400);
+            } else {
+              setAuthModalStatus('Offline sign-in is available only for an account previously used on this device.', 'error');
+            }
           } else {
-            setAccountStatus('Offline sign-in is available only for an account previously used on this device.');
+            setAuthModalStatus(error.message || 'Invalid email or password.', 'error');
           }
-        } else {
-          setAccountStatus(error.message || 'Account request failed.');
+        } finally {
+          setAuthSubmitLoading(false);
         }
-      } finally {
-        accountSubmit.disabled = false;
+      });
+    }
+
+    if (authTabSignin) {
+      authTabSignin.addEventListener('click', function () { openAuthModal('signin'); });
+    }
+    if (authTabSignup) {
+      authTabSignup.addEventListener('click', function () { openAuthModal('signup'); });
+    }
+    if (authSwitchModeBtn) {
+      authSwitchModeBtn.addEventListener('click', function () {
+        openAuthModal(currentAuthMode === 'signin' ? 'signup' : 'signin');
+      });
+    }
+    if (authForgotPasswordLink) {
+      authForgotPasswordLink.addEventListener('click', function () {
+        openAuthModal('reset');
+      });
+    }
+    if (authBackToSigninBtn) {
+      authBackToSigninBtn.addEventListener('click', function () {
+        openAuthModal('signin');
+      });
+    }
+    if (authModalClose) {
+      authModalClose.addEventListener('click', closeAuthModal);
+    }
+    if (authTogglePassword) {
+      authTogglePassword.addEventListener('click', function () {
+        const isPassword = authInputPassword.getAttribute('type') === 'password';
+        const newType = isPassword ? 'text' : 'password';
+        authInputPassword.setAttribute('type', newType);
+        if (authInputConfirmPassword) {
+          authInputConfirmPassword.setAttribute('type', newType);
+        }
+        const eyeIcon = authTogglePassword.querySelector('.auth-icon-eye');
+        const eyeOffIcon = authTogglePassword.querySelector('.auth-icon-eye-off');
+        if (eyeIcon && eyeOffIcon) {
+          eyeIcon.hidden = isPassword;
+          eyeOffIcon.hidden = !isPassword;
+        }
+        authTogglePassword.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+        authTogglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      });
+    }
+    if (accountOpenSignin) {
+      accountOpenSignin.addEventListener('click', function () {
+        accountContent.hidden = true;
+        accountToggle.setAttribute('aria-expanded', 'false');
+        openAuthModal('signin');
+      });
+    }
+    if (accountOpenSignup) {
+      accountOpenSignup.addEventListener('click', function () {
+        accountContent.hidden = true;
+        accountToggle.setAttribute('aria-expanded', 'false');
+        openAuthModal('signup');
+      });
+    }
+    if (accountOpenForm) {
+      accountOpenForm.addEventListener('click', function () {
+        accountContent.hidden = true;
+        accountToggle.setAttribute('aria-expanded', 'false');
+        openAuthModal('signin');
+      });
+    }
+    if (historyOpenSignin) {
+      historyOpenSignin.addEventListener('click', function () {
+        historyContent.hidden = true;
+        historyToggle.setAttribute('aria-expanded', 'false');
+        openAuthModal('signin');
+      });
+    }
+    if (accountViewHistoryBtn) {
+      accountViewHistoryBtn.addEventListener('click', function () {
+        accountContent.hidden = true;
+        accountToggle.setAttribute('aria-expanded', 'false');
+        historyContent.hidden = false;
+        historyToggle.setAttribute('aria-expanded', 'true');
+        if (currentUser) loadActivityHistory(currentUser.id);
+      });
+    }
+    if (accountSwitchBtn) {
+      accountSwitchBtn.addEventListener('click', async function () {
+        accountContent.hidden = true;
+        accountToggle.setAttribute('aria-expanded', 'false');
+        if (supabaseClient) {
+          try { await supabaseClient.auth.signOut(); } catch (e) {}
+        }
+        openAuthModal('signin');
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && authModalOverlay && !authModalOverlay.hidden) {
+        closeAuthModal();
       }
     });
 
@@ -6911,6 +8451,10 @@
           .update({ display_name: displayName, updated_at: new Date().toISOString() })
           .eq('user_id', currentUser.id);
         if (result.error) throw result.error;
+        const profileNameDisplay = document.getElementById('account-profile-name');
+        const avatarBadge = document.getElementById('account-avatar-badge');
+        if (profileNameDisplay) profileNameDisplay.textContent = displayName;
+        if (avatarBadge) avatarBadge.textContent = displayName[0].toUpperCase();
         setAccountStatus('Profile saved.');
       } catch (error) {
         writeOfflineCache('account-profile:' + currentUser.id, { display_name: displayName });
