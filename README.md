@@ -7,8 +7,12 @@ Prototype Shortest Route Emergency Map Finder
 
 - Changes are also implemented as of this moment.
 
-- Link for the Project Interface: http://127.0.0.1:8000/map.html
+# Link for the Project Interface:
+Map:
+- https://prototype-map-route-finder.vercel.app/map (Online)
 
+Responder:
+- https://prototype-map-route-finder.vercel.app/responder (Online)
 
 # Additional Information 
 - The map.html is where the user interacts with the system
