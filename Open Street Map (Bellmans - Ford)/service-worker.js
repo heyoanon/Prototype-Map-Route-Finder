@@ -1,6 +1,6 @@
-const CACHE_NAME = 'map-search-shell-v14';
-const TILE_CACHE = 'map-search-tiles-v3';
-const DATA_CACHE = 'map-search-data-v2';
+const CACHE_NAME = 'map-search-shell-v15';
+const TILE_CACHE = 'map-search-tiles-v4';
+const DATA_CACHE = 'map-search-data-v3';
 
 const APP_SHELL = [
   './',
