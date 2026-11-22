@@ -1937,6 +1937,10 @@
       position: relative;
     }
 
+    #emergency-open[hidden] {
+      display: none !important;
+    }
+
     #emergency-open::after {
       content: '';
       position: absolute;
@@ -4230,6 +4234,11 @@
         right: 8px;
         width: calc(100vw - 16px);
         gap: 8px;
+      }
+
+      /* Hide emergency services button on mobile devices for clean, unobstructed map view */
+      #emergency-open {
+        display: none !important;
       }
 
       .search-panel {
