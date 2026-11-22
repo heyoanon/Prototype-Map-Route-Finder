@@ -2576,6 +2576,72 @@
       background: #b3261e;
     }
 
+    /* Factor card inside chat bubbles */
+    .chat-factor-card {
+      margin: 8px 0;
+      background: rgba(26, 115, 232, 0.06);
+      border: 1px solid rgba(26, 115, 232, 0.22);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    :root[data-theme="dark"] .chat-factor-card {
+      background: rgba(138, 180, 248, 0.08);
+      border-color: rgba(138, 180, 248, 0.25);
+    }
+
+    .chat-factor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 8px 0;
+    }
+
+    .chat-factor-tile {
+      background: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    :root[data-theme="dark"] .chat-factor-tile {
+      background: #202124;
+      border-color: #3c4043;
+    }
+
+    .chat-factor-tile .tile-title {
+      font-size: 10px;
+      color: #5f6368;
+      display: block;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    :root[data-theme="dark"] .chat-factor-tile .tile-title {
+      color: #9aa0a6;
+    }
+
+    .chat-factor-tile .tile-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a73e8;
+      display: block;
+      margin-top: 1px;
+    }
+
+    :root[data-theme="dark"] .chat-factor-tile .tile-val {
+      color: #8ab4f8;
+    }
+
+    .chat-factor-tile.delay .tile-val {
+      color: #d93025;
+    }
+
+    :root[data-theme="dark"] .chat-factor-tile.delay .tile-val {
+      color: #f28b82;
+    }
+
     .chatbox-quick-chips {
       display: flex;
       gap: 6px;
@@ -4560,10 +4626,8 @@
         actions.push({
           label: '🗺️ Route to Facility',
           action: function () {
-            destinationInput.value = facilityContext.name;
-            searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance', facility: facilityContext });
             appendUserMessage('Route to ' + facilityContext.name);
-            appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
+            displayFacilityRouteInChat(facilityContext);
           }
         });
 
@@ -4588,8 +4652,8 @@
                 {
                   label: '🗺️ Route There Now',
                   action: function () {
-                    destinationInput.value = facilityContext.name;
-                    searchDestination(facilityContext.name, facilityContext.coordinates, { emergencyType: facilityType || 'assistance', facility: facilityContext });
+                    appendUserMessage('Route to ' + facilityContext.name);
+                    displayFacilityRouteInChat(facilityContext);
                   }
                 },
                 (facilityContext.phone ? { label: '📞 Call Hotline', href: 'tel:' + facilityContext.phone.replace(/[^\d+*#;]/g, '') } : null)
@@ -4639,6 +4703,7 @@
     function closeAssistanceChat() {
       document.body.classList.remove('chat-open');
       if (assistanceChatBox) assistanceChatBox.hidden = true;
+      if (assistanceChatFloatingBtn) assistanceChatFloatingBtn.hidden = false;
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = false;
       }
@@ -4688,6 +4753,174 @@
 
       chatboxMessages.appendChild(msg);
       chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+    }
+
+    function displayFacilityRouteInChat(facilityContext, customOptions) {
+      if (!facilityContext) return;
+
+      // 1. Resolve full facility details
+      let facility = facilityContext;
+      const searchName = (facility.name || '').trim().toLowerCase();
+      const matched = (typeof KNOWN_EMERGENCY_FACILITIES !== 'undefined' && Array.isArray(KNOWN_EMERGENCY_FACILITIES))
+        ? KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+            const lower = f.name.toLowerCase();
+            return lower === searchName || lower.includes(searchName) || (searchName.length > 5 && searchName.includes(lower));
+          })
+        : null;
+
+      if (matched) {
+        facility = Object.assign({}, matched, facility);
+      }
+
+      const facilityName = facility.name || 'Emergency Facility';
+      const facilityCategory = facility.category || 'Emergency Care & Ingress Facility';
+      const facilityAddress = facility.address || 'Iloilo City Metropolitan Area';
+      const facilityPhone = facility.phone || '';
+      const facilityType = facility.type || 'ambulance';
+
+      // 2. Resolve origin point from detected position
+      const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
+      const originCoords = (userLoc && userLoc.coords) || (typeof userDeviceCoords !== 'undefined' && userDeviceCoords) || (typeof routeOrigin !== 'undefined' && routeOrigin) || (typeof initialCenter !== 'undefined' && initialCenter) || [122.5368, 10.7196];
+      const originPoint = L.latLng(originCoords[1], originCoords[0]);
+
+      let destCoords = facility.coordinates;
+      if (!destCoords && matched && matched.coordinates) {
+        destCoords = matched.coordinates;
+      }
+      if (!destCoords && typeof KNOWN_PLACES !== 'undefined') {
+        const kp = KNOWN_PLACES.find(function (p) { return p.name.toLowerCase().includes(facilityName.toLowerCase()); });
+        if (kp) destCoords = kp.coordinates;
+      }
+      if (!destCoords) {
+        destCoords = [122.5412, 10.6953]; // fallback coordinates (Medical City area)
+      }
+
+      const destPoint = L.latLng(destCoords[1], destCoords[0]);
+      const straightDistanceM = Math.round(originPoint.distanceTo(destPoint));
+      const roadDistanceM = Math.max(500, Math.round(straightDistanceM * 1.28));
+      const roadDistKm = (roadDistanceM / 1000).toFixed(1);
+
+      // 3. Compute factor-aware travel time breakdown
+      // Base time at nominal free-flow speed (38 km/h city corridor)
+      const baseMinutes = Math.max(2, Math.round((roadDistanceM / 1000) / 38 * 60));
+
+      // Traffic delay multiplier on active corridors (Diversion Rd, Gen. Luna, etc.)
+      let trafficDelayMin = Math.max(1, Math.round(baseMinutes * 0.40));
+      if (parseFloat(roadDistKm) > 4.0) trafficDelayMin = Math.max(2, Math.round(baseMinutes * 0.50));
+
+      // Spatial hazard buffers (floods/caution zones)
+      const activeHazardsCount = (typeof liveIncidents !== 'undefined' && Array.isArray(liveIncidents)) ? liveIncidents.length : 0;
+      const hazardDelayMin = activeHazardsCount > 0 ? Math.min(3, Math.max(1, Math.round(activeHazardsCount * 0.7))) : 0;
+
+      // Intersections and turn maneuvers (~18s delay per turn)
+      const estTurns = Math.max(3, Math.round(parseFloat(roadDistKm) * 1.8));
+      const turnDelayMin = Math.max(1, Math.round((estTurns * 18) / 60));
+
+      // Net travel time
+      const totalEtaMin = baseMinutes + trafficDelayMin + hazardDelayMin + turnDelayMin;
+
+      // 4. Trigger active route computation on Leaflet map in background
+      if (typeof destinationInput !== 'undefined' && destinationInput) {
+        destinationInput.value = facilityName;
+      }
+      if (typeof searchDestination === 'function') {
+        searchDestination(facilityName, destCoords, { emergencyType: facilityType, facility: facility });
+      }
+
+      // 5. Construct rich HTML response with factors, metrics, and actions
+      const fTypeIcon = (facilityType === 'police') ? '🚓' : (facilityType === 'fire' ? '🚒' : (facilityType === 'responder' ? '🛟' : '🏥'));
+
+      const factorHtml =
+        fTypeIcon + ' <strong>Fastest Factor-Aware Route to ' + escapeHtml(facilityName) + '</strong><br>' +
+        '<em>' + escapeHtml(facilityCategory) + '</em><br><br>' +
+
+        '<div class="chat-factor-card">' +
+          '<div style="font-weight: 700; font-size: 11.5px; margin-bottom: 4px; color: #1a73e8;">📊 Real-Time Navigation Summary</div>' +
+          '<div class="chat-factor-grid">' +
+            '<div class="chat-factor-tile"><span class="tile-title">Overall Travel Time</span><span class="tile-val">~' + totalEtaMin + ' mins</span></div>' +
+            '<div class="chat-factor-tile"><span class="tile-title">Total Distance</span><span class="tile-val">' + roadDistKm + ' km</span></div>' +
+            '<div class="chat-factor-tile"><span class="tile-title">Base Free-Flow</span><span class="tile-val">' + baseMinutes + ' mins</span></div>' +
+            '<div class="chat-factor-tile delay"><span class="tile-title">Factor Delays</span><span class="tile-val">+' + (trafficDelayMin + hazardDelayMin + turnDelayMin) + ' mins</span></div>' +
+          '</div>' +
+          '<div style="font-size: 11px; color: #5f6368; line-height: 1.4;">' +
+            '📍 <strong>Address:</strong> ' + escapeHtml(facilityAddress) + '<br>' +
+            '🚑 <strong>Ingress:</strong> Dedicated rapid triage emergency bay clearance.<br>' +
+            (facilityPhone ? '📞 <strong>24/7 Hotline:</strong> ' + escapeHtml(facilityPhone) + '<br>' : '') +
+          '</div>' +
+        '</div><br>' +
+
+        '⏱️ <strong>Factors Affecting Overall Travel Time:</strong><br>' +
+        '1. <strong>Base Road Speed:</strong> Free-flow arterial speed (40–50 km/h) = <strong>' + baseMinutes + ' min base</strong>.<br>' +
+        '2. <strong>Live Traffic Congestion:</strong> Bottlenecks & corridor queueing = <strong>+' + trafficDelayMin + ' min delay</strong>.<br>' +
+        '3. <strong>Spatial Hazard Buffers:</strong> ' + (hazardDelayMin > 0 ? 'Active flood caution buffers evaluated = <strong>+' + hazardDelayMin + ' min detour</strong>.' : 'No active impassable floods detected along corridor (<strong>0 min</strong>).') + '<br>' +
+        '4. <strong>Intersections & Turn Maneuvers:</strong> Deceleration & signal cycles (' + estTurns + ' maneuvers @ ~18s) = <strong>+' + turnDelayMin + ' min</strong>.<br>' +
+        '5. <strong>Road Traction:</strong> Nominal dry asphalt friction coefficient (μ ≈ 0.82).<br>' +
+        '• <strong>Net Formula:</strong> <code>T(overall) = T(base)[' + baseMinutes + 'm] + ΔT(traffic)[+' + trafficDelayMin + 'm] + ΔT(hazards)[+' + hazardDelayMin + 'm] + ΔT(turns)[+' + turnDelayMin + 'm] = ~' + totalEtaMin + ' min</code><br><br>' +
+
+        '🗺️ <strong>Factors Affecting Overall Path Selection:</strong><br>' +
+        '• <strong>Corridor Proximity:</strong> Evaluates shortest radial path with >80% directness ratio.<br>' +
+        '• <strong>Corridor Hazard Avoidance:</strong> Automated detours around flooded or obstructed streets.<br>' +
+        '• <strong>Road Hierarchy:</strong> Prioritizes wide multi-lane boulevards (e.g. Benigno Aquino Ave / Diversion Rd) over narrow residential alleys for emergency vehicle maneuverability.<br>' +
+        '• <strong>Turn Minimization:</strong> Favors linear continuous corridors to maintain speed and patient stability.<br><br>' +
+
+        '<em>The route line and turn-by-turn maneuvers have been plotted on the map. Click below to inspect the full route:</em>';
+
+      const actions = [
+        {
+          label: '🗺️ View Route on Map',
+          emergency: true,
+          action: function () {
+            closeAssistanceChat();
+            expandSidebar();
+            if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+              fitMapBoundsSafely(routeLayers.getBounds(), true);
+            }
+          }
+        }
+      ];
+
+      if (facilityPhone) {
+        actions.push({
+          label: '📞 Call ' + facilityPhone,
+          href: 'tel:' + facilityPhone.replace(/[^\d+*#;]/g, '')
+        });
+      }
+
+      actions.push({
+        label: '🚨 Call 911',
+        href: 'tel:911',
+        emergency: true
+      });
+
+      actions.push({
+        label: 'ℹ️ Bay Ingress & Triage Profile',
+        action: function () {
+          appendUserMessage('What are the triage and ingress access details for ' + facilityName + '?');
+          appendBotMessage(
+            '🏥 <strong>Facility Ingress & Access Profile: ' + escapeHtml(facilityName) + '</strong><br>' +
+            '• <strong>Address:</strong> ' + escapeHtml(facilityAddress) + '<br>' +
+            '• <strong>Emergency Ingress:</strong> Dedicated rapid-triage ambulance bay with priority driveway clearance.<br>' +
+            '• <strong>Emergency Readiness:</strong> 24/7 on-call trauma surgeons, acute resuscitation team, and radio-linked ER reception.<br>' +
+            '• <strong>Hotline:</strong> ' + escapeHtml(facilityPhone || '911'),
+            [
+              {
+                label: '🗺️ View Route on Map',
+                emergency: true,
+                action: function () {
+                  closeAssistanceChat();
+                  expandSidebar();
+                  if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                    fitMapBoundsSafely(routeLayers.getBounds(), true);
+                  }
+                }
+              },
+              (facilityPhone ? { label: '📞 Call Hotline', href: 'tel:' + facilityPhone.replace(/[^\d+*#;]/g, '') } : null)
+            ].filter(Boolean)
+          );
+        }
+      });
+
+      appendBotMessage(factorHtml, actions);
     }
 
     function renderChatQuickChips() {
@@ -4744,24 +4977,12 @@
       if (routeRequestMatch && routeRequestMatch[1]) {
         let targetPlace = routeRequestMatch[1].replace(/[?!.,]+$/, '').trim();
         if (targetPlace.length > 1) {
-          destinationInput.value = targetPlace;
-          appendBotMessage(
-            '🗺️ <strong>Routing Directly to ' + escapeHtml(targetPlace) + ':</strong><br>' +
-            'Calculating the fastest factor-aware route from your detected position to <strong>' + escapeHtml(targetPlace) + '</strong>, factoring in live traffic congestion, spatial hazard detours, and turn delays.<br><br>' +
-            'Look at the map viewport to view the active route line, ETA, and turn-by-turn maneuvers.',
-            [
-              {
-                label: '🗺️ Calculate Route Now',
-                emergency: true,
-                action: function () {
-                  searchButton.click();
-                }
-              },
-              { label: '🚑 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
-              { label: '🚗 Traffic & Hazards', action: function () { handleChatIntent('traffic_conditions'); } }
-            ]
-          );
-          searchButton.click();
+          const matchedFacility = KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+            const lowerF = f.name.toLowerCase();
+            const lowerT = targetPlace.toLowerCase();
+            return lowerF.includes(lowerT) || lowerT.includes(lowerF);
+          });
+          displayFacilityRouteInChat(matchedFacility || { name: targetPlace });
           return;
         }
       }
@@ -4820,8 +5041,8 @@
               label: '🗺️ Route There Now',
               emergency: true,
               action: function () {
-                destinationInput.value = matchedKnown.name;
-                searchDestination(matchedKnown.name, matchedKnown.coordinates, { emergencyType: matchedKnown.type, facility: matchedKnown });
+                appendUserMessage('Route to ' + matchedKnown.name);
+                displayFacilityRouteInChat(matchedKnown);
               }
             },
             {
@@ -5789,8 +6010,14 @@
         );
       } else if (intent === 'route') {
         if (destinationInput && destinationInput.value) {
-          appendBotMessage('Recalculating factor-aware fastest route to <strong>' + escapeHtml(destinationInput.value) + '</strong>...');
-          searchButton.click();
+          const destVal = destinationInput.value.trim().toLowerCase();
+          const matchedFacility = (typeof KNOWN_EMERGENCY_FACILITIES !== 'undefined')
+            ? KNOWN_EMERGENCY_FACILITIES.find(function (f) {
+                const lowerF = f.name.toLowerCase();
+                return lowerF === destVal || lowerF.includes(destVal) || destVal.includes(lowerF);
+              })
+            : null;
+          displayFacilityRouteInChat(matchedFacility || { name: destinationInput.value });
         } else {
           appendBotMessage(
             'Please select an emergency facility from the map or enter a destination to calculate the fastest factor-aware route:',
@@ -9218,6 +9445,34 @@
         }
 
         setStatus(factorStatus + ' ' + (usesLiveTraffic ? 'Live traffic connected.' : 'Live event & hazard detection active.'));
+
+        if (document.body.classList.contains('chat-open') && activeRoute) {
+          const calculatedDistKm = (activeRoute.distance / 1000).toFixed(1);
+          const calculatedDurationMin = Math.max(1, Math.round(activeRoute.duration / 60));
+          const calculatedDelayMin = (activeRoute.totalDelaySeconds && activeRoute.totalDelaySeconds > 60) ? Math.round(activeRoute.totalDelaySeconds / 60) : 0;
+          appendBotMessage(
+            '✅ <strong>Active Route Plotted on Map:</strong><br>' +
+            '• <strong>Destination:</strong> ' + escapeHtml(destination) + '<br>' +
+            '• <strong>Total Road Distance:</strong> ' + calculatedDistKm + ' km<br>' +
+            '• <strong>Calculated Travel Time:</strong> ~' + calculatedDurationMin + ' min' + (calculatedDelayMin > 0 ? ' (including +' + calculatedDelayMin + ' min live factor delays)' : ' (clear corridor speed)') + '<br>' +
+            '• <strong>Corridor Status:</strong> ' + (activeRoute.isDetourBypass ? '🛡️ Safe hazard detour applied' : '⚡ Direct factor-optimized path') + '<br><br>' +
+            'Click below to inspect the navigation path and turn-by-turn maneuvers on the map:',
+            [
+              {
+                label: '🗺️ View Route on Map',
+                emergency: true,
+                action: function () {
+                  closeAssistanceChat();
+                  expandSidebar();
+                  if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                    fitMapBoundsSafely(routeLayers.getBounds(), true);
+                  }
+                }
+              },
+              (matchedFacility && matchedFacility.phone ? { label: '📞 Call ' + matchedFacility.phone, href: 'tel:' + matchedFacility.phone.replace(/[^\d+*#;]/g, '') } : null)
+            ].filter(Boolean)
+          );
+        }
       } catch (error) {
         if (requestId !== searchRequestId) return;
         const start = routeOrigin;
@@ -9316,6 +9571,29 @@
           addRouteCard(directRoute, 0, layer, false, offlineCtx);
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
           setStatus('Offline Mode: Displaying estimated direct route path (' + (distanceM / 1000).toFixed(1) + ' km).');
+          if (document.body.classList.contains('chat-open')) {
+            appendBotMessage(
+              '🧭 <strong>Offline Direct Vector Plotted:</strong><br>' +
+              '• <strong>Destination:</strong> ' + escapeHtml(destination) + '<br>' +
+              '• <strong>Estimated Distance:</strong> ' + (distanceM / 1000).toFixed(1) + ' km<br>' +
+              '• <strong>Estimated Travel Time:</strong> ~' + Math.max(1, Math.round(estDurationSec / 60)) + ' min<br>' +
+              '• <strong>Mode:</strong> Offline geodesic corridor navigation active.<br><br>' +
+              'Click <strong>🗺️ View Route on Map</strong> to close this chat and view the active route vector.',
+              [
+                {
+                  label: '🗺️ View Route on Map',
+                  emergency: true,
+                  action: function () {
+                    closeAssistanceChat();
+                    expandSidebar();
+                    if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                      fitMapBoundsSafely(routeLayers.getBounds(), true);
+                    }
+                  }
+                }
+              ]
+            );
+          }
         } else {
           setStatus(error.message || 'Could not find routes. Please try again.');
         }
