@@ -1608,12 +1608,9 @@
     let isMissionCleared = false;
     let clearedTimestamp = 0;
 
-    try {
-      const savedClearedTime = localStorage.getItem('responder_cleared_time');
-      if (savedClearedTime) {
-        clearedTimestamp = parseInt(savedClearedTime, 10) || 0;
-      }
-    } catch (e) {}
+    const responderBroadcastChannel = (typeof window !== 'undefined' && window.BroadcastChannel)
+      ? new BroadcastChannel('emergency_dispatch')
+      : null;
 
     let currentTrackedUser = {
       lat: 10.7196,
@@ -1702,6 +1699,7 @@
     }
 
     function setMissionCleared() {
+      isMissionCleared = true;
       clearedTimestamp = Date.now();
       try {
         localStorage.setItem('responder_cleared_time', String(clearedTimestamp));
@@ -1715,17 +1713,15 @@
         map.panTo(resetCenter);
       }
 
-      if (window.BroadcastChannel) {
+      if (responderBroadcastChannel) {
         try {
-          const bc = new BroadcastChannel('emergency_dispatch');
-          bc.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
-          bc.close();
+          responderBroadcastChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
         } catch (e) {}
       }
     }
 
     // 3. User Location & Activity Syncing Logic
-    function loadTrackedUser() {
+    function loadTrackedUser(directData) {
       let stateChanged = false;
 
       // 1. Check URL parameters
@@ -1734,21 +1730,23 @@
       const urlLng = parseFloat(params.get('lng'));
       const hasUrlParams = Number.isFinite(urlLat) && Number.isFinite(urlLng);
 
-      // 2. Check localStorage from map.html
-      let rawData = null;
-      try {
-        const raw = localStorage.getItem('tracked_user_emergency');
-        if (raw) {
-          rawData = JSON.parse(raw);
+      // 2. Direct memory payload or localStorage from map.html
+      let rawData = directData || null;
+      if (!rawData) {
+        try {
+          const raw = localStorage.getItem('tracked_user_emergency');
+          if (raw) {
+            rawData = JSON.parse(raw);
+          }
+        } catch (e) {
+          console.warn('Could not read user activity sync from localStorage:', e);
         }
-      } catch (e) {
-        console.warn('Could not read user activity sync from localStorage:', e);
       }
 
       const dataTimestamp = rawData ? (rawData.timestamp || rawData.lastActionTime || 0) : 0;
 
-      // If mission is currently cleared, stay in blank state unless fresh input from map.html arrives
-      if (clearedTimestamp > 0) {
+      // Only stay cleared if user explicitly clicked "Cleared" during this session AND caller hasn't sent new updates
+      if (isMissionCleared && clearedTimestamp > 0) {
         if (dataTimestamp <= clearedTimestamp) {
           renderBlankClearedState();
           return;
@@ -1963,20 +1961,40 @@
       }
     });
 
-    // Listen for BroadcastChannel updates from map.html
-    if (window.BroadcastChannel) {
-      const channel = new BroadcastChannel('emergency_dispatch');
-      channel.onmessage = function (event) {
+    // Listen for BroadcastChannel updates from map.html with persistent channel
+    if (responderBroadcastChannel) {
+      responderBroadcastChannel.onmessage = function (event) {
         if (event && event.data) {
-          loadTrackedUser();
-          flashSyncBadge();
+          const payload = event.data.data || event.data;
+          if (payload && (payload.lat || payload.coords || payload.scenario || payload.activityLog)) {
+            loadTrackedUser(payload);
+            flashSyncBadge();
+          }
         }
       };
     }
 
+    let lastSeenSyncTimestamp = 0;
     // Polling heartbeat (every 1 second) for immediate sync responsiveness
     setInterval(function () {
-      loadTrackedUser();
+      let raw = null;
+      try {
+        const rawStr = localStorage.getItem('tracked_user_emergency');
+        if (rawStr) raw = JSON.parse(rawStr);
+      } catch (e) {}
+
+      if (raw) {
+        const ts = raw.timestamp || raw.lastActionTime || 0;
+        if (ts > lastSeenSyncTimestamp) {
+          lastSeenSyncTimestamp = ts;
+          loadTrackedUser(raw);
+          flashSyncBadge();
+        } else {
+          loadTrackedUser(raw);
+        }
+      } else {
+        loadTrackedUser();
+      }
     }, 1000);
 
     // 4. Update UI Elements
@@ -2265,7 +2283,11 @@
     document.getElementById('btn-refresh-user').addEventListener('click', function () {
       lastTrackedCoords = null;
       lastRenderedStationId = null;
+      isMissionCleared = false;
+      clearedTimestamp = 0;
+      try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
       loadTrackedUser();
+      flashSyncBadge();
       if (navigator.geolocation) {
         requestResponderDeviceLocation({ setView: false, userInitiated: false });
       }

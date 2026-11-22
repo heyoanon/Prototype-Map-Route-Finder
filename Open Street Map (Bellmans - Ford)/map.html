@@ -5826,11 +5826,13 @@
 
     // --- Responder Dispatch & Route Recommendation Controller ---
     let currentResponderScenario = 'flood';
-    // Listen for responder mission status updates (e.g. cleared status)
-    if (window.BroadcastChannel) {
+    const emergencyDispatchChannel = (typeof window !== 'undefined' && window.BroadcastChannel)
+      ? new BroadcastChannel('emergency_dispatch')
+      : null;
+
+    if (emergencyDispatchChannel) {
       try {
-        const rc = new BroadcastChannel('emergency_dispatch');
-        rc.onmessage = function (ev) {
+        emergencyDispatchChannel.onmessage = function (ev) {
           if (ev && ev.data && ev.data.type === 'MISSION_CLEARED') {
             const responderBanner = document.getElementById('responder-dispatch-banner');
             if (responderBanner) {
@@ -5897,10 +5899,8 @@
 
         localStorage.setItem('tracked_user_emergency', JSON.stringify(state));
 
-        if (window.BroadcastChannel) {
-          const bc = new BroadcastChannel('emergency_dispatch');
-          bc.postMessage({ type: 'USER_ACTIVITY_SYNC', data: state });
-          bc.close();
+        if (emergencyDispatchChannel) {
+          emergencyDispatchChannel.postMessage({ type: 'USER_ACTIVITY_SYNC', data: state });
         }
       } catch (err) {
         console.warn('Could not broadcast user activity:', err);
@@ -6156,7 +6156,6 @@
           '</div>' +
           '<div class="responder-actions">' +
             '<button type="button" class="chat-action-btn" data-action="plot-responder-route">🗺️ View Route on Map</button>' +
-            '<a href="' + getDispatchConsoleUrl(data.responder.name, data.responder.coordinates, 'responder') + '" target="_blank" rel="noopener noreferrer" class="chat-action-btn secondary">📡 Open Dispatch Console</a>' +
             (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary">📞 Call ' + escapeHtml(data.responder.phone) + '</a>' : '') +
             '<a href="tel:911" class="chat-action-btn emergency">🚨 Call 911</a>' +
           '</div>' +
@@ -6189,7 +6188,6 @@
         (data.scenario && data.scenario.tacticalAdvice ? '<div class="assessment-advice-box"><strong>💡 Immediate Safety Advice:</strong><br><span class="advice-text">' + escapeHtml(data.scenario.tacticalAdvice) + '</span></div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
           '<button type="button" class="emergency-facility-route-btn" data-action="plot-responder-route" style="flex:1;">Active Route</button>' +
-          '<a href="' + getDispatchConsoleUrl(data.responder.name, data.responder.coordinates, 'responder') + '" target="_blank" rel="noopener noreferrer" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;" title="Open live responder dispatch console on Vercel">📡 Dispatch</a>' +
           (data.responder.phone ? '<a href="tel:' + data.responder.phone.replace(/[^\d+*#;]/g, '') + '" class="chat-action-btn secondary" style="font-size:11px;padding:3px 8px;text-decoration:none;">📞 Call</a>' : '') +
         '</div>'
       );
@@ -6243,13 +6241,14 @@
           scenario: scenario.title,
           summary: scenario.summary,
           tacticalAdvice: scenario.tacticalAdvice,
+          serviceType: 'responder',
+          assignedResponder: responder,
+          targetFacility: responder,
           timestamp: Date.now()
         };
         localStorage.setItem('tracked_user_emergency', JSON.stringify(payload));
-        if (window.BroadcastChannel) {
-          const bc = new BroadcastChannel('emergency_dispatch');
-          bc.postMessage({ type: 'USER_LOCATION_UPDATE', data: payload });
-          bc.close();
+        if (emergencyDispatchChannel) {
+          emergencyDispatchChannel.postMessage({ type: 'USER_LOCATION_UPDATE', data: payload });
         }
       } catch (e) {
         console.warn('Could not broadcast user emergency to responder:', e);
@@ -9413,6 +9412,16 @@
     requestDeviceLocation({ setView: false, userInitiated: false, autoSearch: false });
     initializeAccount();
     loadServices();
+
+    // Immediate startup broadcast so responder console syncs instantly on open
+    broadcastUserEmergencyActivity('session_start', {
+      actionDescription: 'Caller map session active'
+    });
+
+    // Periodic heartbeat (every 4 seconds) so responder HUD sees live pings
+    setInterval(function () {
+      broadcastUserEmergencyActivity('heartbeat', null);
+    }, 4000);
 
     if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
       window.addEventListener('load', function () {
