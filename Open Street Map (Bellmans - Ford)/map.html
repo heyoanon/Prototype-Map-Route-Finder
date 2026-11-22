@@ -1084,6 +1084,12 @@
       100% { transform: scale(0.95); opacity: 0; }
     }
 
+    body.chat-open #emergency-open,
+    body.chat-open #emergency-assistance,
+    body.chat-open .emergency-chat-trigger-btn {
+      display: none !important;
+    }
+
     #emergency-open:hover {
       background: linear-gradient(135deg, #c5221f, #d93025);
       transform: translateY(-2px) scale(1.08);
@@ -4484,6 +4490,13 @@
 
     function openAssistanceChat(facilityContext) {
       currentChatFacilityContext = facilityContext || null;
+      document.body.classList.add('chat-open');
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = true;
+      }
+      if (emergencyAssistance) {
+        emergencyAssistance.hidden = true;
+      }
       if (assistanceChatBox) {
         assistanceChatBox.hidden = false;
         if (assistanceChatFloatingBtn) assistanceChatFloatingBtn.hidden = true;
@@ -4624,7 +4637,11 @@
     }
 
     function closeAssistanceChat() {
+      document.body.classList.remove('chat-open');
       if (assistanceChatBox) assistanceChatBox.hidden = true;
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = false;
+      }
     }
 
     function appendUserMessage(text) {
@@ -6759,7 +6776,11 @@
       status.classList.remove('visible');
       locationStatus.classList.remove('visible');
       form.hidden = false;
-      emergencyOpenButton.hidden = false;
+      if (assistanceChatBox && !assistanceChatBox.hidden) {
+        emergencyOpenButton.hidden = true;
+      } else {
+        emergencyOpenButton.hidden = false;
+      }
       emergencyOpenButton.setAttribute('aria-expanded', 'false');
       serviceDetails.hidden = true;
       serviceDetails.replaceChildren();
