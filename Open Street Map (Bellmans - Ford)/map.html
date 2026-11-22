@@ -1640,6 +1640,191 @@
       color: #e37400;
     }
 
+    /* Account Role & Portal Selector */
+    .auth-role-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 3px;
+    }
+
+    @media (max-width: 440px) {
+      .auth-role-selector {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .auth-role-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      border: 1.5px solid #dadce0;
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    .auth-role-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .auth-role-card:hover {
+      border-color: #1a73e8;
+      background: #f8fafd;
+    }
+
+    .auth-role-card.selected {
+      border-color: #1a73e8;
+      background: #e8f0fe;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+
+    .auth-role-card.selected.role-responder {
+      border-color: #d93025;
+      background: #fdf2f2;
+      box-shadow: 0 0 0 2px rgba(217, 48, 37, 0.2);
+    }
+
+    .auth-role-card-header {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .auth-role-card-icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .auth-role-card-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #202124;
+    }
+
+    .auth-role-card-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #1a73e8;
+      background: rgba(26, 115, 232, 0.12);
+      padding: 2px 6px;
+      border-radius: 999px;
+      margin-left: auto;
+    }
+
+    .auth-role-card-badge.responder {
+      color: #b3261e;
+      background: rgba(217, 48, 37, 0.12);
+    }
+
+    .auth-role-card-desc {
+      margin: 0;
+      font-size: 11px;
+      color: #5f6368;
+      line-height: 1.35;
+    }
+
+    /* Portal Access Toggle (Sign In) */
+    .auth-portal-toggle {
+      display: flex;
+      background: #f1f3f4;
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .auth-portal-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #5f6368;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .auth-portal-btn.active {
+      background: #ffffff;
+      color: #1a73e8;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .auth-portal-btn.active.role-responder {
+      color: #b3261e;
+    }
+
+    /* Account Popover Role Badge */
+    .account-role-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 3px;
+      letter-spacing: 0.2px;
+    }
+
+    .account-role-pill.personal {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
+    .account-role-pill.responder {
+      background: #fdf2f2;
+      color: #b3261e;
+      border: 1px solid rgba(217, 48, 37, 0.2);
+    }
+
+    .account-portal-switch-btn {
+      width: 100%;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid #d93025;
+      border-radius: 8px;
+      background: #fdf2f2;
+      color: #b3261e;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
+
+    .account-portal-switch-btn:hover {
+      background: #fce8e6;
+    }
+
+    .account-role-edit-row {
+      margin-top: 8px;
+    }
+
     .history-signin-btn {
       display: inline-flex;
       align-items: center;
@@ -2951,6 +3136,74 @@
       background: #223f73;
     }
 
+    :root[data-theme="dark"] .auth-role-card {
+      background: #202124;
+      border-color: #3c4043;
+    }
+
+    :root[data-theme="dark"] .auth-role-card:hover {
+      border-color: #8ab4f8;
+      background: #282a2e;
+    }
+
+    :root[data-theme="dark"] .auth-role-card.selected {
+      border-color: #8ab4f8;
+      background: #172b4d;
+      box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.25);
+    }
+
+    :root[data-theme="dark"] .auth-role-card.selected.role-responder {
+      border-color: #f28b82;
+      background: #3c1e1e;
+      box-shadow: 0 0 0 2px rgba(242, 139, 130, 0.25);
+    }
+
+    :root[data-theme="dark"] .auth-role-card-title {
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .auth-role-card-desc {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .auth-portal-toggle {
+      background: #303134;
+    }
+
+    :root[data-theme="dark"] .auth-portal-btn {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .auth-portal-btn.active {
+      background: #202124;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .auth-portal-btn.active.role-responder {
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .account-role-pill.personal {
+      background: #172b4d;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .account-role-pill.responder {
+      background: #3c1e1e;
+      color: #f28b82;
+      border-color: #771d1d;
+    }
+
+    :root[data-theme="dark"] .account-portal-switch-btn {
+      background: #3c1e1e;
+      border-color: #f28b82;
+      color: #f28b82;
+    }
+
+    :root[data-theme="dark"] .account-portal-switch-btn:hover {
+      background: #492525;
+    }
+
     :root[data-theme="dark"] #destination,
     :root[data-theme="dark"] .route-name,
     :root[data-theme="dark"] .route-directions li,
@@ -4149,15 +4402,29 @@
           <div class="account-profile-info">
             <div id="account-profile-name" class="account-profile-name">User</div>
             <div id="account-identity" class="account-profile-email"></div>
-            <div id="account-sync-status" class="account-sync-badge">
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Cloud Synced</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px;">
+              <div id="account-role-badge" class="account-role-pill personal">👤 Personal User</div>
+              <div id="account-sync-status" class="account-sync-badge">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Cloud Synced</span>
+              </div>
             </div>
           </div>
         </div>
+        <button id="account-go-responder" type="button" class="account-portal-switch-btn" hidden>
+          <span>🚨 Open Responder Console</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
         <label>
           Display name
           <input id="profile-name" type="text" autocomplete="name" maxlength="100">
+        </label>
+        <label class="account-role-edit-row">
+          Account Role
+          <select id="profile-role-select" style="display: block; width: 100%; min-height: 34px; margin-top: 3px; padding: 5px 7px; border: 1px solid #dadce0; border-radius: 4px; background: inherit; color: inherit; font: inherit;">
+            <option value="personal">👤 Personal User (Map Navigation)</option>
+            <option value="responder">🚨 Emergency Responder (Dispatch Tracker)</option>
+          </select>
         </label>
         <div class="account-buttons">
           <button id="save-profile" type="button">Save profile</button>
@@ -4241,6 +4508,50 @@
       </div>
 
       <form id="auth-modal-form" class="auth-modal-form" novalidate>
+        <!-- Sign-In Destination / Portal Selector -->
+        <div class="auth-field-group" id="auth-signin-role-group">
+          <label class="auth-field-label">
+            <span>Destination Portal</span>
+            <span class="auth-field-hint">Auto-detected from account</span>
+          </label>
+          <div class="auth-portal-toggle" id="auth-portal-toggle">
+            <button type="button" class="auth-portal-btn active" id="auth-portal-map" data-portal="personal">
+              <span>🗺️ Personal Map</span>
+            </button>
+            <button type="button" class="auth-portal-btn role-responder" id="auth-portal-responder" data-portal="responder">
+              <span>🚨 Responder Console</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Account Role Selection (Sign Up only) -->
+        <div class="auth-field-group" id="auth-field-role-group" hidden>
+          <label class="auth-field-label">
+            <span>Account Role</span>
+            <span class="auth-field-hint">Select how you will use the account</span>
+          </label>
+          <div class="auth-role-selector" role="radiogroup" aria-label="Account Role">
+            <label class="auth-role-card selected" id="auth-role-card-personal">
+              <input type="radio" name="auth-account-role" id="auth-role-personal" value="personal" checked>
+              <div class="auth-role-card-header">
+                <span class="auth-role-card-icon">👤</span>
+                <span class="auth-role-card-title">Personal</span>
+                <span class="auth-role-card-badge">Directs to Map</span>
+              </div>
+              <p class="auth-role-card-desc">For general users: route navigation, saved places, and requesting emergency help.</p>
+            </label>
+            <label class="auth-role-card role-responder" id="auth-role-card-responder">
+              <input type="radio" name="auth-account-role" id="auth-role-responder" value="responder">
+              <div class="auth-role-card-header">
+                <span class="auth-role-card-icon">🚨</span>
+                <span class="auth-role-card-title">Emergency Responder</span>
+                <span class="auth-role-card-badge responder">Directs to Dispatch</span>
+              </div>
+              <p class="auth-role-card-desc">For official responders: live caller tracking and dispatch console.</p>
+            </label>
+          </div>
+        </div>
+
         <!-- Display Name (Sign Up only) -->
         <div class="auth-field-group" id="auth-field-name-group" hidden>
           <label for="auth-input-name" class="auth-field-label">
@@ -5346,6 +5657,19 @@
     const historyOpenSignin = document.getElementById('history-open-signin');
     const accountViewHistoryBtn = document.getElementById('account-view-history-btn');
     const accountSwitchBtn = document.getElementById('account-switch-btn');
+    const authSigninRoleGroup = document.getElementById('auth-signin-role-group');
+    const authPortalMap = document.getElementById('auth-portal-map');
+    const authPortalResponder = document.getElementById('auth-portal-responder');
+    const authFieldRoleGroup = document.getElementById('auth-field-role-group');
+    const authRoleCardPersonal = document.getElementById('auth-role-card-personal');
+    const authRoleCardResponder = document.getElementById('auth-role-card-responder');
+    const authRolePersonal = document.getElementById('auth-role-personal');
+    const authRoleResponder = document.getElementById('auth-role-responder');
+    const accountRoleBadge = document.getElementById('account-role-badge');
+    const accountGoResponder = document.getElementById('account-go-responder');
+    const profileRoleSelect = document.getElementById('profile-role-select');
+    let selectedPortalMode = 'personal';
+    let selectedSignupRole = 'personal';
     let currentAuthMode = 'signin';
 
     let supabaseClient = null;
@@ -7857,20 +8181,49 @@
       }
     }
 
+    function updateRoleBadge(role) {
+      if (!accountRoleBadge) return;
+      if (role === 'responder') {
+        accountRoleBadge.textContent = '🚨 Emergency Responder';
+        accountRoleBadge.className = 'account-role-pill responder';
+        accountRoleBadge.hidden = false;
+        if (accountGoResponder) accountGoResponder.hidden = false;
+      } else {
+        accountRoleBadge.textContent = '👤 Personal User';
+        accountRoleBadge.className = 'account-role-pill personal';
+        accountRoleBadge.hidden = false;
+        if (accountGoResponder) accountGoResponder.hidden = true;
+      }
+    }
+
     async function loadAccountData(userId) {
       if (!supabaseClient || !currentUser || currentUser.id !== userId) return;
       try {
-        const result = await supabaseClient
+        let result = await supabaseClient
           .from('user_profiles')
-          .select('display_name')
+          .select('display_name,account_role')
           .eq('user_id', userId)
           .maybeSingle();
-        if (result.error) throw result.error;
+        if (result.error) {
+          // If account_role column is not yet in user_profiles schema, fallback to display_name
+          result = await supabaseClient
+            .from('user_profiles')
+            .select('display_name')
+            .eq('user_id', userId)
+            .maybeSingle();
+        }
         if (!currentUser || currentUser.id !== userId) return;
-        const displayName = result.data
+        const displayName = result.data && result.data.display_name
           ? result.data.display_name
           : currentUser.user_metadata && currentUser.user_metadata.display_name || '';
+        const role = (result.data && result.data.account_role) ||
+          (currentUser.user_metadata && currentUser.user_metadata.account_role) ||
+          readOfflineCache('account-role:' + userId, readOfflineCache('account-last-role', 'personal'));
+
         profileNameInput.value = displayName;
+        if (profileRoleSelect) profileRoleSelect.value = role;
+        updateRoleBadge(role);
+
         const profileNameDisplay = document.getElementById('account-profile-name');
         const avatarBadge = document.getElementById('account-avatar-badge');
         if (profileNameDisplay) {
@@ -7880,11 +8233,18 @@
           const char = (displayName ? displayName[0] : (currentUser.email ? currentUser.email[0] : 'U')).toUpperCase();
           avatarBadge.textContent = char;
         }
-        writeOfflineCache('account-profile:' + userId, { display_name: displayName });
+        writeOfflineCache('account-profile:' + userId, { display_name: displayName, account_role: role });
+        writeOfflineCache('account-role:' + userId, role);
+        writeOfflineCache('account-last-role', role);
         await loadActivityHistory(userId);
       } catch (error) {
         console.error('Could not load the account profile:', error);
         const cachedProfile = readOfflineCache('account-profile:' + userId, null);
+        const cachedRole = (cachedProfile && cachedProfile.account_role) ||
+          readOfflineCache('account-role:' + userId, readOfflineCache('account-last-role', 'personal'));
+        if (profileRoleSelect) profileRoleSelect.value = cachedRole;
+        updateRoleBadge(cachedRole);
+
         if (cachedProfile) {
           profileNameInput.value = cachedProfile.display_name || '';
           const profileNameDisplay = document.getElementById('account-profile-name');
@@ -7906,10 +8266,15 @@
 
     function showAccountSession(session) {
       currentUser = session && session.user ? session.user : null;
+      let detectedRole = 'personal';
       if (currentUser) {
+        detectedRole = (currentUser.user_metadata && currentUser.user_metadata.account_role) ||
+          readOfflineCache('account-role:' + currentUser.id, readOfflineCache('account-last-role', 'personal'));
         writeOfflineCache('account-session:' + currentUser.id, session);
         writeOfflineCache('account-session-last', session);
         writeOfflineCache('account-last-email', currentUser.email || '');
+        writeOfflineCache('account-role:' + currentUser.id, detectedRole);
+        writeOfflineCache('account-last-role', detectedRole);
       }
       const isSignedIn = Boolean(currentUser);
       accountLoggedOut.hidden = isSignedIn;
@@ -7926,6 +8291,8 @@
         accountOpenForm.hidden = false;
         accountIdentity.textContent = '';
         profileNameInput.value = '';
+        if (accountRoleBadge) accountRoleBadge.hidden = true;
+        if (accountGoResponder) accountGoResponder.hidden = true;
         activityHistory.replaceChildren();
         if (accountToggle) {
           accountToggle.classList.remove('signed-in');
@@ -7946,9 +8313,12 @@
           (email ? email.split('@')[0] : 'User');
       }
       accountIdentity.textContent = email;
+      updateRoleBadge(detectedRole);
+      if (profileRoleSelect) profileRoleSelect.value = detectedRole;
+
       if (accountToggle) {
         accountToggle.classList.add('signed-in');
-        accountToggle.setAttribute('title', 'Signed in as ' + (currentUser.user_metadata && currentUser.user_metadata.display_name || email));
+        accountToggle.setAttribute('title', 'Signed in as ' + (currentUser.user_metadata && currentUser.user_metadata.display_name || email) + ' (' + (detectedRole === 'responder' ? 'Responder' : 'Personal') + ')');
       }
       if (syncStatusPill) {
         if (navigator.onLine) {
@@ -7960,7 +8330,7 @@
         }
       }
 
-      setAccountStatus('Signed in.');
+      setAccountStatus('Signed in as ' + (detectedRole === 'responder' ? 'Emergency Responder' : 'Personal User') + '.');
       if (authModalOverlay && !authModalOverlay.hidden) {
         closeAuthModal();
       }
@@ -8044,8 +8414,78 @@
     }
 
     /* -------------------------------------------------------------------------
-       Dedicated Sign-In / Log-In Interface Logic
+       Dedicated Sign-In / Log-In Interface Logic & Role-Based Routing
        ------------------------------------------------------------------------- */
+    function getResponderConsoleUrl() {
+      const pathname = window.location.pathname;
+      if (pathname.indexOf('Open Street Map (Bellmans - Ford)') !== -1) {
+        return 'responder.html';
+      }
+      return 'responder.html';
+    }
+
+    function getMapAppUrl() {
+      const pathname = window.location.pathname;
+      if (pathname.indexOf('Open Street Map (Bellmans - Ford)') !== -1) {
+        return 'map.html';
+      }
+      return 'map.html';
+    }
+
+    function redirectBasedOnRole(role, isSignUp) {
+      const targetRole = role === 'responder' ? 'responder' : 'personal';
+      writeOfflineCache('account-last-role', targetRole);
+      if (currentUser) {
+        writeOfflineCache('account-role:' + currentUser.id, targetRole);
+      }
+      updateRoleBadge(targetRole);
+
+      if (targetRole === 'responder') {
+        setAuthModalStatus('🚨 Emergency Responder verified! Directing to Responder Console...', 'success');
+        setTimeout(function () {
+          window.location.href = getResponderConsoleUrl();
+        }, 750);
+      } else {
+        const isAlreadyOnMap = window.location.pathname.endsWith('map.html') || window.location.pathname.endsWith('/');
+        if (!isAlreadyOnMap) {
+          setAuthModalStatus('Personal account verified. Directing to Map...', 'success');
+          setTimeout(function () {
+            window.location.href = getMapAppUrl();
+          }, 500);
+        } else {
+          setAuthModalStatus(isSignUp ? 'Account created! Welcome to Open Street Map.' : 'Signed in as Personal User.', 'success');
+          setTimeout(function () {
+            closeAuthModal();
+            setAccountStatus('Signed in as Personal User.');
+          }, 450);
+        }
+      }
+    }
+
+    function setSignupRole(role) {
+      selectedSignupRole = role === 'responder' ? 'responder' : 'personal';
+      if (authRolePersonal) authRolePersonal.checked = selectedSignupRole === 'personal';
+      if (authRoleResponder) authRoleResponder.checked = selectedSignupRole === 'responder';
+      if (authRoleCardPersonal) {
+        authRoleCardPersonal.classList.toggle('active', selectedSignupRole === 'personal');
+      }
+      if (authRoleCardResponder) {
+        authRoleCardResponder.classList.toggle('active', selectedSignupRole === 'responder');
+      }
+    }
+
+    function setPortalMode(mode) {
+      selectedPortalMode = mode === 'responder' ? 'responder' : 'personal';
+      if (authPortalMap) {
+        authPortalMap.classList.toggle('active', selectedPortalMode === 'personal');
+        authPortalMap.setAttribute('aria-pressed', selectedPortalMode === 'personal');
+      }
+      if (authPortalResponder) {
+        authPortalResponder.classList.toggle('active', selectedPortalMode === 'responder');
+        authPortalResponder.setAttribute('aria-pressed', selectedPortalMode === 'responder');
+      }
+    }
+
     function setAuthModalStatus(message, type) {
       if (!authModalStatus) return;
       if (!message) {
@@ -8105,7 +8545,7 @@
 
       if (currentAuthMode === 'signup') {
         if (authModalTitle) authModalTitle.textContent = 'Create an Account';
-        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign up to bookmark places, save custom routes, and sync preferences across devices.';
+        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign up to bookmark places, save custom routes, or dispatch emergency responder units.';
         if (authTablist) authTablist.hidden = false;
         if (authTabSignin) {
           authTabSignin.classList.remove('active');
@@ -8116,6 +8556,8 @@
           authTabSignup.setAttribute('aria-selected', 'true');
         }
         if (authFieldNameGroup) authFieldNameGroup.hidden = false;
+        if (authFieldRoleGroup) authFieldRoleGroup.hidden = false;
+        if (authSigninRoleGroup) authSigninRoleGroup.hidden = true;
         if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = false;
         if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = false;
         if (authPasswordHint) authPasswordHint.hidden = false;
@@ -8127,6 +8569,8 @@
         if (authSwitchModeBtn) authSwitchModeBtn.textContent = 'Sign in';
         if (authFooterResetBack) authFooterResetBack.hidden = true;
 
+        setSignupRole(selectedSignupRole || 'personal');
+
         authModalOverlay.hidden = false;
         authModalOverlay.setAttribute('aria-hidden', 'false');
         setTimeout(function () {
@@ -8137,6 +8581,8 @@
         if (authModalSubtitle) authModalSubtitle.textContent = 'Enter your email address and we will send you instructions to reset your password.';
         if (authTablist) authTablist.hidden = true;
         if (authFieldNameGroup) authFieldNameGroup.hidden = true;
+        if (authFieldRoleGroup) authFieldRoleGroup.hidden = true;
+        if (authSigninRoleGroup) authSigninRoleGroup.hidden = true;
         if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = true;
         if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = true;
         if (authPasswordHint) authPasswordHint.hidden = true;
@@ -8153,7 +8599,7 @@
       } else {
         currentAuthMode = 'signin';
         if (authModalTitle) authModalTitle.textContent = 'Welcome Back';
-        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign in to access your saved places, recent routes, and sync across devices.';
+        if (authModalSubtitle) authModalSubtitle.textContent = 'Sign in to access your saved places, recent routes, or responder console.';
         if (authTablist) authTablist.hidden = false;
         if (authTabSignin) {
           authTabSignin.classList.add('active');
@@ -8164,6 +8610,8 @@
           authTabSignup.setAttribute('aria-selected', 'false');
         }
         if (authFieldNameGroup) authFieldNameGroup.hidden = true;
+        if (authFieldRoleGroup) authFieldRoleGroup.hidden = true;
+        if (authSigninRoleGroup) authSigninRoleGroup.hidden = false;
         if (authFieldPasswordGroup) authFieldPasswordGroup.hidden = false;
         if (authFieldConfirmPasswordGroup) authFieldConfirmPasswordGroup.hidden = true;
         if (authPasswordHint) authPasswordHint.hidden = true;
@@ -8174,6 +8622,9 @@
         if (authFooterQuestion) authFooterQuestion.textContent = "Don't have an account?";
         if (authSwitchModeBtn) authSwitchModeBtn.textContent = 'Create one now';
         if (authFooterResetBack) authFooterResetBack.hidden = true;
+
+        const defaultPortal = readOfflineCache('account-last-role', 'personal');
+        setPortalMode(selectedPortalMode || defaultPortal);
 
         authModalOverlay.hidden = false;
         authModalOverlay.setAttribute('aria-hidden', 'false');
@@ -8234,6 +8685,7 @@
         if (currentAuthMode === 'signup') {
           const displayName = authInputName ? authInputName.value.trim() : '';
           const confirmPassword = authInputConfirmPassword ? authInputConfirmPassword.value : '';
+          const targetRole = selectedSignupRole || 'personal';
 
           if (!displayName) {
             setAuthModalStatus('Please enter your display name.', 'error');
@@ -8266,20 +8718,41 @@
             const result = await supabaseClient.auth.signUp({
               email: email,
               password: password,
-              options: { data: { display_name: displayName } }
+              options: {
+                data: {
+                  display_name: displayName,
+                  account_role: targetRole
+                }
+              }
             });
             if (result.error) throw result.error;
+            writeOfflineCache('account-last-role', targetRole);
+            if (result.data && result.data.user) {
+              writeOfflineCache('account-role:' + result.data.user.id, targetRole);
+              try {
+                await supabaseClient.from('user_profiles').upsert({
+                  user_id: result.data.user.id,
+                  display_name: displayName,
+                  account_role: targetRole,
+                  updated_at: new Date().toISOString()
+                });
+              } catch (profileErr) {
+                console.warn('Could not upsert user profile:', profileErr);
+              }
+            }
+
             if (result.data && result.data.session) {
-              setAuthModalStatus('Account created successfully! Signed in.', 'success');
-              setTimeout(function () {
-                closeAuthModal();
-                setAccountStatus('Account created and signed in.');
-              }, 450);
+              redirectBasedOnRole(targetRole, true);
             } else {
-              setAuthModalStatus('Account created! Please check your email inbox to confirm, then sign in.', 'success');
+              if (targetRole === 'responder') {
+                setAuthModalStatus('Account created! Please check your email to confirm. After confirming, you can sign in to access the Responder Console.', 'success');
+              } else {
+                setAuthModalStatus('Account created! Please check your email inbox to confirm, then sign in.', 'success');
+              }
               setTimeout(function () {
                 openAuthModal('signin');
                 if (authInputEmail) authInputEmail.value = email;
+                setPortalMode(targetRole);
                 setAuthModalStatus('Confirmation email sent. Please check your inbox and then sign in.', 'info');
               }, 2500);
             }
@@ -8311,23 +8784,31 @@
             password: password
           });
           if (result.error) throw result.error;
-          setAuthModalStatus('Signed in successfully!', 'success');
-          setTimeout(function () {
-            closeAuthModal();
-            setAccountStatus('Signed in.');
-          }, 350);
+          const signedUser = result.data && result.data.user;
+          let detectedRole = (signedUser && signedUser.user_metadata && signedUser.user_metadata.account_role) ||
+            readOfflineCache('account-role:' + (signedUser ? signedUser.id : ''), null);
+          
+          if (!detectedRole) {
+            detectedRole = selectedPortalMode || 'personal';
+          } else if (selectedPortalMode === 'responder') {
+            detectedRole = 'responder';
+          }
+
+          writeOfflineCache('account-last-role', detectedRole);
+          if (signedUser) {
+            writeOfflineCache('account-role:' + signedUser.id, detectedRole);
+          }
+
+          redirectBasedOnRole(detectedRole, false);
         } catch (error) {
           if (!navigator.onLine) {
             const cachedSession = readOfflineCache('account-session-last', null);
-            const cachedEmail = readOfflineCache('account-last-email', '');
             if (cachedSession && cachedSession.user &&
               String(cachedSession.user.email || '').toLowerCase() === email.toLowerCase()) {
+              const detectedRole = readOfflineCache('account-role:' + cachedSession.user.id, selectedPortalMode || 'personal');
+              writeOfflineCache('account-last-role', detectedRole);
               showAccountSession(cachedSession);
-              setAuthModalStatus('Signed in using saved account data offline.', 'info');
-              setTimeout(function () {
-                closeAuthModal();
-                setAccountStatus('Signed in using saved account data offline.');
-              }, 400);
+              redirectBasedOnRole(detectedRole, false);
             } else {
               setAuthModalStatus('Offline sign-in is available only for an account previously used on this device.', 'error');
             }
@@ -8338,6 +8819,28 @@
           setAuthSubmitLoading(false);
         }
       });
+    }
+
+    // Role selector card listeners (Sign Up)
+    if (authRoleCardPersonal) {
+      authRoleCardPersonal.addEventListener('click', function () { setSignupRole('personal'); });
+    }
+    if (authRoleCardResponder) {
+      authRoleCardResponder.addEventListener('click', function () { setSignupRole('responder'); });
+    }
+    if (authRolePersonal) {
+      authRolePersonal.addEventListener('change', function () { if (this.checked) setSignupRole('personal'); });
+    }
+    if (authRoleResponder) {
+      authRoleResponder.addEventListener('change', function () { if (this.checked) setSignupRole('responder'); });
+    }
+
+    // Portal mode buttons (Sign In)
+    if (authPortalMap) {
+      authPortalMap.addEventListener('click', function () { setPortalMode('personal'); });
+    }
+    if (authPortalResponder) {
+      authPortalResponder.addEventListener('click', function () { setPortalMode('responder'); });
     }
 
     if (authTabSignin) {
@@ -8429,6 +8932,13 @@
         openAuthModal('signin');
       });
     }
+    if (accountGoResponder) {
+      accountGoResponder.addEventListener('click', function () {
+        accountContent.hidden = true;
+        if (accountToggle) accountToggle.setAttribute('aria-expanded', 'false');
+        window.location.href = getResponderConsoleUrl();
+      });
+    }
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && authModalOverlay && !authModalOverlay.hidden) {
@@ -8439,6 +8949,7 @@
     document.getElementById('save-profile').addEventListener('click', async function () {
       if (!supabaseClient || !currentUser) return;
       const displayName = profileNameInput.value.trim();
+      const selectedRole = profileRoleSelect ? profileRoleSelect.value : 'personal';
       if (!displayName) {
         setAccountStatus('Enter a display name.');
         return;
@@ -8446,18 +8957,47 @@
       const button = document.getElementById('save-profile');
       button.disabled = true;
       try {
-        const result = await supabaseClient
+        let result = await supabaseClient
           .from('user_profiles')
-          .update({ display_name: displayName, updated_at: new Date().toISOString() })
+          .update({ display_name: displayName, account_role: selectedRole, updated_at: new Date().toISOString() })
           .eq('user_id', currentUser.id);
-        if (result.error) throw result.error;
+        if (result.error) {
+          result = await supabaseClient
+            .from('user_profiles')
+            .update({ display_name: displayName, updated_at: new Date().toISOString() })
+            .eq('user_id', currentUser.id);
+          if (result.error) throw result.error;
+        }
+
+        try {
+          await supabaseClient.auth.updateUser({
+            data: { display_name: displayName, account_role: selectedRole }
+          });
+        } catch (metaErr) {}
+
+        writeOfflineCache('account-profile:' + currentUser.id, { display_name: displayName, account_role: selectedRole });
+        writeOfflineCache('account-role:' + currentUser.id, selectedRole);
+        writeOfflineCache('account-last-role', selectedRole);
+
         const profileNameDisplay = document.getElementById('account-profile-name');
         const avatarBadge = document.getElementById('account-avatar-badge');
         if (profileNameDisplay) profileNameDisplay.textContent = displayName;
         if (avatarBadge) avatarBadge.textContent = displayName[0].toUpperCase();
-        setAccountStatus('Profile saved.');
+        updateRoleBadge(selectedRole);
+
+        if (selectedRole === 'responder') {
+          setAccountStatus('Profile saved as Emergency Responder. Switching to Responder Console...');
+          setTimeout(function () {
+            window.location.href = getResponderConsoleUrl();
+          }, 850);
+        } else {
+          setAccountStatus('Profile saved as Personal User.');
+        }
       } catch (error) {
-        writeOfflineCache('account-profile:' + currentUser.id, { display_name: displayName });
+        writeOfflineCache('account-profile:' + currentUser.id, { display_name: displayName, account_role: selectedRole });
+        writeOfflineCache('account-role:' + currentUser.id, selectedRole);
+        writeOfflineCache('account-last-role', selectedRole);
+        updateRoleBadge(selectedRole);
         setAccountStatus('Profile saved locally for offline use.');
       } finally {
         button.disabled = false;

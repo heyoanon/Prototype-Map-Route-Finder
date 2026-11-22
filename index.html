@@ -2,10 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=Open%20Street%20Map%20(Bellmans%20-%20Ford)/map.html">
   <title>Open Street Map Route Finder</title>
+  <script>
+    (function () {
+      try {
+        var lastRole = localStorage.getItem('osm-map-offline-v1:account-last-role');
+        if (lastRole === 'responder') {
+          window.location.replace('Open Street Map (Bellmans - Ford)/responder.html');
+          return;
+        }
+      } catch (e) {}
+      window.location.replace('Open Street Map (Bellmans - Ford)/map.html');
+    })();
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=Open%20Street%20Map%20(Bellmans%20-%20Ford)/map.html">
+  </noscript>
 </head>
 <body>
-  <p>Loading Map Route Finder... If you are not redirected automatically, <a href="Open%20Street%20Map%20(Bellmans%20-%20Ford)/map.html">click here</a>.</p>
+  <p>Loading Map Route Finder... If you are not redirected automatically, <a href="Open Street Map (Bellmans - Ford)/map.html">click here for Map</a> or <a href="Open Street Map (Bellmans - Ford)/responder.html">here for Responder Console</a>.</p>
 </body>
 </html>

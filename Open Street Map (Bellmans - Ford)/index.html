@@ -2,10 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=map.html">
   <title>Open Street Map Search</title>
+  <script>
+    (function () {
+      try {
+        var lastRole = localStorage.getItem('osm-map-offline-v1:account-last-role');
+        if (lastRole === 'responder') {
+          window.location.replace('responder.html');
+          return;
+        }
+      } catch (e) {}
+      window.location.replace('map.html');
+    })();
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=map.html">
+  </noscript>
 </head>
 <body>
-  <p>Loading Map Search... If you are not redirected automatically, <a href="map.html">click here</a>.</p>
+  <p>Loading Map Search... If you are not redirected automatically, <a href="map.html">click here for Map</a> or <a href="responder.html">here for Responder Console</a>.</p>
 </body>
 </html>
