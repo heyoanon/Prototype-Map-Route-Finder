@@ -3728,11 +3728,11 @@
         '#account-panel, #history-panel, .map-categories-control, .leaflet-control'
       ));
 
-      // Collapse panels only when clicking outside panels on map empty space
-      if (!isInsidePanels) {
-        if (!isInteractive) {
-          collapseSidebar();
-        } else if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
+      // Collapse panels when clicking at any area that has no buttons or interactive controls
+      if (!isInteractive) {
+        collapseSidebar();
+      } else if (!isInsidePanels) {
+        if (!emergencyAssistance.hidden && !emergencyAssistance.contains(target) && !emergencyOpenButton.contains(target)) {
           collapseSidebar();
         }
       }
@@ -4150,11 +4150,6 @@
             appendUserMessage('Route to ' + facilityContext.name);
             appendBotMessage('Calculating fastest factor-aware route to <strong>' + escapeHtml(facilityContext.name) + '</strong>...');
           }
-        });
-
-        actions.push({
-          label: '🚨 Dispatch Console',
-          href: getDispatchConsoleUrl(facilityContext.name, facilityContext.coordinates, facilityType)
         });
 
         if (facilityContext.phone) {
@@ -5442,7 +5437,7 @@
 
     function collapseSidebar(options) {
       isSidebarExpanded = false;
-      const clearRoutes = options && options.clearRoutes === true;
+      const keepRoutes = options && options.keepRoutes === true;
       const mapSearchControls = document.getElementById('map-search-controls');
       if (mapSearchControls) {
         mapSearchControls.classList.remove('sidebar-expanded');
@@ -5459,15 +5454,26 @@
       locationStatus.classList.remove('visible');
       form.hidden = false;
       emergencyOpenButton.hidden = false;
-      serviceDetails.hidden = true;
-      emergencyAssistance.hidden = true;
       emergencyOpenButton.setAttribute('aria-expanded', 'false');
+      serviceDetails.hidden = true;
+      serviceDetails.replaceChildren();
+      emergencyAssistance.hidden = true;
       selectedServiceCoordinates = null;
 
-      if (clearRoutes) {
+      if (!keepRoutes) {
         searchRequestId += 1;
         isSearching = false;
-        searchButton.disabled = false;
+        if (searchButton) {
+          searchButton.disabled = false;
+        }
+        if (destinationInput) {
+          destinationInput.value = '';
+          destinationInput.placeholder = 'Search destination or coordinates';
+        }
+        if (sourceInput) {
+          sourceInput.value = '';
+          sourceInput.placeholder = 'Your device location';
+        }
         status.textContent = '';
         routesElement.replaceChildren();
         routeLayers.clearLayers();
@@ -5794,30 +5800,6 @@
       if (assistanceBtn) {
         assistanceBtn.title = 'Need Assistance';
         assistanceBtn.setAttribute('aria-label', 'Need Assistance');
-      }
-
-      const isEmergencyStation = Boolean(
-        actionType ||
-        (actions && actions.type) ||
-        /police|fire|rescue|responder|ambulance|hospital|station|precinct|drrmo/i.test((name || '') + ' ' + (categoryLabel || ''))
-      );
-
-      if (isEmergencyStation) {
-        const dispatchUrl = getDispatchConsoleUrl(name, selectedServiceCoordinates, actionType);
-        const dispatchBtn = addAction('🚨 Dispatch Console', dispatchUrl, function () {
-          broadcastUserEmergencyActivity('dispatch_console_opened', {
-            facilityName: name,
-            category: categoryLabel,
-            coordinates: selectedServiceCoordinates,
-            actionDescription: 'Opened Dispatch Console for ' + name
-          });
-        }, 'dispatch-link');
-        if (dispatchBtn) {
-          dispatchBtn.setAttribute('target', '_blank');
-          dispatchBtn.setAttribute('rel', 'noopener noreferrer');
-          dispatchBtn.title = 'Open Responder Dispatch Console on Vercel (/dispatch)';
-          dispatchBtn.setAttribute('aria-label', 'Open Responder Dispatch Console on Vercel');
-        }
       }
       serviceDetails.appendChild(actionBar);
 
@@ -6675,6 +6657,76 @@
 
       if (type === 'responder') {
         recommendResponderDispatch('', currentResponderScenario || 'flood');
+      } else {
+        // Immediately compute fastest route to the nearest known facility for police, fire, ambulance
+        const originPoint = L.latLng(origin[1], origin[0]);
+        const knownForType = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+          return f.type === type;
+        }).map(function (known) {
+          return {
+            name: known.name,
+            category: known.category,
+            coordinates: known.coordinates,
+            address: known.address,
+            phone: known.phone,
+            type: known.type,
+            distanceMeters: originPoint.distanceTo(L.latLng(known.coordinates[1], known.coordinates[0])),
+            selectService: function () {
+              selectedServiceCoordinates = known.coordinates;
+              expandSidebar();
+              destinationInput.value = known.name;
+              showServiceDetails(
+                known.name,
+                known.category,
+                [
+                  ['Address', known.address],
+                  ['Phone', known.phone, 'phone'],
+                  ['Category', known.category]
+                ],
+                '#d93025',
+                '',
+                {
+                  callNumber: known.phone,
+                  messageNumber: known.phone,
+                  type: known.type,
+                  onNeedAssistance: function () {
+                    openAssistanceChat({
+                      name: known.name,
+                      category: known.category,
+                      phone: known.phone,
+                      coordinates: known.coordinates,
+                      address: known.address,
+                      type: known.type
+                    });
+                  }
+                }
+              );
+              searchDestination(known.name, known.coordinates, { emergencyType: type });
+            }
+          };
+        });
+
+        knownForType.sort(function (a, b) {
+          return a.distanceMeters - b.distanceMeters;
+        });
+
+        if (knownForType.length > 0) {
+          // Hide center modal dialog so the route path on the map is immediately visible
+          if (emergencyAssistance) {
+            emergencyAssistance.hidden = true;
+          }
+          const sidebarContainer = document.getElementById('emergency-results-list');
+          if (sidebarContainer) {
+            sidebarContainer.hidden = false;
+          }
+
+          renderEmergencyFacilitiesList(knownForType.slice(0, 8), type);
+
+          const nearest = knownForType[0];
+          const distKm = (nearest.distanceMeters / 1000).toFixed(1);
+          setStatus('Routing to nearest ' + (labels[type] || type) + ': ' + nearest.name + ' (' + distKm + ' km away)...');
+          nearest.selectService();
+        }
       }
 
       // Ensure appropriate layer is visible
@@ -7580,7 +7632,7 @@
           }
         });
 
-        fitMapBoundsSafely(routeLayers.getBounds());
+        fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
 
         const activeRoute = routes[0];
         let factorStatus = '';
@@ -7626,7 +7678,7 @@
             }).addTo(routeLayers);
             addRouteCard(route, index, layer, false, Boolean(routePurpose));
           });
-          fitMapBoundsSafely(routeLayers.getBounds());
+          fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
           setStatus('Showing a previously saved offline route.');
         } else {
           setStatus(error.message || 'Could not find routes. Please try again.');
@@ -7739,7 +7791,7 @@
         handleMapClickForIncident(event);
         return;
       }
-      collapseSidebar({ clearRoutes: false });
+      collapseSidebar();
     });
     map.on('moveend', scheduleServiceRefresh);
     requestDeviceLocation({ setView: false, userInitiated: false, autoSearch: false });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'map-search-shell-v11';
+const CACHE_NAME = 'map-search-shell-v12';
 const TILE_CACHE = 'map-search-tiles-v2';
 const DATA_CACHE = 'map-search-data-v1';
 const APP_SHELL = [
