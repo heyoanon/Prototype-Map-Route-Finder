@@ -14160,15 +14160,37 @@
     initializeAccount();
     loadServices();
 
+    const getCallerPlatform = function () {
+      return (window.innerWidth <= 640 || ('ontouchstart' in window)) ? 'Mobile' : 'Desktop';
+    };
+
     // Immediate startup broadcast so responder console syncs instantly on open
     broadcastUserEmergencyActivity('session_start', {
-      actionDescription: 'Caller map session active'
+      actionDescription: 'Caller map session active',
+      isSessionActive: true,
+      callerPlatform: getCallerPlatform()
     });
 
-    // Periodic heartbeat (every 4 seconds) so responder HUD sees live pings
+    // Periodic heartbeat (every 3.5 seconds) so responder HUD sees live pings
     setInterval(function () {
-      broadcastUserEmergencyActivity('heartbeat', null);
-    }, 4000);
+      broadcastUserEmergencyActivity('heartbeat', {
+        isSessionActive: true,
+        callerPlatform: getCallerPlatform()
+      });
+    }, 3500);
+
+    window.addEventListener('pagehide', function () {
+      broadcastUserEmergencyActivity('session_ended', {
+        actionDescription: 'Caller left map session',
+        isSessionActive: false
+      });
+    });
+    window.addEventListener('beforeunload', function () {
+      broadcastUserEmergencyActivity('session_ended', {
+        actionDescription: 'Caller left map session',
+        isSessionActive: false
+      });
+    });
 
     if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
       window.addEventListener('load', function () {
@@ -14180,7 +14202,7 @@
         });
       });
     }
-  </script>
+
     // Mobile Pull to Refresh Current Action and Page
     function saveCurrentActionState() {
       try {
@@ -14380,7 +14402,7 @@
       // Restore current action if loaded with saved state
       window.addEventListener('load', restoreCurrentActionState);
     })();
-
+  </script>
 </body>
 
 </html>
