@@ -6849,9 +6849,9 @@
         coordinates: nearest.coordinates,
         phone: nearest.phone,
         type: 'ambulance'
-      });
+      }, true);
 
-      setStatus('Route Preview: Viewing route to nearest ' + specLabel + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+      setStatus('🚨 Emergency Route Active: Viewing route to nearest ' + specLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
     }
 
     function findFastestCategoryService(categoryId) {
@@ -6940,9 +6940,9 @@
         coordinates: nearest.coordinates,
         phone: nearest.phone,
         type: 'ambulance'
-      });
+      }, true);
 
-      setStatus('Route Preview: Viewing route to nearest ' + catLabel + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+      setStatus('🚨 Emergency Route Active: Viewing route to nearest ' + catLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
     }
 
     const baseLayers = {
@@ -9729,15 +9729,17 @@
     if (emergencyDispatchChannel) {
       try {
         emergencyDispatchChannel.onmessage = function (ev) {
+          // Route cleared is ONLY reflected in responder.html. Do not clear route on caller's map.html
           if (ev && ev.data && ev.data.type === 'MISSION_CLEARED') {
-            clearEmergencyRoute();
+            console.log('Responder mission cleared; caller map route remains active on map.html');
           }
         };
       } catch (e) {}
     }
     window.addEventListener('storage', function (e) {
+      // Route cleared is ONLY reflected in responder.html. Do not clear route on caller's map.html
       if (e.key === 'responder_cleared_time') {
-        clearEmergencyRoute();
+        console.log('Responder cleared timestamp updated; caller map route remains active on map.html');
       }
     });
 
@@ -10198,6 +10200,16 @@
               }
             }
             plotResponderRoute(data);
+            showEmergencyRouteConfirmationBar({
+              name: data.responder.name,
+              category: data.responder.category,
+              distKm: data.metrics.distKm,
+              durationMins: data.metrics.durationMins,
+              coordinates: data.responder.coordinates,
+              phone: data.responder.phone,
+              dispatchData: data,
+              type: 'responder'
+            }, true);
           }
         });
       });
@@ -10250,9 +10262,9 @@
     let currentEmergencyTarget = null;
     let isCurrentEmergencyConfirmed = false;
 
-    function showEmergencyRouteConfirmationBar(facilityData) {
+    function showEmergencyRouteConfirmationBar(facilityData, isDirectConfirmed) {
       currentEmergencyTarget = facilityData;
-      isCurrentEmergencyConfirmed = false;
+      isCurrentEmergencyConfirmed = Boolean(isDirectConfirmed);
 
       const bar = document.getElementById('route-emergency-confirm-bar');
       if (!bar) return;
@@ -10266,17 +10278,60 @@
       const confirmBtn = document.getElementById('route-confirm-emergency-btn');
       const cancelBtn = document.getElementById('route-cancel-preview-btn');
 
-      if (badge) badge.classList.remove('confirmed');
-      if (badgeText) badgeText.textContent = '⚠️ Emergency Route Preview — Not Yet Confirmed';
       if (facilityTitle) facilityTitle.textContent = facilityData.name || 'Emergency Facility';
       if (etaSpan) etaSpan.textContent = facilityData.durationMins ? ('⏱ ~' + facilityData.durationMins + ' min') : '⏱ Quickest ETA';
       if (distSpan) distSpan.textContent = facilityData.distKm ? ('📍 ' + facilityData.distKm + ' km') : '📍 Nearest Base';
-      if (promptText) promptText.textContent = 'Inspect the route path on the map above. Confirm below if you have an active emergency.';
-      if (confirmBtn) {
-        confirmBtn.hidden = false;
-        confirmBtn.textContent = '🚨 Confirm Emergency';
+
+      if (isDirectConfirmed) {
+        if (badge) badge.classList.add('confirmed');
+        if (badgeText) badgeText.textContent = '🚨 Emergency Route Active · Responders Notified';
+        if (promptText) promptText.textContent = 'Active emergency route to ' + (facilityData.name || 'nearest facility') + '. Responders notified.';
+        if (confirmBtn) confirmBtn.hidden = true;
+        if (cancelBtn) cancelBtn.textContent = 'End Emergency / Clear Route';
+
+        // Direct broadcast confirmed emergency to responder console
+        try {
+          const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
+            coords: [122.5368, 10.7196],
+            lat: 10.7196,
+            lng: 122.5368,
+            districtName: 'Iloilo City'
+          };
+          const payload = {
+            lat: userLoc.coords[1],
+            lng: userLoc.coords[0],
+            coords: userLoc.formattedCoords || (userLoc.coords[1].toFixed(4) + '° N, ' + userLoc.coords[0].toFixed(4) + '° E'),
+            district: userLoc.districtName,
+            scenario: (facilityData.dispatchData && facilityData.dispatchData.scenario && facilityData.dispatchData.scenario.title) || '🚨 Emergency Assistance Request',
+            summary: 'Emergency confirmed. Routing to ' + (facilityData.name || 'facility'),
+            tacticalAdvice: (facilityData.dispatchData && facilityData.dispatchData.scenario && facilityData.dispatchData.scenario.tacticalAdvice) || 'Keep clear of obstacles and proceed safely.',
+            serviceType: facilityData.type || emergencySearchType || 'emergency',
+            assignedResponder: facilityData,
+            targetFacility: facilityData,
+            isConfirmed: true,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('tracked_user_emergency', JSON.stringify(payload));
+          if (emergencyDispatchChannel) {
+            emergencyDispatchChannel.postMessage({ type: 'USER_LOCATION_UPDATE', data: payload });
+          }
+        } catch (e) {}
+
+        broadcastUserEmergencyActivity('emergency_confirmed', {
+          targetFacility: facilityData,
+          isConfirmed: true,
+          actionDescription: 'Emergency route active: ' + (facilityData.name || 'nearest facility')
+        });
+      } else {
+        if (badge) badge.classList.remove('confirmed');
+        if (badgeText) badgeText.textContent = '⚠️ Emergency Route Preview — Not Yet Confirmed';
+        if (promptText) promptText.textContent = 'Inspect the route path on the map above. Confirm below if you have an active emergency.';
+        if (confirmBtn) {
+          confirmBtn.hidden = false;
+          confirmBtn.textContent = '🚨 Confirm Emergency';
+        }
+        if (cancelBtn) cancelBtn.textContent = 'Cancel Route';
       }
-      if (cancelBtn) cancelBtn.textContent = 'Cancel Route';
 
       bar.hidden = false;
     }
@@ -11428,7 +11483,7 @@
     function collapseSidebar(options) {
       document.body.classList.remove('emergency-panel-open');
       isSidebarExpanded = false;
-      const keepRoutes = options && options.keepRoutes === true;
+      const keepRoutes = (options && options.keepRoutes === true) || Boolean(currentEmergencyTarget);
       const mapSearchControls = document.getElementById('map-search-controls');
       if (mapSearchControls) {
         mapSearchControls.classList.remove('sidebar-expanded');
@@ -12637,9 +12692,9 @@
               coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
               phone: candidate.phone || '',
               type: type
-            });
+            }, true);
 
-            setStatus('Route Preview: Viewing route to ' + candidate.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+            setStatus('🚨 Emergency Route Active: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
           });
 
           listEl.appendChild(card);
@@ -12696,9 +12751,9 @@
               coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
               phone: candidate.phone || '',
               type: type
-            });
+            }, true);
 
-            setStatus('Route Preview: Viewing route to ' + candidate.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+            setStatus('🚨 Emergency Route Active: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
           });
 
           sList.appendChild(card);
@@ -12853,13 +12908,21 @@
 
       if (type === 'responder') {
         const dispatchData = recommendResponderDispatch('', currentResponderScenario || 'flood');
+        // Show nearest route in the options both in desktop and mobile
         if (emergencyAssistance) {
-          emergencyAssistance.hidden = true;
-          document.body.classList.remove('emergency-panel-open');
+          emergencyAssistance.hidden = false;
+          document.body.classList.add('emergency-panel-open');
         }
-        if (emergencyOpenButton) {
-          emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        const situationSelector = document.getElementById('responder-situation-selector');
+        if (situationSelector) {
+          situationSelector.hidden = false;
         }
+        const assistanceContainer = document.getElementById('emergency-assistance-results');
+        if (assistanceContainer) {
+          assistanceContainer.hidden = false;
+          assistanceContainer.innerHTML = buildResponderAssessmentHtml(dispatchData);
+        }
+
         expandSidebar();
         syncEmergencyOpenButtonVisibility();
         plotResponderRoute(dispatchData);
@@ -12872,8 +12935,8 @@
           phone: dispatchData.responder.phone,
           dispatchData: dispatchData,
           type: 'responder'
-        });
-        setStatus('Route Preview: Viewing responder route to ' + dispatchData.responder.name + ' (~' + dispatchData.metrics.durationMins + ' min). Confirm emergency to alert responders.');
+        }, true);
+        setStatus('🚨 Emergency Route Active: Viewing nearest responder route to ' + dispatchData.responder.name + ' (~' + dispatchData.metrics.durationMins + ' min).');
       } else {
         // Immediately compute fastest route to the nearest known facility for police, fire, ambulance
         const originPoint = L.latLng(origin[1], origin[0]);
@@ -12928,12 +12991,10 @@
         });
 
         if (knownForType.length > 0) {
+          // Keep emergencyAssistance OPEN so the nearest route is shown in the options both on desktop & mobile!
           if (emergencyAssistance) {
-            emergencyAssistance.hidden = true;
-            document.body.classList.remove('emergency-panel-open');
-          }
-          if (emergencyOpenButton) {
-            emergencyOpenButton.setAttribute('aria-expanded', 'false');
+            emergencyAssistance.hidden = false;
+            document.body.classList.add('emergency-panel-open');
           }
           const sidebarContainer = document.getElementById('emergency-results-list');
           syncEmergencyOpenButtonVisibility();
@@ -12941,6 +13002,7 @@
             sidebarContainer.hidden = false;
           }
 
+          // Populate the options list in emergencyAssistance dialog and sidebar
           renderEmergencyFacilitiesList(knownForType.slice(0, 8), type);
 
           const nearest = knownForType[0];
@@ -12956,9 +13018,9 @@
             coordinates: nearest.coordinates,
             phone: nearest.phone,
             type: type
-          });
+          }, true);
 
-          setStatus('Route Preview: Viewing route to nearest ' + (labels[type] || type) + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency to alert responders.');
+          setStatus('🚨 Emergency Route Active: Viewing nearest route to ' + (labels[type] || type) + ': ' + nearest.name + ' (~' + estMins + ' min).');
         }
       }
 
