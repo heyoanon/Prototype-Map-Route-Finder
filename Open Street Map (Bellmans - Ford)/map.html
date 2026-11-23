@@ -5062,6 +5062,58 @@
         transform: translate(-9999px, -9999px) !important;
       }
     }
+      /* Mobile Pull-Up to Refresh Indicator */
+    .pull-refresh-indicator {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top, 14px));
+      left: 50%;
+      transform: translateX(-50%) translateY(-65px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: rgba(32, 33, 36, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e8eaed;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    }
+
+    :root[data-theme="light"] .pull-refresh-indicator {
+      background: rgba(255, 255, 255, 0.94);
+      border-color: rgba(0, 0, 0, 0.12);
+      color: #202124;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .pull-refresh-indicator.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .pull-refresh-indicator .refresh-spin-icon {
+      display: inline-block;
+      font-size: 15px;
+      transition: transform 0.15s ease;
+    }
+
+    .pull-refresh-indicator.refreshing .refresh-spin-icon {
+      animation: spinRefresh 0.8s linear infinite;
+    }
+
+    @keyframes spinRefresh {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
   </style>
 </head>
 
@@ -12858,6 +12910,122 @@
       });
     }
   </script>
+    // Mobile Pull-Up to Refresh Action
+    (function initMobilePullUpRefresh() {
+      if (window.innerWidth > 640 && !('ontouchstart' in window)) return;
+
+      const indicator = document.createElement('div');
+      indicator.id = 'pull-refresh-indicator';
+      indicator.className = 'pull-refresh-indicator';
+      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh</span>';
+      document.body.appendChild(indicator);
+
+      let startY = 0;
+      let startX = 0;
+      let isPulling = false;
+      let isRefreshing = false;
+      const PULL_THRESHOLD = 55; // px
+
+      function getScrollableParent(el) {
+        while (el && el !== document.body) {
+          const style = window.getComputedStyle(el);
+          const overflowY = style.overflowY;
+          if (overflowY === 'auto' || overflowY === 'scroll') {
+            if (el.scrollHeight > el.clientHeight) return el;
+          }
+          el = el.parentElement;
+        }
+        return null;
+      }
+
+      async function doRefreshAction() {
+        if (typeof fetchLiveIncidents === 'function') {
+          try { await fetchLiveIncidents(); } catch (e) {}
+        }
+        const destInput = document.getElementById('destination');
+        if (destInput && destInput.value.trim() && typeof calculateRoute === 'function') {
+          try { await calculateRoute(true); } catch (e) {}
+        } else if (typeof loadServices === 'function') {
+          try { await loadServices(); } catch (e) {}
+        }
+        if (navigator.geolocation && typeof requestDeviceLocation === 'function') {
+          requestDeviceLocation({ setView: false, userInitiated: false });
+        }
+      }
+
+      document.addEventListener('touchstart', function (e) {
+        if (isRefreshing || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        startY = touch.clientY;
+        startX = touch.clientX;
+        isPulling = false;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function (e) {
+        if (isRefreshing || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        const deltaY = startY - touch.clientY;
+        const deltaX = Math.abs(touch.clientX - startX);
+
+        if (deltaY <= 12 || deltaX > deltaY) {
+          if (isPulling && deltaY <= 0) {
+            indicator.classList.remove('visible');
+            isPulling = false;
+          }
+          return;
+        }
+
+        const scrollParent = getScrollableParent(e.target);
+        if (scrollParent) {
+          const atBottom = (scrollParent.scrollTop + scrollParent.clientHeight) >= (scrollParent.scrollHeight - 12);
+          if (!atBottom) return;
+        }
+
+        isPulling = true;
+        indicator.classList.add('visible');
+        const spinIcon = indicator.querySelector('.refresh-spin-icon');
+        const textEl = indicator.querySelector('.refresh-text');
+
+        if (deltaY >= PULL_THRESHOLD) {
+          if (textEl) textEl.textContent = 'Release to refresh';
+          if (spinIcon) spinIcon.style.transform = 'rotate(180deg)';
+        } else {
+          if (textEl) textEl.textContent = 'Pull up to refresh';
+          const angle = Math.min(180, Math.round((deltaY / PULL_THRESHOLD) * 180));
+          if (spinIcon) spinIcon.style.transform = 'rotate(' + angle + 'deg)';
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', function (e) {
+        if (!isPulling || isRefreshing) return;
+        const touch = e.changedTouches[0];
+        const deltaY = startY - touch.clientY;
+
+        if (deltaY >= PULL_THRESHOLD) {
+          isRefreshing = true;
+          indicator.classList.add('refreshing');
+          const textEl = indicator.querySelector('.refresh-text');
+          if (textEl) textEl.textContent = 'Refreshing map & conditions...';
+
+          doRefreshAction().finally(function () {
+            if (textEl) textEl.textContent = '✓ Route & conditions refreshed';
+            setTimeout(function () {
+              indicator.classList.remove('visible', 'refreshing');
+              isRefreshing = false;
+              isPulling = false;
+              const spinIcon = indicator.querySelector('.refresh-spin-icon');
+              if (spinIcon) spinIcon.style.transform = '';
+            }, 900);
+          });
+        } else {
+          indicator.classList.remove('visible');
+          isPulling = false;
+          const spinIcon = indicator.querySelector('.refresh-spin-icon');
+          if (spinIcon) spinIcon.style.transform = '';
+        }
+      }, { passive: true });
+    })();
+
 </body>
 
 </html>
