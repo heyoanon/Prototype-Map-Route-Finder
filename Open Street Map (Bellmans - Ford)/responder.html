@@ -2211,6 +2211,7 @@
       lat: 10.7196,
       lng: 122.5368,
       district: 'Mandurriao District',
+      isConfirmed: false,
       streetRef: 'Benigno Aquino Ave / Guzman St',
       coordsFormatted: '10.7196° N, 122.5368° E',
       scenario: 'Flash Flood & Water Evacuation',
@@ -2433,6 +2434,13 @@
           currentTrackedUser.lastActionTime = rawData.lastActionTime || Date.now();
         }
 
+        // Only mark confirmed if caller explicitly confirmed or answered confirmation
+        currentTrackedUser.isConfirmed = Boolean(
+          rawData.isConfirmed === true ||
+          rawData.lastAction === 'emergency_confirmed' ||
+          (Array.isArray(rawData.activityLog) && rawData.activityLog[0] && rawData.activityLog[0].type === 'emergency_confirmed')
+        );
+
         if (rawData.userMessage) {
           currentTrackedUser.chatMessage = rawData.userMessage;
         }
@@ -2560,6 +2568,10 @@
     if (responderBroadcastChannel) {
       responderBroadcastChannel.onmessage = function (event) {
         if (event && event.data) {
+          if (event.data.type === 'MISSION_CLEARED' || (event.data.data && event.data.data.lastAction === 'emergency_cleared')) {
+            setMissionCleared();
+            return;
+          }
           const payload = event.data.data || event.data;
           if (payload && (payload.lat || payload.coords || payload.scenario || payload.activityLog)) {
             loadTrackedUser(payload);
@@ -2721,8 +2733,24 @@
         (activeResponderStation.address || '')
       );
 
-      // 3. Compute and Draw Fastest Route to User
-      await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+      // 3. Compute and Draw Fastest Route to User ONLY if caller clicked or answered confirm that there is an emergency
+      if (currentTrackedUser.isConfirmed && !isMissionCleared) {
+        await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+      } else {
+        routeLayers.clearLayers();
+        const etaEl = document.getElementById('route-eta-val');
+        if (etaEl) etaEl.textContent = '—';
+        const distEl = document.getElementById('route-dist-val');
+        if (distEl) distEl.textContent = '—';
+        const hazardStatusText = document.getElementById('hazard-status-text');
+        if (hazardStatusText) {
+          hazardStatusText.textContent = isMissionCleared
+            ? 'Mission cleared. No active route.'
+            : 'Standby: Caller route path held until emergency is confirmed.';
+        }
+        const factorsContainer = document.getElementById('responder-factors-container');
+        if (factorsContainer) factorsContainer.innerHTML = '';
+      }
     }
 
     function fitMapBoundsSafely(bounds, force) {

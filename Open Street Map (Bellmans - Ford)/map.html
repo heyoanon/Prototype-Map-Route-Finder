@@ -8319,6 +8319,73 @@
         endAssistanceChat('Understood. Closing emergency assistance. Stay safe!');
         return;
       }
+
+      // Check if caller answered/clicked confirm that there is an emergency
+      if (/^(?:confirm|confirm emergency|yes confirm|yes,?\s*confirm|yes there is an emergency|there is an emergency|emergency confirmed|i confirm|confirmed|yes)$/i.test(cleanQ)) {
+        if (currentEmergencyTarget) {
+          confirmCurrentEmergencyRoute();
+          appendBotMessage(
+            '🚨 <strong>Emergency Confirmed!</strong><br>' +
+            'Your active emergency has been verified and transmitted to 24/7 responders.<br>' +
+            '• <strong>Target Facility:</strong> ' + escapeHtml(currentEmergencyTarget.name) + '<br>' +
+            '• <strong>Status:</strong> Active emergency route live on map and dispatch systems.',
+            [
+              {
+                label: '🗺️ View Active Route on Map',
+                emergency: true,
+                action: function () {
+                  closeAssistanceChat();
+                  expandSidebar();
+                  if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                    fitMapBoundsSafely(routeLayers.getBounds(), true);
+                  }
+                }
+              },
+              (currentEmergencyTarget.phone ? { label: '📞 Call Facility', href: 'tel:' + currentEmergencyTarget.phone.replace(/[^\d+*#;]/g, '') } : null),
+              { label: '📞 Call 911', href: 'tel:911', emergency: true },
+              {
+                label: '🛑 Clear / End Emergency Route',
+                secondary: true,
+                action: function () {
+                  clearEmergencyRoute();
+                  appendBotMessage('🛑 <strong>Emergency Route Erased:</strong><br>The active emergency route has been cleared automatically from your map.');
+                }
+              }
+            ].filter(Boolean)
+          );
+          return;
+        } else {
+          isCurrentEmergencyConfirmed = true;
+          broadcastUserEmergencyActivity('emergency_confirmed', {
+            actionDescription: 'Caller confirmed active emergency via chat'
+          });
+          appendBotMessage(
+            '🚨 <strong>Emergency Confirmed!</strong><br>' +
+            'Responders have been notified of your active emergency. Please select your required response service to plot the fastest route:',
+            [
+              { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+              { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+              { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+              { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+              { label: '📞 Call 911 Hotline', href: 'tel:911', emergency: true }
+            ]
+          );
+          return;
+        }
+      }
+
+      // Check if caller wants to clear / erase the route path automatically
+      if (/^(?:clear route|erase route|clear emergency|cancel route|erase the route|delete route|remove route|stop route)$/i.test(cleanQ)) {
+        clearEmergencyRoute();
+        appendBotMessage(
+          '🛑 <strong>Emergency Route Erased:</strong><br>' +
+          'The active route path and emergency status have been cleared automatically from your map on desktop and mobile.',
+          [
+            { label: '🏠 24/7 Dispatch Menu', action: function () { displayEmergencyAssistanceDispatchMenu(); } }
+          ]
+        );
+        return;
+      }
       const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
         coords: [122.5368, 10.7196],
         lat: 10.7196,
@@ -9663,22 +9730,14 @@
       try {
         emergencyDispatchChannel.onmessage = function (ev) {
           if (ev && ev.data && ev.data.type === 'MISSION_CLEARED') {
-            const responderBanner = document.getElementById('responder-dispatch-banner');
-            if (responderBanner) {
-              responderBanner.hidden = true;
-              responderBanner.innerHTML = '';
-            }
+            clearEmergencyRoute();
           }
         };
       } catch (e) {}
     }
     window.addEventListener('storage', function (e) {
       if (e.key === 'responder_cleared_time') {
-        const responderBanner = document.getElementById('responder-dispatch-banner');
-        if (responderBanner) {
-          responderBanner.hidden = true;
-          responderBanner.innerHTML = '';
-        }
+        clearEmergencyRoute();
       }
     });
 
@@ -9704,6 +9763,7 @@
         state.coords = userLoc.formattedCoords || (userLoc.lat.toFixed(4) + '° N, ' + userLoc.lng.toFixed(4) + '° E');
         state.district = userLoc.districtName;
         state.timestamp = Date.now();
+        state.isConfirmed = Boolean(isCurrentEmergencyConfirmed);
 
         if (extraData) {
           for (const key in extraData) {
@@ -10275,7 +10335,9 @@
       const bar = document.getElementById('route-emergency-confirm-bar');
       if (bar) bar.hidden = true;
 
+      // Automatically erase route polyline from map on both desktop and mobile
       routeLayers.clearLayers();
+
       if (destinationMarker) {
         map.removeLayer(destinationMarker);
         destinationMarker = null;
@@ -10283,6 +10345,30 @@
       if (destinationInput) {
         destinationInput.value = '';
       }
+
+      const resultsList = document.getElementById('emergency-results-list');
+      if (resultsList) {
+        resultsList.hidden = true;
+        resultsList.replaceChildren();
+      }
+      const serviceDetails = document.getElementById('service-details');
+      if (serviceDetails) {
+        serviceDetails.hidden = true;
+        serviceDetails.replaceChildren();
+      }
+      const routesEl = document.getElementById('routes');
+      if (routesEl) {
+        routesEl.replaceChildren();
+      }
+      const responderBanner = document.getElementById('responder-dispatch-banner');
+      if (responderBanner) {
+        responderBanner.hidden = true;
+        responderBanner.innerHTML = '';
+      }
+
+      currentEmergencyTarget = null;
+      isCurrentEmergencyConfirmed = false;
+
       try {
         localStorage.removeItem('tracked_user_emergency');
         if (emergencyDispatchChannel) {
@@ -10290,8 +10376,11 @@
         }
       } catch (e) {}
 
-      currentEmergencyTarget = null;
-      isCurrentEmergencyConfirmed = false;
+      broadcastUserEmergencyActivity('emergency_cleared', {
+        isConfirmed: false,
+        actionDescription: 'Emergency route cleared / standby'
+      });
+
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = false;
         emergencyOpenButton.setAttribute('aria-expanded', 'false');
