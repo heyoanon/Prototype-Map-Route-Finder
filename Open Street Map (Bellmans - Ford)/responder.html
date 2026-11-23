@@ -1050,16 +1050,20 @@
         border-radius: 12px !important;
       }
 
-      /* Leaflet zoom controls on mobile placed safely above HUD */
-      .leaflet-bottom.leaflet-right {
-        bottom: 170px !important;
-        right: 12px !important;
+      /* Remove + and - zoom buttons on mobile */
+      .leaflet-control-zoom {
+        display: none !important;
       }
-      .leaflet-control-zoom a {
-        width: 40px !important;
-        height: 40px !important;
-        line-height: 40px !important;
-        font-size: 18px !important;
+
+      /* Move copyright / attribution to area that cannot be seen on mobile */
+      .leaflet-control-attribution {
+        display: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+        bottom: -9999px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate(-9999px, -9999px) !important;
       }
     }
   </style>
