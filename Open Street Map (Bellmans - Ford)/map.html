@@ -2295,156 +2295,38 @@
       border-color: #188038;
     }
 
-    /* Emergency Confirmation Modal & Banner */
-    .emergency-confirm-modal {
+    /* Floating Emergency Route Confirmation Bar */
+    .route-emergency-confirm-bar {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 12000;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1500;
+      width: calc(100% - 32px);
+      max-width: 500px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 0 1.5px rgba(217, 48, 37, 0.3);
+      padding: 14px 18px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      flex-direction: column;
+      gap: 10px;
+      animation: routeBarUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .emergency-confirm-modal[hidden] {
+    .route-emergency-confirm-bar[hidden] {
       display: none !important;
     }
 
-    .emergency-confirm-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(4px);
+    @keyframes routeBarUp {
+      from { transform: translate(-50%, 20px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
     }
 
-    .emergency-confirm-card {
-      position: relative;
-      background: #ffffff;
-      border-radius: 14px;
-      max-width: 420px;
-      width: 100%;
-      padding: 22px 20px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-      text-align: center;
-      border: 1px solid rgba(217, 48, 37, 0.2);
-      animation: emergencyConfirmIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
-    }
-
-    @keyframes emergencyConfirmIn {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .emergency-confirm-icon-wrap {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: #fce8e6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px auto;
-      font-size: 26px;
-    }
-
-    .emergency-confirm-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #d93025;
-      margin: 0 0 8px 0;
-    }
-
-    .emergency-confirm-desc {
-      font-size: 14px;
-      color: #3c4043;
-      line-height: 1.45;
-      margin: 0 0 12px 0;
-    }
-
-    .emergency-confirm-desc strong {
-      color: #202124;
-      font-weight: 600;
-    }
-
-    .emergency-confirm-notice {
-      font-size: 12px;
-      color: #b3261e;
-      background: #fdf2f2;
-      border: 1px solid #fad2cf;
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 16px;
-      line-height: 1.35;
-      text-align: left;
-    }
-
-    .emergency-confirm-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .emergency-confirm-btn-primary {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #ffffff;
-      background: #d93025;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.15s ease, transform 0.1s ease;
-    }
-
-    .emergency-confirm-btn-primary:hover {
-      background: #c5221f;
-    }
-
-    .emergency-confirm-btn-cancel {
-      width: 100%;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #5f6368;
-      background: #f1f3f4;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-
-    .emergency-confirm-btn-cancel:hover {
-      background: #e8eaed;
-      color: #202124;
-    }
-
-    /* Emergency Inline Confirmation Banner */
-    .emergency-confirm-banner {
-      background: #fdf2f2;
-      border: 1.5px solid #fad2cf;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .emergency-confirm-badge {
+    .route-confirm-bar-badge {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       font-size: 11px;
       font-weight: 700;
       color: #d93025;
@@ -2452,24 +2334,128 @@
       letter-spacing: 0.5px;
     }
 
-    .emergency-confirm-prompt {
-      font-size: 13px;
-      color: #3c4043;
-      line-height: 1.35;
+    .route-confirm-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d93025;
+      box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.7);
+      animation: pulseAlert 1.5s infinite;
     }
 
-    .emergency-confirm-prompt strong {
+    @keyframes pulseAlert {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(217, 48, 37, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 48, 37, 0); }
+    }
+
+    .route-confirm-bar-badge.confirmed {
+      color: #188038;
+    }
+
+    .route-confirm-bar-badge.confirmed .route-confirm-pulse {
+      background: #188038;
+      box-shadow: 0 0 0 0 rgba(24, 128, 56, 0.7);
+    }
+
+    .route-confirm-bar-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .route-confirm-bar-title {
+      font-size: 15px;
+      font-weight: 700;
       color: #202124;
     }
 
-    .emergency-confirm-banner-actions {
+    .route-confirm-bar-meta {
+      font-size: 12px;
+      color: #5f6368;
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
-    .emergency-confirm-banner-actions .emergency-confirm-btn-primary {
-      padding: 9px 12px;
-      font-size: 13px;
+    .route-confirm-bar-prompt {
+      font-size: 12px;
+      color: #3c4043;
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .route-confirm-bar-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    .route-confirm-btn-primary {
+      flex: 2;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      background: #d93025;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .route-confirm-btn-primary:hover {
+      background: #c5221f;
+    }
+
+    .route-confirm-btn-cancel {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #5f6368;
+      background: #f1f3f4;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .route-confirm-btn-cancel:hover {
+      background: #e8eaed;
+      color: #202124;
+    }
+
+    @media (max-width: 600px) {
+      .route-emergency-confirm-bar {
+        bottom: max(16px, env(safe-area-inset-bottom, 16px));
+        width: calc(100% - 24px);
+        padding: 12px 14px;
+        gap: 8px;
+      }
+
+      .route-confirm-bar-title {
+        font-size: 14px;
+      }
+
+      .route-confirm-btn-primary {
+        padding: 9px 12px;
+        font-size: 13px;
+      }
+
+      .route-confirm-btn-cancel {
+        padding: 9px 10px;
+        font-size: 12px;
+      }
     }
 
     .emergency-facilities-container {
@@ -3077,54 +3063,32 @@
       color: #81c995;
     }
 
-    :root[data-theme="dark"] .emergency-confirm-card {
+    :root[data-theme="dark"] .route-emergency-confirm-bar {
       background: #202124;
-      border-color: rgba(242, 139, 130, 0.3);
+      border: 1px solid rgba(242, 139, 130, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
       color: #e8eaed;
     }
 
-    :root[data-theme="dark"] .emergency-confirm-icon-wrap {
-      background: rgba(217, 48, 37, 0.2);
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-title {
-      color: #f28b82;
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-desc {
-      color: #bdc1c6;
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-desc strong {
+    :root[data-theme="dark"] .route-confirm-bar-title {
       color: #ffffff;
     }
 
-    :root[data-theme="dark"] .emergency-confirm-notice {
-      background: rgba(217, 48, 37, 0.15);
-      border-color: rgba(242, 139, 130, 0.3);
-      color: #f28b82;
+    :root[data-theme="dark"] .route-confirm-bar-meta {
+      color: #9aa0a6;
     }
 
-    :root[data-theme="dark"] .emergency-confirm-btn-cancel {
+    :root[data-theme="dark"] .route-confirm-bar-prompt {
+      color: #bdc1c6;
+    }
+
+    :root[data-theme="dark"] .route-confirm-btn-cancel {
       background: #303134;
       color: #bdc1c6;
     }
 
-    :root[data-theme="dark"] .emergency-confirm-btn-cancel:hover {
+    :root[data-theme="dark"] .route-confirm-btn-cancel:hover {
       background: #3c4043;
-      color: #ffffff;
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-banner {
-      background: rgba(217, 48, 37, 0.12);
-      border-color: rgba(242, 139, 130, 0.25);
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-prompt {
-      color: #bdc1c6;
-    }
-
-    :root[data-theme="dark"] .emergency-confirm-prompt strong {
       color: #ffffff;
     }
 
@@ -4978,6 +4942,33 @@
 
 <body>
   <div id="map" aria-label="Map"></div>
+
+  <!-- Floating Emergency Route Confirmation Bar -->
+  <div id="route-emergency-confirm-bar" class="route-emergency-confirm-bar" hidden>
+    <div class="route-confirm-bar-badge" id="route-confirm-bar-badge">
+      <span class="route-confirm-pulse"></span>
+      <span id="route-confirm-badge-text">⚠️ Emergency Route Preview — Not Yet Confirmed</span>
+    </div>
+    <div class="route-confirm-bar-info">
+      <div class="route-confirm-bar-title" id="route-confirm-bar-facility">Emergency Facility</div>
+      <div class="route-confirm-bar-meta">
+        <span id="route-confirm-bar-eta">⏱ ~8 min</span> •
+        <span id="route-confirm-bar-dist">📍 2.4 km</span> •
+        <span id="route-confirm-bar-corridor">Fastest Route</span>
+      </div>
+      <div class="route-confirm-bar-prompt" id="route-confirm-bar-prompt">
+        Inspect the route path on the map above. Confirm below if you have an active emergency.
+      </div>
+    </div>
+    <div class="route-confirm-bar-actions">
+      <button type="button" id="route-confirm-emergency-btn" class="route-confirm-btn-primary">
+        🚨 Confirm Emergency
+      </button>
+      <button type="button" id="route-cancel-preview-btn" class="route-confirm-btn-cancel">
+        Cancel Route
+      </button>
+    </div>
+  </div>
   <div id="offline-banner" role="status" aria-live="polite" hidden>
     Offline mode: previously loaded map areas and data are available.
   </div>
@@ -5075,30 +5066,7 @@
     </p>
   </section>
 
-  <!-- Emergency Route Confirmation Modal -->
-  <div id="emergency-confirm-modal" class="emergency-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="emergency-confirm-title" hidden>
-    <div class="emergency-confirm-backdrop"></div>
-    <div class="emergency-confirm-card">
-      <div class="emergency-confirm-icon-wrap">
-        <span class="emergency-confirm-icon">🚨</span>
-      </div>
-      <h3 id="emergency-confirm-title" class="emergency-confirm-title">Confirm Emergency</h3>
-      <p class="emergency-confirm-desc">
-        Are you experiencing an active emergency requiring immediate route navigation to <strong id="emergency-confirm-facility">Facility</strong>?
-      </p>
-      <div class="emergency-confirm-notice">
-        <span>⚠️</span> Emergency routes should only be requested for genuine situations requiring rapid dispatch or navigation.
-      </div>
-      <div class="emergency-confirm-actions">
-        <button type="button" id="emergency-confirm-yes-btn" class="emergency-confirm-btn-primary">
-          🚨 Yes, Confirm Emergency & View Route
-        </button>
-        <button type="button" id="emergency-confirm-no-btn" class="emergency-confirm-btn-cancel">
-          No, Cancel
-        </button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Assistance Chat Box -->
   <section id="assistance-chatbox" class="assistance-chatbox" aria-label="Assistance chat" hidden>
@@ -8885,91 +8853,157 @@
       setStatus('');
     }
 
-    // Emergency Route Confirmation helpers
-    let pendingEmergencyConfirmation = null;
+    // Floating Emergency Route Confirmation Logic (Route preview before confirming)
+    let currentEmergencyTarget = null;
+    let isCurrentEmergencyConfirmed = false;
 
-    function showEmergencyConfirmation(options) {
-      const modal = document.getElementById('emergency-confirm-modal');
-      const facilitySpan = document.getElementById('emergency-confirm-facility');
-      if (!modal) {
-        const confirmed = window.confirm('🚨 Confirm Emergency\n\nAre you experiencing an active emergency requiring immediate route navigation to ' + (options.facilityName || 'this facility') + '?\n\nPress OK to confirm and show route.');
-        if (confirmed) {
-          if (typeof options.onConfirm === 'function') options.onConfirm();
-        } else {
-          if (typeof options.onCancel === 'function') options.onCancel();
-        }
-        return;
+    function showEmergencyRouteConfirmationBar(facilityData) {
+      currentEmergencyTarget = facilityData;
+      isCurrentEmergencyConfirmed = false;
+
+      const bar = document.getElementById('route-emergency-confirm-bar');
+      if (!bar) return;
+
+      const badge = document.getElementById('route-confirm-bar-badge');
+      const badgeText = document.getElementById('route-confirm-badge-text');
+      const facilityTitle = document.getElementById('route-confirm-bar-facility');
+      const etaSpan = document.getElementById('route-confirm-bar-eta');
+      const distSpan = document.getElementById('route-confirm-bar-dist');
+      const promptText = document.getElementById('route-confirm-bar-prompt');
+      const confirmBtn = document.getElementById('route-confirm-emergency-btn');
+      const cancelBtn = document.getElementById('route-cancel-preview-btn');
+
+      if (badge) badge.classList.remove('confirmed');
+      if (badgeText) badgeText.textContent = '⚠️ Emergency Route Preview — Not Yet Confirmed';
+      if (facilityTitle) facilityTitle.textContent = facilityData.name || 'Emergency Facility';
+      if (etaSpan) etaSpan.textContent = facilityData.durationMins ? ('⏱ ~' + facilityData.durationMins + ' min') : '⏱ Quickest ETA';
+      if (distSpan) distSpan.textContent = facilityData.distKm ? ('📍 ' + facilityData.distKm + ' km') : '📍 Nearest Base';
+      if (promptText) promptText.textContent = 'Inspect the route path on the map above. Confirm below if you have an active emergency.';
+      if (confirmBtn) {
+        confirmBtn.hidden = false;
+        confirmBtn.textContent = '🚨 Confirm Emergency';
       }
-      if (facilitySpan) {
-        facilitySpan.textContent = options.facilityName || 'the nearest facility';
-      }
-      pendingEmergencyConfirmation = options;
-      modal.hidden = false;
+      if (cancelBtn) cancelBtn.textContent = 'Cancel Route';
+
+      bar.hidden = false;
     }
 
-    function hideEmergencyConfirmation() {
-      const modal = document.getElementById('emergency-confirm-modal');
-      if (modal) {
-        modal.hidden = true;
+    function confirmCurrentEmergencyRoute() {
+      if (!currentEmergencyTarget) return;
+      isCurrentEmergencyConfirmed = true;
+
+      const badge = document.getElementById('route-confirm-bar-badge');
+      const badgeText = document.getElementById('route-confirm-badge-text');
+      const promptText = document.getElementById('route-confirm-bar-prompt');
+      const confirmBtn = document.getElementById('route-confirm-emergency-btn');
+      const cancelBtn = document.getElementById('route-cancel-preview-btn');
+
+      if (badge) badge.classList.add('confirmed');
+      if (badgeText) badgeText.textContent = '🚨 Emergency Confirmed · Responders Notified';
+      if (promptText) promptText.textContent = 'Active emergency confirmed. Responders alert transmitted.';
+      if (confirmBtn) confirmBtn.hidden = true;
+      if (cancelBtn) cancelBtn.textContent = 'End Emergency / Clear Route';
+
+      // Broadcast confirmed emergency to responder console
+      const userLoc = getDetectedUserLocation();
+      const payload = {
+        lat: userLoc.coords[1],
+        lng: userLoc.coords[0],
+        coords: userLoc.formattedCoords || (userLoc.coords[1].toFixed(4) + '° N, ' + userLoc.coords[0].toFixed(4) + '° E'),
+        district: userLoc.districtName,
+        scenario: (currentEmergencyTarget.dispatchData && currentEmergencyTarget.dispatchData.scenario && currentEmergencyTarget.dispatchData.scenario.title) || '🚨 Emergency Assistance Request',
+        summary: 'Emergency confirmed by user. Navigating to ' + currentEmergencyTarget.name,
+        tacticalAdvice: (currentEmergencyTarget.dispatchData && currentEmergencyTarget.dispatchData.scenario && currentEmergencyTarget.dispatchData.scenario.tacticalAdvice) || 'Keep clear of obstacles and proceed safely.',
+        serviceType: currentEmergencyTarget.type || emergencySearchType || 'emergency',
+        assignedResponder: currentEmergencyTarget,
+        targetFacility: currentEmergencyTarget,
+        isConfirmed: true,
+        timestamp: Date.now()
+      };
+
+      try {
+        localStorage.setItem('tracked_user_emergency', JSON.stringify(payload));
+        if (emergencyDispatchChannel) {
+          emergencyDispatchChannel.postMessage({ type: 'USER_LOCATION_UPDATE', data: payload });
+        }
+      } catch (e) {
+        console.warn('Could not store or broadcast emergency:', e);
       }
-      pendingEmergencyConfirmation = null;
+
+      broadcastUserEmergencyActivity('emergency_confirmed', {
+        targetFacility: currentEmergencyTarget,
+        actionDescription: 'Emergency confirmed. Routing to ' + currentEmergencyTarget.name
+      });
+
+      setStatus('🚨 Emergency Confirmed! Route active to ' + currentEmergencyTarget.name + '. Responders notified.');
     }
 
-    const emergencyConfirmYesBtn = document.getElementById('emergency-confirm-yes-btn');
-    if (emergencyConfirmYesBtn) {
-      emergencyConfirmYesBtn.addEventListener('click', function () {
-        const action = pendingEmergencyConfirmation;
-        hideEmergencyConfirmation();
-        if (action && typeof action.onConfirm === 'function') {
-          action.onConfirm();
+    function clearEmergencyRoute() {
+      const bar = document.getElementById('route-emergency-confirm-bar');
+      if (bar) bar.hidden = true;
+
+      routeLayers.clearLayers();
+      if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+      }
+      if (destinationInput) {
+        destinationInput.value = '';
+      }
+      try {
+        localStorage.removeItem('tracked_user_emergency');
+        if (emergencyDispatchChannel) {
+          emergencyDispatchChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: Date.now() });
         }
+      } catch (e) {}
+
+      currentEmergencyTarget = null;
+      isCurrentEmergencyConfirmed = false;
+      if (emergencyOpenButton) {
+        emergencyOpenButton.hidden = false;
+        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+      }
+      setStatus('Route cleared.');
+    }
+
+    const routeConfirmEmergencyBtn = document.getElementById('route-confirm-emergency-btn');
+    if (routeConfirmEmergencyBtn) {
+      routeConfirmEmergencyBtn.addEventListener('click', function () {
+        confirmCurrentEmergencyRoute();
       });
     }
 
-    const emergencyConfirmNoBtn = document.getElementById('emergency-confirm-no-btn');
-    if (emergencyConfirmNoBtn) {
-      emergencyConfirmNoBtn.addEventListener('click', function () {
-        const action = pendingEmergencyConfirmation;
-        hideEmergencyConfirmation();
-        if (action && typeof action.onCancel === 'function') {
-          action.onCancel();
-        }
+    const routeCancelPreviewBtn = document.getElementById('route-cancel-preview-btn');
+    if (routeCancelPreviewBtn) {
+      routeCancelPreviewBtn.addEventListener('click', function () {
+        clearEmergencyRoute();
       });
-    }
-
-    const emergencyConfirmModalEl = document.getElementById('emergency-confirm-modal');
-    if (emergencyConfirmModalEl) {
-      const backdrop = emergencyConfirmModalEl.querySelector('.emergency-confirm-backdrop');
-      if (backdrop) {
-        backdrop.addEventListener('click', function () {
-          const action = pendingEmergencyConfirmation;
-          hideEmergencyConfirmation();
-          if (action && typeof action.onCancel === 'function') {
-            action.onCancel();
-          }
-        });
-      }
     }
 
     // Global listener for plot-responder-route buttons
     document.addEventListener('click', function (e) {
       const btn = e.target.closest('[data-action="plot-responder-route"]');
       if (btn && lastResponderDispatchData) {
-        showEmergencyConfirmation({
-          facilityName: lastResponderDispatchData.responder.name,
-          onConfirm: function () {
-            closeAssistanceChat();
-            if (emergencyAssistance) {
-              emergencyAssistance.hidden = true;
-              document.body.classList.remove('emergency-panel-open');
-              if (emergencyOpenButton) {
-                emergencyOpenButton.setAttribute('aria-expanded', 'false');
-                emergencyOpenButton.hidden = false;
-              }
-            }
-            expandSidebar();
-            plotResponderRoute(lastResponderDispatchData);
+        closeAssistanceChat();
+        if (emergencyAssistance) {
+          emergencyAssistance.hidden = true;
+          document.body.classList.remove('emergency-panel-open');
+          if (emergencyOpenButton) {
+            emergencyOpenButton.setAttribute('aria-expanded', 'false');
+            emergencyOpenButton.hidden = false;
           }
+        }
+        expandSidebar();
+        plotResponderRoute(lastResponderDispatchData);
+        showEmergencyRouteConfirmationBar({
+          name: lastResponderDispatchData.responder.name,
+          category: lastResponderDispatchData.responder.category,
+          distKm: lastResponderDispatchData.metrics.distKm,
+          durationMins: lastResponderDispatchData.metrics.durationMins,
+          coordinates: lastResponderDispatchData.responder.coordinates,
+          phone: lastResponderDispatchData.responder.phone,
+          dispatchData: lastResponderDispatchData,
+          type: 'responder'
         });
       }
     });
@@ -11167,89 +11201,41 @@
         const listEl = document.createElement('div');
         listEl.className = 'emergency-facility-list';
 
-        if (type !== 'responder' && candidates.length > 0) {
-          const nearestCandidate = candidates[0];
-          const confirmBanner = document.createElement('div');
-          confirmBanner.className = 'emergency-confirm-banner';
-          confirmBanner.innerHTML =
-            '<div class="emergency-confirm-badge">⚠️ Active Emergency Check</div>' +
-            '<div class="emergency-confirm-prompt">' +
-              'Are you experiencing an active emergency? Confirm to view the fastest route to <strong>' + escapeHtml(nearestCandidate.name) + '</strong>.' +
-            '</div>' +
-            '<div class="emergency-confirm-banner-actions">' +
-              '<button type="button" class="emergency-confirm-btn-primary emergency-confirm-top-btn">' +
-                '🚨 Yes, Confirm Emergency & View Route' +
-              '</button>' +
-            '</div>';
-          const topBtn = confirmBanner.querySelector('.emergency-confirm-top-btn');
-          if (topBtn) {
-            topBtn.addEventListener('click', function () {
-              if (emergencyAssistance) {
-                emergencyAssistance.hidden = true;
-                document.body.classList.remove('emergency-panel-open');
-              }
-              const sidebarContainer = document.getElementById('emergency-results-list');
-              if (sidebarContainer) {
-                sidebarContainer.hidden = false;
-              }
-              if (emergencyOpenButton) {
-                emergencyOpenButton.hidden = false;
-                emergencyOpenButton.setAttribute('aria-expanded', 'false');
-              }
-              broadcastUserEmergencyActivity('facility_route_selected', {
-                targetFacility: {
-                  name: nearestCandidate.name,
-                  category: nearestCandidate.category || label,
-                  coordinates: nearestCandidate.coordinates || (nearestCandidate.geometry && nearestCandidate.geometry.coordinates),
-                  distanceMeters: nearestCandidate.distanceMeters,
-                  phone: nearestCandidate.phone || ''
-                },
-                actionDescription: 'Emergency confirmed. Routed to facility: ' + nearestCandidate.name
-              });
-              setStatus('Emergency confirmed. Routing to nearest ' + label + ': ' + nearestCandidate.name + '...');
-              nearestCandidate.selectService();
-            });
-          }
-          assistanceContainer.appendChild(confirmBanner);
-        }
-
         candidates.forEach(function (candidate, index) {
           const card = createUnifiedFacilityCard(candidate, index, label, index === 0);
 
           card.addEventListener('click', function () {
             syncFacilityCardSelection(index);
-            showEmergencyConfirmation({
-              facilityName: candidate.name,
-              onConfirm: function () {
-                if (emergencyAssistance) {
-                  emergencyAssistance.hidden = true;
-                  document.body.classList.remove('emergency-panel-open');
-                }
-                const sidebarContainer = document.getElementById('emergency-results-list');
-                if (sidebarContainer) {
-                  sidebarContainer.hidden = false;
-                }
-                if (emergencyOpenButton) {
-                  emergencyOpenButton.hidden = false;
-                  emergencyOpenButton.setAttribute('aria-expanded', 'false');
-                }
-                broadcastUserEmergencyActivity('facility_route_selected', {
-                  targetFacility: {
-                    name: candidate.name,
-                    category: candidate.category || label,
-                    coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
-                    distanceMeters: candidate.distanceMeters,
-                    phone: candidate.phone || ''
-                  },
-                  actionDescription: 'Emergency confirmed. Routed to facility: ' + candidate.name
-                });
-                setStatus('Emergency confirmed. Routing to ' + candidate.name + '...');
-                candidate.selectService();
-              },
-              onCancel: function () {
-                setStatus('Selected facility: ' + candidate.name + ' (Emergency route not plotted).');
-              }
+            if (emergencyAssistance) {
+              emergencyAssistance.hidden = true;
+              document.body.classList.remove('emergency-panel-open');
+            }
+            const sidebarContainer = document.getElementById('emergency-results-list');
+            if (sidebarContainer) {
+              sidebarContainer.hidden = false;
+            }
+            if (emergencyOpenButton) {
+              emergencyOpenButton.hidden = false;
+              emergencyOpenButton.setAttribute('aria-expanded', 'false');
+            }
+            candidate.selectService();
+
+            const distKm = candidate.distanceMeters >= 1000
+              ? (candidate.distanceMeters / 1000).toFixed(1)
+              : (candidate.distanceMeters / 1000).toFixed(2);
+            const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
+
+            showEmergencyRouteConfirmationBar({
+              name: candidate.name,
+              category: candidate.category || label,
+              distKm: distKm,
+              durationMins: estMins,
+              coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
+              phone: candidate.phone || '',
+              type: type
             });
+
+            setStatus('Route Preview: Viewing route to ' + candidate.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
           });
 
           listEl.appendChild(card);
@@ -11445,7 +11431,28 @@
       }
 
       if (type === 'responder') {
-        recommendResponderDispatch('', currentResponderScenario || 'flood');
+        const dispatchData = recommendResponderDispatch('', currentResponderScenario || 'flood');
+        if (emergencyAssistance) {
+          emergencyAssistance.hidden = true;
+          document.body.classList.remove('emergency-panel-open');
+        }
+        if (emergencyOpenButton) {
+          emergencyOpenButton.hidden = false;
+          emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        }
+        expandSidebar();
+        plotResponderRoute(dispatchData);
+        showEmergencyRouteConfirmationBar({
+          name: dispatchData.responder.name,
+          category: dispatchData.responder.category,
+          distKm: dispatchData.metrics.distKm,
+          durationMins: dispatchData.metrics.durationMins,
+          coordinates: dispatchData.responder.coordinates,
+          phone: dispatchData.responder.phone,
+          dispatchData: dispatchData,
+          type: 'responder'
+        });
+        setStatus('Route Preview: Viewing responder route to ' + dispatchData.responder.name + ' (~' + dispatchData.metrics.durationMins + ' min). Confirm emergency to alert responders.');
       } else {
         // Immediately compute fastest route to the nearest known facility for police, fire, ambulance
         const originPoint = L.latLng(origin[1], origin[0]);
@@ -11500,11 +11507,37 @@
         });
 
         if (knownForType.length > 0) {
+          if (emergencyAssistance) {
+            emergencyAssistance.hidden = true;
+            document.body.classList.remove('emergency-panel-open');
+          }
+          if (emergencyOpenButton) {
+            emergencyOpenButton.hidden = false;
+            emergencyOpenButton.setAttribute('aria-expanded', 'false');
+          }
+          const sidebarContainer = document.getElementById('emergency-results-list');
+          if (sidebarContainer) {
+            sidebarContainer.hidden = false;
+          }
+
           renderEmergencyFacilitiesList(knownForType.slice(0, 8), type);
 
           const nearest = knownForType[0];
           const distKm = (nearest.distanceMeters / 1000).toFixed(1);
-          setStatus('Nearest ' + (labels[type] || type) + ': ' + nearest.name + ' (' + distKm + ' km away). Confirm emergency to view route.');
+          const estMins = Math.max(1, Math.round(nearest.distanceMeters / 500));
+          nearest.selectService();
+
+          showEmergencyRouteConfirmationBar({
+            name: nearest.name,
+            category: nearest.category,
+            distKm: distKm,
+            durationMins: estMins,
+            coordinates: nearest.coordinates,
+            phone: nearest.phone,
+            type: type
+          });
+
+          setStatus('Route Preview: Viewing route to nearest ' + (labels[type] || type) + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency to alert responders.');
         }
       }
 

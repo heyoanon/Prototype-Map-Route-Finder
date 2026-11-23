@@ -163,32 +163,6 @@
       transition: all 0.3s ease;
     }
 
-    .hud-map-btn {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #1a73e8, #1557b0);
-      color: #ffffff;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.35);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .hud-map-btn:hover {
-      background: linear-gradient(135deg, #1557b0, #0d47a1);
-      transform: translateY(-1px) scale(1.03);
-      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5);
-    }
-
-    :root[data-theme="light"] .hud-map-btn {
-      background: #1a73e8;
-      color: #ffffff;
-    }
-
     :root[data-theme="light"] .hud-badge {
       background: #fce8e6;
       color: #b3261e;
@@ -1121,7 +1095,6 @@
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
-        <a href="map.html" class="hud-map-btn" title="Switch to Personal Map view" aria-label="Open Personal Map">🗺️ Map</a>
         <button id="hud-collapse-btn" type="button" class="hud-toggle-btn" aria-label="Toggle compact map view" title="Toggle compact map view">
           <svg id="hud-toggle-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
