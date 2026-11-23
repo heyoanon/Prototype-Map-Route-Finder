@@ -9729,17 +9729,17 @@
     if (emergencyDispatchChannel) {
       try {
         emergencyDispatchChannel.onmessage = function (ev) {
-          // Route cleared is ONLY reflected in responder.html. Do not clear route on caller's map.html
+          // When responder clicks cleared in responder.html, automatically reflect it in map.html (desktop & mobile)
           if (ev && ev.data && ev.data.type === 'MISSION_CLEARED') {
-            console.log('Responder mission cleared; caller map route remains active on map.html');
+            clearEmergencyRoute(true);
           }
         };
       } catch (e) {}
     }
     window.addEventListener('storage', function (e) {
-      // Route cleared is ONLY reflected in responder.html. Do not clear route on caller's map.html
+      // When responder clicks cleared in responder.html, automatically reflect it in map.html (desktop & mobile)
       if (e.key === 'responder_cleared_time') {
-        console.log('Responder cleared timestamp updated; caller map route remains active on map.html');
+        clearEmergencyRoute(true);
       }
     });
 
@@ -10386,7 +10386,7 @@
       setStatus('🚨 Emergency Confirmed! Route active to ' + currentEmergencyTarget.name + '. Responders notified.');
     }
 
-    function clearEmergencyRoute() {
+    function clearEmergencyRoute(isFromResponder) {
       const bar = document.getElementById('route-emergency-confirm-bar');
       if (bar) bar.hidden = true;
 
@@ -10406,6 +10406,30 @@
         resultsList.hidden = true;
         resultsList.replaceChildren();
       }
+      const assistanceResults = document.getElementById('emergency-assistance-results');
+      if (assistanceResults) {
+        assistanceResults.hidden = true;
+        assistanceResults.replaceChildren();
+      }
+      if (emergencyAssistance) {
+        emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
+          btn.classList.remove('active');
+        });
+      }
+      const situationSelector = document.getElementById('responder-situation-selector');
+      if (situationSelector) {
+        situationSelector.hidden = true;
+        situationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
+          c.classList.remove('active');
+        });
+      }
+      const emergencyStatusEl = document.getElementById('emergency-status-text');
+      if (emergencyStatusEl) {
+        emergencyStatusEl.textContent = 'Select an emergency service type below to find the nearest facilities.';
+      }
+      const emergencyOpenChat = document.getElementById('emergency-open-chat');
+      if (emergencyOpenChat) emergencyOpenChat.hidden = false;
+
       const serviceDetails = document.getElementById('service-details');
       if (serviceDetails) {
         serviceDetails.hidden = true;
@@ -10426,21 +10450,22 @@
 
       try {
         localStorage.removeItem('tracked_user_emergency');
-        if (emergencyDispatchChannel) {
+        if (!isFromResponder && emergencyDispatchChannel) {
           emergencyDispatchChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: Date.now() });
         }
       } catch (e) {}
 
       broadcastUserEmergencyActivity('emergency_cleared', {
         isConfirmed: false,
-        actionDescription: 'Emergency route cleared / standby'
+        actionDescription: isFromResponder ? 'Mission cleared by dispatch console' : 'Emergency route cleared / standby'
       });
 
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = false;
         emergencyOpenButton.setAttribute('aria-expanded', 'false');
       }
-      setStatus('Route cleared.');
+      syncEmergencyOpenButtonVisibility();
+      setStatus(isFromResponder ? '🚨 Mission cleared by dispatch. Emergency route reset.' : 'Route cleared.');
     }
 
     const routeConfirmEmergencyBtn = document.getElementById('route-confirm-emergency-btn');
