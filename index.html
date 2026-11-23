@@ -8,18 +8,18 @@
       try {
         var lastRole = localStorage.getItem('osm-map-offline-v1:account-last-role');
         if (lastRole === 'responder') {
-          window.location.replace('Open Street Map (Bellmans - Ford)/responder.html');
+          window.location.replace('/responder');
           return;
         }
       } catch (e) {}
-      window.location.replace('Open Street Map (Bellmans - Ford)/map.html');
+      window.location.replace('/map');
     })();
   </script>
   <noscript>
-    <meta http-equiv="refresh" content="0; url=Open%20Street%20Map%20(Bellmans%20-%20Ford)/map.html">
+    <meta http-equiv="refresh" content="0; url=/map">
   </noscript>
 </head>
 <body>
-  <p>Loading Map Route Finder... If you are not redirected automatically, <a href="Open Street Map (Bellmans - Ford)/map.html">click here for Map</a> or <a href="Open Street Map (Bellmans - Ford)/responder.html">here for Responder Console</a>.</p>
+  <p>Loading Map Route Finder... If you are not redirected automatically, <a href="/map">click here for Map</a> or <a href="/responder">here for Responder Console</a>.</p>
 </body>
 </html>
