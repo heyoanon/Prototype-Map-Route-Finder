@@ -7133,21 +7133,7 @@
         const now = Date.now();
         if (!chatboxMessages || chatboxMessages.children.length === 0 || (now - lastMsgTime > 45000)) {
           assistanceChatBox.dataset.lastPromptTime = String(now);
-          appendBotMessage(
-            '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
-            'Hello! What emergency assistance or route information do you need right now?<br><br>' +
-            'Please choose an emergency service below, or ask any question in the chatbox:',
-            [
-              { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
-              { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
-              { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
-              { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
-              { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
-              { label: '🛣️ Live Road Conditions & Traffic', action: function () { handleChatIntent('traffic_conditions'); } },
-              { label: '☎️ 911 Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } },
-              { label: '🩹 First Aid Quick Guide', action: function () { handleChatIntent('first_aid'); } }
-            ]
-          );
+          displayEmergencyAssistanceDispatchMenu();
         }
       }
       renderChatQuickChips();
@@ -7177,16 +7163,52 @@
       chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
     }
 
+    function displayEmergencyAssistanceDispatchMenu() {
+      appendBotMessage(
+        '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
+        'Hello! What emergency assistance or route information do you need right now?<br><br>' +
+        'Please choose an emergency service below, or ask any question in the chatbox:',
+        [
+          { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+          { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+          { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+          { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
+          { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
+          { label: '🛣️ Live Road Conditions & Traffic', action: function () { handleChatIntent('traffic_conditions'); } },
+          { label: '☎️ 911 Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } },
+          { label: '🩹 First Aid Quick Guide', action: function () { handleChatIntent('first_aid'); } }
+        ]
+      );
+    }
+
     function appendBotMessage(htmlContent, actions) {
       if (!chatboxMessages) return;
       const msg = document.createElement('div');
       msg.className = 'chat-msg bot';
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+      // Automatically include "Emergency Assistance & 24/7 Dispatch" return option on any opened choices
+      let effectiveActions = Array.isArray(actions) ? actions.slice() : [];
+      const isDispatchMenu = Boolean(htmlContent && htmlContent.includes('Emergency Assistance & 24/7 Dispatch'));
+      const hasBackToDispatch = effectiveActions.some(function (act) {
+        return act && act.label && (act.label.includes('Emergency Assistance') || act.label.includes('24/7 Dispatch'));
+      });
+
+      if (!isDispatchMenu && !hasBackToDispatch && effectiveActions.length > 0) {
+        effectiveActions.push({
+          label: '🔙 Emergency Assistance & 24/7 Dispatch',
+          secondary: true,
+          action: function () {
+            appendUserMessage('Emergency Assistance & 24/7 Dispatch');
+            displayEmergencyAssistanceDispatchMenu();
+          }
+        });
+      }
+
       let actionsHtml = '';
-      if (Array.isArray(actions) && actions.length > 0) {
+      if (effectiveActions.length > 0) {
         actionsHtml = '<div class="chat-msg-actions">';
-        actions.forEach(function (act, idx) {
+        effectiveActions.forEach(function (act, idx) {
           if (act.href) {
             actionsHtml += '<a href="' + escapeHtml(act.href) + '" class="chat-action-btn secondary' + (act.emergency ? ' emergency' : '') + '">' + escapeHtml(act.label) + '</a>';
           } else {
@@ -7199,11 +7221,11 @@
       msg.innerHTML = '<div class="chat-msg-bubble">' + htmlContent + actionsHtml + '</div>' +
         '<div class="chat-msg-time">' + timeStr + ' • Assistant</div>';
 
-      if (Array.isArray(actions) && actions.length > 0) {
+      if (effectiveActions.length > 0) {
         msg.querySelectorAll('button[data-action-idx]').forEach(function (btn) {
           const idx = parseInt(btn.dataset.actionIdx, 10);
-          if (actions[idx] && typeof actions[idx].action === 'function') {
-            btn.addEventListener('click', actions[idx].action);
+          if (effectiveActions[idx] && typeof effectiveActions[idx].action === 'function') {
+            btn.addEventListener('click', effectiveActions[idx].action);
           }
         });
       }
@@ -7376,6 +7398,7 @@
       if (!chatboxQuickChips) return;
       chatboxQuickChips.innerHTML = '';
       const chips = [
+        { label: '🏠 24/7 Dispatch', intent: 'dispatch' },
         { label: '🚑 Medical', intent: 'ambulance' },
         { label: '🚓 Police', intent: 'police' },
         { label: '🚒 Fire', intent: 'fire' },
@@ -8267,21 +8290,9 @@
         return;
       }
 
-      // 34. Greetings / Help
-      if (/^(hi|hello|hey|good morning|good afternoon|good evening|kamusta|musta|help|need help|yo)$/i.test(q) || q === 'help') {
-        appendBotMessage(
-          '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
-          'Hello! What emergency assistance or route information do you need right now?<br><br>' +
-          'Select an emergency service or describe what you need in the chatbox:',
-          [
-            { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
-            { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
-            { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
-            { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
-            { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
-            { label: '☎️ 911 Emergency Hotlines', action: function () { handleChatIntent('hotlines'); } }
-          ]
-        );
+      // 34. Greetings / Help / Emergency Assistance & 24/7 Dispatch Trigger
+      if (/^(hi|hello|hey|good morning|good afternoon|good evening|kamusta|musta|help|need help|yo)$/i.test(q) || q === 'help' || /^(?:emergency assistance|24\/7 dispatch|dispatch|main menu|menu|back to dispatch|home|back to home)$/i.test(q)) {
+        displayEmergencyAssistanceDispatchMenu();
         return;
       }
 
@@ -8333,7 +8344,10 @@
     }
 
     function handleChatIntent(intent, userText) {
-      if (intent === 'ambulance') {
+      if (intent === 'dispatch' || intent === 'main_menu') {
+        displayEmergencyAssistanceDispatchMenu();
+        return;
+      } else if (intent === 'ambulance') {
         appendBotMessage(
           '🚑 <strong>Requesting Ambulance & Medical Response...</strong><br>' +
           'Querying closest hospitals, emergency clinics, and ambulance units to your position.'
