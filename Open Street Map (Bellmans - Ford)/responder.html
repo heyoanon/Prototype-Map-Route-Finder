@@ -3454,14 +3454,35 @@
       requestResponderDeviceLocation({ setView: false, userInitiated: false });
     }
   </script>
-    // Mobile Pull to Refresh Page Action
+    // Mobile Pull to Refresh Current Action and Page
+    async function refreshCurrentResponderAction() {
+      const hud = document.getElementById('responder-hud');
+      if (hud && hud.classList.contains('hud-collapsed')) {
+        hud.classList.remove('hud-collapsed');
+      }
+
+      lastTrackedCoords = null;
+      lastRenderedStationId = null;
+      isMissionCleared = false;
+      clearedTimestamp = 0;
+      try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+
+      if (typeof loadTrackedUser === 'function') {
+        await loadTrackedUser();
+      }
+
+      if (navigator.geolocation && typeof requestResponderDeviceLocation === 'function') {
+        requestResponderDeviceLocation({ setView: false, userInitiated: false });
+      }
+    }
+
     (function initMobilePullUpRefresh() {
       if (window.innerWidth > 640 && !('ontouchstart' in window)) return;
 
       const indicator = document.createElement('div');
       indicator.id = 'pull-refresh-indicator';
       indicator.className = 'pull-refresh-indicator';
-      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh page</span>';
+      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh current action</span>';
       document.body.appendChild(indicator);
 
       let startY = 0;
@@ -3469,7 +3490,7 @@
       let isPulling = false;
       let isRefreshing = false;
       let pullDirection = 'up';
-      const PULL_THRESHOLD = 50; // px threshold
+      const PULL_THRESHOLD = 50;
 
       function getScrollableParent(el) {
         while (el && el !== document.body) {
@@ -3528,12 +3549,12 @@
         const spinIcon = indicator.querySelector('.refresh-spin-icon');
         const textEl = indicator.querySelector('.refresh-text');
 
-        const actionText = pullDirection === 'up' ? 'Pull up to refresh page' : 'Pull down to refresh page';
+        const actionPrompt = pullDirection === 'up' ? 'Pull up to refresh current action' : 'Pull down to refresh current action';
         if (absDeltaY >= PULL_THRESHOLD) {
-          if (textEl) textEl.textContent = 'Release to refresh page';
+          if (textEl) textEl.textContent = 'Release to refresh current action';
           if (spinIcon) spinIcon.style.transform = 'rotate(180deg)';
         } else {
-          if (textEl) textEl.textContent = actionText;
+          if (textEl) textEl.textContent = actionPrompt;
           const angle = Math.min(180, Math.round((absDeltaY / PULL_THRESHOLD) * 180));
           if (spinIcon) spinIcon.style.transform = 'rotate(' + angle + 'deg)';
         }
@@ -3549,13 +3570,19 @@
           isRefreshing = true;
           indicator.classList.add('refreshing');
           const textEl = indicator.querySelector('.refresh-text');
-          if (textEl) textEl.textContent = 'Refreshing page...';
+          if (textEl) textEl.textContent = 'Refreshing live tracker...';
           const spinIcon = indicator.querySelector('.refresh-spin-icon');
           if (spinIcon) spinIcon.style.transform = '';
 
-          setTimeout(function () {
-            window.location.reload();
-          }, 200);
+          refreshCurrentResponderAction().finally(function () {
+            if (textEl) textEl.textContent = '✓ Live tracker refreshed';
+            setTimeout(function () {
+              indicator.classList.remove('visible', 'refreshing');
+              isRefreshing = false;
+              isPulling = false;
+              if (spinIcon) spinIcon.style.transform = '';
+            }, 800);
+          });
         } else {
           indicator.classList.remove('visible');
           isPulling = false;
