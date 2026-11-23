@@ -1503,50 +1503,7 @@
         transform: translate(-9999px, -9999px) !important;
       }
     }
-      /* Mobile Pull-Up to Refresh Indicator */
-    .pull-refresh-indicator {
-      position: fixed;
-      top: max(14px, env(safe-area-inset-top, 14px));
-      left: 50%;
-      transform: translateX(-50%) translateY(-65px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 18px;
-      border-radius: 999px;
-      background: rgba(24, 27, 33, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      color: #e8eaed;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-      pointer-events: none;
-      opacity: 0;
-      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-    }
-
-    .pull-refresh-indicator.visible {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    .pull-refresh-indicator .refresh-spin-icon {
-      display: inline-block;
-      font-size: 15px;
-      transition: transform 0.15s ease;
-    }
-
-    .pull-refresh-indicator.refreshing .refresh-spin-icon {
-      animation: spinRefresh 0.8s linear infinite;
-    }
-
-    @keyframes spinRefresh {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+      
 
   </style>
 </head>
@@ -1670,6 +1627,9 @@
 
     <!-- Quick Map & Tracking Actions -->
     <div class="hud-controls-group">
+      <button id="btn-show-route" type="button" class="hud-btn primary" style="grid-column: 1 / -1; font-weight: 700; background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; box-shadow: 0 2px 8px rgba(26,115,232,0.4);" title="Detect caller position and navigate route immediately">
+        <span>🗺️</span> Detect Position, Show & Go to Route
+      </button>
       <button id="btn-center-user" type="button" class="hud-btn primary">
         <span>📍</span> Track User
       </button>
@@ -1703,9 +1663,14 @@
       </div>
     </div>
 
-    <a id="btn-call-caller" href="tel:911" class="hud-btn danger" style="width: 100%;">
-      <span>📞</span> Contact Caller / 911 Hotline
-    </a>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+      <a id="btn-call-caller" href="tel:911" class="hud-btn danger" style="justify-content: center; width: 100%;" title="Call caller">
+        <span>📞</span> Call Caller
+      </a>
+      <a id="btn-message-caller" href="sms:911" class="hud-btn" style="justify-content: center; width: 100%; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: #e8eaed;" title="Message caller">
+        <span>💬</span> Message Caller
+      </a>
+    </div>
   </aside>
 
 
@@ -2421,6 +2386,10 @@
           rawData.isConfirmed === true ||
           rawData.lastAction === 'emergency_confirmed' ||
           rawData.lastAction === 'facility_route_selected' ||
+          rawData.lastAction === 'service_change' ||
+          rawData.lastAction === 'situation_change' ||
+          rawData.lastAction === 'search' ||
+          rawData.lastAction === 'chat_message' ||
           (rawData.targetFacility && rawData.lastAction !== 'emergency_cleared')
         )
       );
@@ -2722,6 +2691,18 @@
       // Activity Feed display
       document.getElementById('latest-activity-summary').textContent = currentTrackedUser.latestSummary || 'Caller active on map';
 
+      const callBtn = document.getElementById('btn-call-caller');
+      const msgBtn = document.getElementById('btn-message-caller');
+      const phoneNum = currentTrackedUser.callerPhone || '(033) 333-1111';
+      if (callBtn) {
+        callBtn.href = 'tel:' + phoneNum.replace(/[^\d+*#;]/g, '');
+        callBtn.title = 'Call ' + phoneNum;
+      }
+      if (msgBtn) {
+        msgBtn.href = 'sms:' + phoneNum.replace(/[^\d+*#;]/g, '');
+        msgBtn.title = 'Send SMS to ' + phoneNum;
+      }
+
       // Update Live Caller Map Session Status (Desktop & Mobile)
       const sessionBadge = document.getElementById('caller-session-status-badge');
       const sessionText = document.getElementById('caller-session-status-text');
@@ -2769,10 +2750,19 @@
       const timeAgoStr = Math.max(0, Math.round((Date.now() - currentTrackedUser.lastPingTime.getTime()) / 1000));
       document.getElementById('user-last-ping').textContent = timeAgoStr < 5 ? 'Live Ping Just Now' : timeAgoStr + 's ago';
 
-      if (currentTrackedUser.callerPhone) {
-        const telLink = document.getElementById('btn-call-caller');
-        telLink.href = 'tel:' + currentTrackedUser.callerPhone.replace(/[^\d+*#;]/g, '');
-        telLink.innerHTML = '<span>📞</span> Contact Caller (' + currentTrackedUser.callerPhone + ')';
+      const callBtn = document.getElementById('btn-call-caller');
+      const msgBtn = document.getElementById('btn-message-caller');
+      const phoneNum = currentTrackedUser.callerPhone || '(033) 333-1111';
+      const cleanPhone = phoneNum.replace(/[^\d+*#;]/g, '');
+      if (callBtn) {
+        callBtn.href = 'tel:' + cleanPhone;
+        callBtn.innerHTML = '<span>📞</span> Call Caller';
+        callBtn.title = 'Call ' + phoneNum;
+      }
+      if (msgBtn) {
+        msgBtn.href = 'sms:' + cleanPhone;
+        msgBtn.innerHTML = '<span>💬</span> Message Caller';
+        msgBtn.title = 'Send SMS to ' + phoneNum;
       }
     }
 
@@ -2852,8 +2842,9 @@
         (activeResponderStation.address || '')
       );
 
-      // 3. Compute and Draw Fastest Route to User ONLY if caller clicked or answered confirm that there is an emergency
-      if (currentTrackedUser.isConfirmed && !isMissionCleared) {
+      // 3. Compute and Draw Fastest Route to User
+      // Responders can detect user's current position, show and go to route regardless of confirm/call/message state
+      if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
         await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
       } else {
         routeLayers.clearLayers();
@@ -2865,7 +2856,7 @@
         if (hazardStatusText) {
           hazardStatusText.textContent = isMissionCleared
             ? 'Mission cleared. No active route.'
-            : 'Standby: Caller route path held until emergency is confirmed.';
+            : 'Standby: Caller position pending.';
         }
         const factorsContainer = document.getElementById('responder-factors-container');
         if (factorsContainer) factorsContainer.innerHTML = '';
@@ -3218,6 +3209,45 @@
     const btnQuickFactors = document.getElementById('btn-quick-factors');
     if (btnQuickFactors) {
       btnQuickFactors.addEventListener('click', toggleResponderFactors);
+    }
+
+    const btnShowRoute = document.getElementById('btn-show-route');
+    if (btnShowRoute) {
+      btnShowRoute.addEventListener('click', async function () {
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.status === 'en-route');
+        });
+        const badge = document.getElementById('dispatch-badge');
+        if (badge) badge.textContent = 'EN ROUTE';
+
+        if (Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
+          await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+          if (routeLayers.getBounds().isValid()) {
+            fitMapBoundsSafely(routeLayers.getBounds(), true);
+          }
+        }
+      });
+    }
+
+    const callBtnEl = document.getElementById('btn-call-caller');
+    if (callBtnEl) {
+      callBtnEl.addEventListener('click', function () {
+        if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
+          calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+        }
+      });
+    }
+
+    const msgBtnEl = document.getElementById('btn-message-caller');
+    if (msgBtnEl) {
+      msgBtnEl.addEventListener('click', function () {
+        if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
+          calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+        }
+      });
     }
 
     document.getElementById('btn-center-user').addEventListener('click', function () {
@@ -3601,143 +3631,7 @@
       requestResponderDeviceLocation({ setView: false, userInitiated: false });
     }
   </script>
-    // Mobile Pull to Refresh Current Action and Page
-    async function refreshCurrentResponderAction() {
-      const hud = document.getElementById('responder-hud');
-      if (hud && hud.classList.contains('hud-collapsed')) {
-        hud.classList.remove('hud-collapsed');
-      }
-
-      lastTrackedCoords = null;
-      lastRenderedStationId = null;
-      isMissionCleared = false;
-      clearedTimestamp = 0;
-      try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
-
-      if (typeof loadTrackedUser === 'function') {
-        await loadTrackedUser();
-      }
-
-      if (navigator.geolocation && typeof requestResponderDeviceLocation === 'function') {
-        requestResponderDeviceLocation({ setView: false, userInitiated: false });
-      }
-    }
-
-    (function initMobilePullUpRefresh() {
-      if (window.innerWidth > 640 && !('ontouchstart' in window)) return;
-
-      const indicator = document.createElement('div');
-      indicator.id = 'pull-refresh-indicator';
-      indicator.className = 'pull-refresh-indicator';
-      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh current action</span>';
-      document.body.appendChild(indicator);
-
-      let startY = 0;
-      let startX = 0;
-      let isPulling = false;
-      let isRefreshing = false;
-      let pullDirection = 'up';
-      const PULL_THRESHOLD = 50;
-
-      function getScrollableParent(el) {
-        while (el && el !== document.body) {
-          const style = window.getComputedStyle(el);
-          const overflowY = style.overflowY;
-          if (overflowY === 'auto' || overflowY === 'scroll') {
-            if (el.scrollHeight > el.clientHeight) return el;
-          }
-          el = el.parentElement;
-        }
-        return null;
-      }
-
-      document.addEventListener('touchstart', function (e) {
-        if (isRefreshing || e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        startY = touch.clientY;
-        startX = touch.clientX;
-        isPulling = false;
-      }, { passive: true });
-
-      document.addEventListener('touchmove', function (e) {
-        if (isRefreshing || e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        const rawDeltaY = startY - touch.clientY;
-        const absDeltaY = Math.abs(rawDeltaY);
-        const deltaX = Math.abs(touch.clientX - startX);
-
-        if (absDeltaY <= 12 || deltaX > absDeltaY) {
-          if (isPulling && absDeltaY <= 0) {
-            indicator.classList.remove('visible');
-            isPulling = false;
-          }
-          return;
-        }
-
-        const scrollParent = getScrollableParent(e.target);
-        if (rawDeltaY > 0) {
-          pullDirection = 'up';
-          if (scrollParent) {
-            const atBottom = (scrollParent.scrollTop + scrollParent.clientHeight) >= (scrollParent.scrollHeight - 15);
-            if (!atBottom) return;
-          }
-        } else {
-          pullDirection = 'down';
-          if (scrollParent) {
-            const atTop = scrollParent.scrollTop <= 10;
-            if (!atTop) return;
-          } else if (window.scrollY > 10) {
-            return;
-          }
-        }
-
-        isPulling = true;
-        indicator.classList.add('visible');
-        const spinIcon = indicator.querySelector('.refresh-spin-icon');
-        const textEl = indicator.querySelector('.refresh-text');
-
-        const actionPrompt = pullDirection === 'up' ? 'Pull up to refresh current action' : 'Pull down to refresh current action';
-        if (absDeltaY >= PULL_THRESHOLD) {
-          if (textEl) textEl.textContent = 'Release to refresh current action';
-          if (spinIcon) spinIcon.style.transform = 'rotate(180deg)';
-        } else {
-          if (textEl) textEl.textContent = actionPrompt;
-          const angle = Math.min(180, Math.round((absDeltaY / PULL_THRESHOLD) * 180));
-          if (spinIcon) spinIcon.style.transform = 'rotate(' + angle + 'deg)';
-        }
-      }, { passive: true });
-
-      document.addEventListener('touchend', function (e) {
-        if (!isPulling || isRefreshing) return;
-        const touch = e.changedTouches[0];
-        const rawDeltaY = startY - touch.clientY;
-        const absDeltaY = Math.abs(rawDeltaY);
-
-        if (absDeltaY >= PULL_THRESHOLD) {
-          isRefreshing = true;
-          indicator.classList.add('refreshing');
-          const textEl = indicator.querySelector('.refresh-text');
-          if (textEl) textEl.textContent = 'Refreshing live tracker...';
-          const spinIcon = indicator.querySelector('.refresh-spin-icon');
-          if (spinIcon) spinIcon.style.transform = '';
-
-          refreshCurrentResponderAction().finally(function () {
-            if (textEl) textEl.textContent = '✓ Live tracker refreshed';
-            setTimeout(function () {
-              indicator.classList.remove('visible', 'refreshing');
-              isRefreshing = false;
-              isPulling = false;
-              if (spinIcon) spinIcon.style.transform = '';
-            }, 800);
-          });
-        } else {
-          indicator.classList.remove('visible');
-          isPulling = false;
-          const spinIcon = indicator.querySelector('.refresh-spin-icon');
-          if (spinIcon) spinIcon.style.transform = '';
-        }
-      }, { passive: true });
-    })();
+    
 
 </body>
 
