@@ -8521,7 +8521,7 @@
       } else if (intent === 'first_aid') {
         appendBotMessage(
           '🩹 <strong>First Aid Quick Guides:</strong><br>' +
-          'Select an emergency topic below for immediate step-by-step guidance (accessible on desktop & mobile):',
+          'Select an emergency topic below for immediate step-by-step guidance:',
           [
             { label: '🌊 Drowning Rescue', emergency: true, action: function () { answerUserEmergencyQuestion('drowning'); } },
             { label: '🫀 CPR / Cardiac Arrest', emergency: true, action: function () { answerUserEmergencyQuestion('cpr'); } },
