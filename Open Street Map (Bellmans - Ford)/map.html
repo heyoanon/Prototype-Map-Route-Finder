@@ -7721,6 +7721,33 @@
         return;
       }
 
+      // First Aid Quick Guides Directory Trigger (Chat Input & Voice)
+      if (/^(?:first aid|first-aid|first aid guide|first aid guides|first aid quick guide|first aid quick guides|first aid tips|firstaid|medical first aid|emergency first aid)$/i.test(q) || (/first aid/i.test(q) && /guide|help|list|menu|options|show|what/i.test(q))) {
+        handleChatIntent('first_aid');
+        return;
+      }
+
+      // First Aid - Drowning Protocol
+      if (/drown|drowning|submersion|water inhalation|near drowning|nalunod|nalulunod|water rescue/i.test(q)) {
+        appendBotMessage(
+          '🌊 <strong>Drowning Emergency First Aid Protocol:</strong><br>' +
+          '1. <strong>Safety First (Reach / Throw / Row / Go):</strong> Do not endanger yourself in swift or deep water. Throw a flotation device, rope, or branch. Call 911 / Coast Guard immediately.<br>' +
+          '2. <strong>Extract Victim to Dry Ground:</strong> Bring victim out onto firm, flat ground while supporting their head and neck.<br>' +
+          '3. <strong>Assess Responsiveness & Breathing:</strong> Tilt head back gently and lift chin. Look, listen, and feel for normal breathing (maximum 10 seconds).<br>' +
+          '4. <strong>Deliver 5 Initial Rescue Breaths:</strong> Drowning victims experience severe oxygen deprivation (hypoxia). Pinch their nose, seal your mouth over theirs, and give 5 steady rescue breaths watching for chest rise.<br>' +
+          '5. <strong>Begin 30:2 CPR Immediately:</strong> If unresponsive or not breathing normally, place hands in the center of the chest and compress 2 inches deep at 100–120 bpm. Alternate 30 compressions with 2 rescue breaths.<br>' +
+          '6. <strong>Do NOT Attempt Heimlich to Drain Water:</strong> Chest compressions clear fluid effectively. Pumping the stomach increases vomiting and aspiration risk. Turn victim briefly on their side only if vomit obstructs the mouth.<br>' +
+          '7. <strong>Recovery Position & Keep Warm:</strong> If breathing returns, roll onto their side in recovery position. Remove wet clothes, cover with blankets to combat hypothermia, and monitor closely for secondary drowning until emergency responders arrive.',
+          [
+            { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🫀 CPR Instructions', action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
+          ]
+        );
+        return;
+      }
+
       // 10. First Aid - CPR
       if (/cpr|cardiac arrest|heart attack|not breathing|unresponsive|chest compression/i.test(q)) {
         appendBotMessage(
@@ -7733,7 +7760,8 @@
           [
             { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
             { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } }
+            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7751,7 +7779,8 @@
           [
             { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
             { label: '🏥 Nearest Hospital / Burn Care', action: function () { handleChatIntent('ambulance'); } },
-            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7768,7 +7797,8 @@
           '5. <strong>If Unresponsive:</strong> Lower to the floor and begin CPR compressions immediately.',
           [
             { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
-            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } }
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7786,7 +7816,47 @@
           [
             { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
             { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
-            { label: '📞 Call Red Cross (033) 337-5976', href: 'tel:0333375976' }
+            { label: '📞 Call Red Cross (033) 337-5976', href: 'tel:0333375976' },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
+          ]
+        );
+        return;
+      }
+
+      // First Aid - Fractures, Broken Bones & Sprains
+      if (/fracture|broken bone|bone break|sprain|strain|dislocation|broken arm|broken leg|twisted ankle|bali.*buto|pilay/i.test(q)) {
+        appendBotMessage(
+          '🦴 <strong>Fracture & Sprain Emergency Protocol:</strong><br>' +
+          '1. <strong>Immobilize Immediately:</strong> Keep the person and injured area still. Do NOT try to straighten, realign, or force a broken bone or dislocated joint back in place.<br>' +
+          '2. <strong>Support & Splint:</strong> Support joints above and below the fracture using padded boards, folded cardboard, or rolled magazines tied loosely with cloth. Do not tie tightly enough to restrict blood flow.<br>' +
+          '3. <strong>R.I.C.E. for Sprains & Strains:</strong> Rest the limb, apply Ice wrapped in cloth (15–20 min intervals), Compress lightly with elastic bandage, and Elevate above heart level if tolerated.<br>' +
+          '4. <strong>Open / Compound Fracture:</strong> If bone is exposed through skin, do NOT push it back. Cover gently with sterile gauze/clean cloth and apply pressure around wound edges to control bleeding.<br>' +
+          '5. <strong>Check Blood Flow:</strong> Confirm fingers/toes beyond the injury remain warm and pink with normal sensation.<br>' +
+          '6. <strong>Seek Emergency Orthopedic Care:</strong> Dispatch ambulance or transport safely to nearest emergency hospital.',
+          [
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🏥 Nearest Hospital / Trauma Center', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
+          ]
+        );
+        return;
+      }
+
+      // First Aid - Severe Allergic Reaction / Anaphylaxis
+      if (/allergy|allergic|anaphylaxis|anaphylactic|epipen|hives|swollen throat|swollen face|severe allergic/i.test(q)) {
+        appendBotMessage(
+          '⚠️ <strong>Anaphylaxis & Severe Allergic Reaction Protocol:</strong><br>' +
+          '1. <strong>Call 911 / Emergency Ambulance Immediately:</strong> Anaphylaxis can rapidly progress to complete airway closure and shock.<br>' +
+          '2. <strong>Administer Epinephrine (EpiPen) Without Delay:</strong> If prescribed an auto-injector, grasp firmly, remove safety cap, push orange tip firmly into outer mid-thigh until click sounds, and hold for 3 seconds.<br>' +
+          '3. <strong>Position the Victim:</strong> Lay them flat on their back and elevate legs 12 inches to maintain blood pressure. If having severe breathing difficulty, allow them to sit upright.<br>' +
+          '4. <strong>Do NOT Give Oral Fluids or Food:</strong> Swelling can cause choking or aspiration.<br>' +
+          '5. <strong>Loosen Tight Garments:</strong> Unbutton collar, loosen belt or necktie to relieve breathing restriction.<br>' +
+          '6. <strong>Monitor Breathing & Second Dose:</strong> If symptoms worsen or do not improve after 5–15 minutes and medics have not arrived, deliver a second dose if available. Begin CPR immediately if breathing stops.',
+          [
+            { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
+            { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🫀 CPR Instructions', action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7812,7 +7882,8 @@
                 }
               }
             },
-            { label: '📞 Call WVMC (033) 321-2841', href: 'tel:0333212841' }
+            { label: '📞 Call WVMC (033) 321-2841', href: 'tel:0333212841' },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7895,7 +7966,8 @@
                   searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
                 }
               }
-            }
+            },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7914,7 +7986,8 @@
           [
             { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
             { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } }
+            { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7931,7 +8004,8 @@
           [
             { label: '📞 Call 911 Now', href: 'tel:911', emergency: true },
             { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } }
+            { label: '🏥 Nearest Emergency Room', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7949,7 +8023,8 @@
           [
             { label: '🚑 Dispatch Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
             { label: '🏥 Nearest Hospital', action: function () { handleChatIntent('ambulance'); } },
-            { label: '📞 Call Red Cross', href: 'tel:0333375976' }
+            { label: '📞 Call Red Cross', href: 'tel:0333375976' },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7967,7 +8042,8 @@
           [
             { label: '📞 Call 911 Immediately', href: 'tel:911', emergency: true },
             { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
-            { label: '🫀 CPR Instructions', action: function () { answerUserEmergencyQuestion('cpr'); } }
+            { label: '🫀 CPR Instructions', action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -7994,7 +8070,8 @@
               }
             },
             { label: '📞 Call 911', href: 'tel:911', emergency: true },
-            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } }
+            { label: '🚑 Dispatch Ambulance', action: function () { handleChatIntent('ambulance'); } },
+            { label: '🩹 All First Aid Guides', action: function () { handleChatIntent('first_aid'); } }
           ]
         );
         return;
@@ -8215,7 +8292,7 @@
           '• <strong>Factor-Aware Routing:</strong> Bellman-Ford/A* algorithm evaluating traffic, spatial hazards, turns, and friction.<br>' +
           '• <strong>Emergency Directory:</strong> 24/7 verified database of hospitals, police stations, fire bases, and rescue units.<br>' +
           '• <strong>Automated Detour Engine:</strong> Bypasses road closures, flood zones, and heavy congestion.<br>' +
-          '• <strong>First Aid Assistant:</strong> Instant step-by-step guidance for CPR, burns, choking, and bleeding.<br>' +
+          '• <strong>First Aid Assistant:</strong> Instant step-by-step guidance for drowning rescue, CPR, bleeding, burns, choking, fractures, anaphylaxis, heat stroke, and poisoning.<br>' +
           '• <strong>Offline Navigation:</strong> Cached tile rendering and direct compass navigation when offline.',
           [
             { label: '🚑 Medical / Ambulance', action: function () { handleChatIntent('ambulance'); } },
@@ -8444,13 +8521,22 @@
       } else if (intent === 'first_aid') {
         appendBotMessage(
           '🩹 <strong>First Aid Quick Guides:</strong><br>' +
-          'Select a first aid emergency topic below for immediate step-by-step guidance:',
+          'Select an emergency topic below for immediate step-by-step guidance (accessible on desktop & mobile):',
           [
-            { label: '🫀 CPR / Cardiac Arrest', action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🌊 Drowning Rescue', emergency: true, action: function () { answerUserEmergencyQuestion('drowning'); } },
+            { label: '🫀 CPR / Cardiac Arrest', emergency: true, action: function () { answerUserEmergencyQuestion('cpr'); } },
+            { label: '🗣️ Choking (Heimlich)', emergency: true, action: function () { answerUserEmergencyQuestion('choking'); } },
+            { label: '🩸 Stop Heavy Bleeding', emergency: true, action: function () { answerUserEmergencyQuestion('bleeding'); } },
             { label: '🔥 Burn Treatment', action: function () { answerUserEmergencyQuestion('burn'); } },
-            { label: '🗣️ Choking (Heimlich)', action: function () { answerUserEmergencyQuestion('choking'); } },
-            { label: '🩸 Stop Heavy Bleeding', action: function () { answerUserEmergencyQuestion('bleeding'); } },
+            { label: '🦴 Fractures & Sprains', action: function () { answerUserEmergencyQuestion('fracture'); } },
+            { label: '⚠️ Severe Allergy / Anaphylaxis', action: function () { answerUserEmergencyQuestion('allergy'); } },
+            { label: '☀️ Heat Stroke & Exhaustion', action: function () { answerUserEmergencyQuestion('heat stroke'); } },
+            { label: '⚡ Electric Shock', action: function () { answerUserEmergencyQuestion('electric shock'); } },
+            { label: '🧪 Poisoning & Ingestion', action: function () { answerUserEmergencyQuestion('poisoning'); } },
             { label: '🐕 Animal / Snake Bite', action: function () { answerUserEmergencyQuestion('dog bite'); } },
+            { label: '🧠 Stroke Signs (F.A.S.T.)', action: function () { answerUserEmergencyQuestion('stroke'); } },
+            { label: '⚠️ Seizures / Convulsions', action: function () { answerUserEmergencyQuestion('seizure'); } },
+            { label: '🫁 Asthma / Breathing', action: function () { answerUserEmergencyQuestion('asthma'); } },
             { label: '🚑 Call Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } }
           ]
         );
