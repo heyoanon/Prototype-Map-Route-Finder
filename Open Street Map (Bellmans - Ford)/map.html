@@ -4422,7 +4422,7 @@
       /* Smooth touch scrolling and tap behavior */
       html, body {
         -webkit-text-size-adjust: 100%;
-        overscroll-behavior-y: none;
+        overscroll-behavior-y: auto;
         -webkit-tap-highlight-color: transparent;
       }
 
@@ -12910,21 +12910,22 @@
       });
     }
   </script>
-    // Mobile Pull-Up to Refresh Action
+    // Mobile Pull to Refresh Page Action
     (function initMobilePullUpRefresh() {
       if (window.innerWidth > 640 && !('ontouchstart' in window)) return;
 
       const indicator = document.createElement('div');
       indicator.id = 'pull-refresh-indicator';
       indicator.className = 'pull-refresh-indicator';
-      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh</span>';
+      indicator.innerHTML = '<span class="refresh-spin-icon">🔄</span><span class="refresh-text">Pull up to refresh page</span>';
       document.body.appendChild(indicator);
 
       let startY = 0;
       let startX = 0;
       let isPulling = false;
       let isRefreshing = false;
-      const PULL_THRESHOLD = 55; // px
+      let pullDirection = 'up';
+      const PULL_THRESHOLD = 50; // px threshold
 
       function getScrollableParent(el) {
         while (el && el !== document.body) {
@@ -12938,21 +12939,6 @@
         return null;
       }
 
-      async function doRefreshAction() {
-        if (typeof fetchLiveIncidents === 'function') {
-          try { await fetchLiveIncidents(); } catch (e) {}
-        }
-        const destInput = document.getElementById('destination');
-        if (destInput && destInput.value.trim() && typeof calculateRoute === 'function') {
-          try { await calculateRoute(true); } catch (e) {}
-        } else if (typeof loadServices === 'function') {
-          try { await loadServices(); } catch (e) {}
-        }
-        if (navigator.geolocation && typeof requestDeviceLocation === 'function') {
-          requestDeviceLocation({ setView: false, userInitiated: false });
-        }
-      }
-
       document.addEventListener('touchstart', function (e) {
         if (isRefreshing || e.touches.length !== 1) return;
         const touch = e.touches[0];
@@ -12964,11 +12950,12 @@
       document.addEventListener('touchmove', function (e) {
         if (isRefreshing || e.touches.length !== 1) return;
         const touch = e.touches[0];
-        const deltaY = startY - touch.clientY;
+        const rawDeltaY = startY - touch.clientY;
+        const absDeltaY = Math.abs(rawDeltaY);
         const deltaX = Math.abs(touch.clientX - startX);
 
-        if (deltaY <= 12 || deltaX > deltaY) {
-          if (isPulling && deltaY <= 0) {
+        if (absDeltaY <= 12 || deltaX > absDeltaY) {
+          if (isPulling && absDeltaY <= 0) {
             indicator.classList.remove('visible');
             isPulling = false;
           }
@@ -12976,9 +12963,20 @@
         }
 
         const scrollParent = getScrollableParent(e.target);
-        if (scrollParent) {
-          const atBottom = (scrollParent.scrollTop + scrollParent.clientHeight) >= (scrollParent.scrollHeight - 12);
-          if (!atBottom) return;
+        if (rawDeltaY > 0) {
+          pullDirection = 'up';
+          if (scrollParent) {
+            const atBottom = (scrollParent.scrollTop + scrollParent.clientHeight) >= (scrollParent.scrollHeight - 15);
+            if (!atBottom) return;
+          }
+        } else {
+          pullDirection = 'down';
+          if (scrollParent) {
+            const atTop = scrollParent.scrollTop <= 10;
+            if (!atTop) return;
+          } else if (window.scrollY > 10) {
+            return;
+          }
         }
 
         isPulling = true;
@@ -12986,12 +12984,13 @@
         const spinIcon = indicator.querySelector('.refresh-spin-icon');
         const textEl = indicator.querySelector('.refresh-text');
 
-        if (deltaY >= PULL_THRESHOLD) {
-          if (textEl) textEl.textContent = 'Release to refresh';
+        const actionText = pullDirection === 'up' ? 'Pull up to refresh page' : 'Pull down to refresh page';
+        if (absDeltaY >= PULL_THRESHOLD) {
+          if (textEl) textEl.textContent = 'Release to refresh page';
           if (spinIcon) spinIcon.style.transform = 'rotate(180deg)';
         } else {
-          if (textEl) textEl.textContent = 'Pull up to refresh';
-          const angle = Math.min(180, Math.round((deltaY / PULL_THRESHOLD) * 180));
+          if (textEl) textEl.textContent = actionText;
+          const angle = Math.min(180, Math.round((absDeltaY / PULL_THRESHOLD) * 180));
           if (spinIcon) spinIcon.style.transform = 'rotate(' + angle + 'deg)';
         }
       }, { passive: true });
@@ -12999,24 +12998,20 @@
       document.addEventListener('touchend', function (e) {
         if (!isPulling || isRefreshing) return;
         const touch = e.changedTouches[0];
-        const deltaY = startY - touch.clientY;
+        const rawDeltaY = startY - touch.clientY;
+        const absDeltaY = Math.abs(rawDeltaY);
 
-        if (deltaY >= PULL_THRESHOLD) {
+        if (absDeltaY >= PULL_THRESHOLD) {
           isRefreshing = true;
           indicator.classList.add('refreshing');
           const textEl = indicator.querySelector('.refresh-text');
-          if (textEl) textEl.textContent = 'Refreshing map & conditions...';
+          if (textEl) textEl.textContent = 'Refreshing page...';
+          const spinIcon = indicator.querySelector('.refresh-spin-icon');
+          if (spinIcon) spinIcon.style.transform = '';
 
-          doRefreshAction().finally(function () {
-            if (textEl) textEl.textContent = '✓ Route & conditions refreshed';
-            setTimeout(function () {
-              indicator.classList.remove('visible', 'refreshing');
-              isRefreshing = false;
-              isPulling = false;
-              const spinIcon = indicator.querySelector('.refresh-spin-icon');
-              if (spinIcon) spinIcon.style.transform = '';
-            }, 900);
-          });
+          setTimeout(function () {
+            window.location.reload();
+          }, 200);
         } else {
           indicator.classList.remove('visible');
           isPulling = false;
