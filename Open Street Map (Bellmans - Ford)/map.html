@@ -4618,8 +4618,18 @@
       #emergency-open[hidden],
       body.emergency-panel-open #emergency-open,
       body:has(#emergency-assistance:not([hidden])) #emergency-open,
-      body.chat-open #emergency-open {
+      body.chat-open #emergency-open,
+      #map-search-controls.sidebar-expanded #emergency-open,
+      body.sidebar-expanded #emergency-open,
+      #map-search-controls:has(#routes:not(:empty)) #emergency-open,
+      #map-search-controls:has(#emergency-results-list:not([hidden])) #emergency-open,
+      #map-search-controls:has(#service-details:not([hidden])) #emergency-open,
+      #map-search-controls:has(.emergency-route-confirm-bar) #emergency-open,
+      .sidebar-expanded #emergency-open {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
       }
 
       /* Hide floating buttons when viewing route cards/details or during modals */
@@ -6250,6 +6260,7 @@
 
     syncAccountButtonPlacement();
     window.addEventListener('resize', syncAccountButtonPlacement);
+    window.addEventListener('resize', syncEmergencyOpenButtonVisibility);
 
     const categoryControl = L.control({ position: 'bottomleft' });
     categoryControl.onAdd = function () {
@@ -9121,10 +9132,10 @@
           document.body.classList.remove('emergency-panel-open');
           if (emergencyOpenButton) {
             emergencyOpenButton.setAttribute('aria-expanded', 'false');
-            emergencyOpenButton.hidden = false;
           }
         }
         expandSidebar();
+        syncEmergencyOpenButtonVisibility();
         plotResponderRoute(lastResponderDispatchData);
         showEmergencyRouteConfirmationBar({
           name: lastResponderDispatchData.responder.name,
@@ -10094,6 +10105,32 @@
       hasUserInteracted = true;
     }
 
+    function syncEmergencyOpenButtonVisibility() {
+      if (!emergencyOpenButton) return;
+      const isMobile = window.innerWidth <= 640;
+      const mapSearchControls = document.getElementById('map-search-controls');
+      const resultsList = document.getElementById('emergency-results-list');
+      const isExpanded = (mapSearchControls && mapSearchControls.classList.contains('sidebar-expanded')) ||
+        document.body.classList.contains('sidebar-expanded') ||
+        document.body.classList.contains('emergency-panel-open') ||
+        document.body.classList.contains('chat-open') ||
+        (emergencyAssistance && !emergencyAssistance.hidden) ||
+        (assistanceChatBox && !assistanceChatBox.hidden) ||
+        (serviceDetails && !serviceDetails.hidden) ||
+        (resultsList && !resultsList.hidden) ||
+        (routesElement && routesElement.children.length > 0);
+
+      if (isMobile && isExpanded) {
+        emergencyOpenButton.hidden = true;
+        emergencyOpenButton.style.display = 'none';
+      } else if (!emergencyAssistance || emergencyAssistance.hidden) {
+        if (!assistanceChatBox || assistanceChatBox.hidden) {
+          emergencyOpenButton.hidden = false;
+          emergencyOpenButton.style.display = '';
+        }
+      }
+    }
+
     function expandSidebar() {
       isSidebarExpanded = true;
       const mapSearchControls = document.getElementById('map-search-controls');
@@ -10103,6 +10140,7 @@
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = true;
       }
+      syncEmergencyOpenButtonVisibility();
       status.classList.toggle('visible', Boolean(status.textContent));
       locationStatus.classList.toggle('visible', Boolean(locationStatus.textContent));
     }
@@ -10115,6 +10153,7 @@
       if (mapSearchControls) {
         mapSearchControls.classList.remove('sidebar-expanded');
       }
+      syncEmergencyOpenButtonVisibility();
       isAssistanceSearch = false;
       emergencySearchType = null;
       serviceRequestId += 1;
@@ -11274,8 +11313,8 @@
               sidebarContainer.hidden = false;
             }
             if (emergencyOpenButton) {
-              emergencyOpenButton.hidden = false;
               emergencyOpenButton.setAttribute('aria-expanded', 'false');
+              syncEmergencyOpenButtonVisibility();
             }
             candidate.selectService();
 
@@ -11496,10 +11535,10 @@
           document.body.classList.remove('emergency-panel-open');
         }
         if (emergencyOpenButton) {
-          emergencyOpenButton.hidden = false;
           emergencyOpenButton.setAttribute('aria-expanded', 'false');
         }
         expandSidebar();
+        syncEmergencyOpenButtonVisibility();
         plotResponderRoute(dispatchData);
         showEmergencyRouteConfirmationBar({
           name: dispatchData.responder.name,
@@ -11571,10 +11610,10 @@
             document.body.classList.remove('emergency-panel-open');
           }
           if (emergencyOpenButton) {
-            emergencyOpenButton.hidden = false;
             emergencyOpenButton.setAttribute('aria-expanded', 'false');
           }
           const sidebarContainer = document.getElementById('emergency-results-list');
+          syncEmergencyOpenButtonVisibility();
           if (sidebarContainer) {
             sidebarContainer.hidden = false;
           }
