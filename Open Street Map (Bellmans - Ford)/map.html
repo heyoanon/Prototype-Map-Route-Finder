@@ -4266,8 +4266,8 @@
         top: max(8px, env(safe-area-inset-top, 8px));
         left: 8px;
         right: auto;
-        width: calc(100vw - 66px);
-        max-width: calc(100vw - 66px);
+        width: calc(100vw - 62px);
+        max-width: calc(100vw - 62px);
         display: flex;
         flex-direction: column;
         align-items: stretch;
@@ -4284,32 +4284,67 @@
         right: 8px !important;
       }
 
+      /* Hide device location input and status text on mobile (as requested) */
+      .search-row.origin-row,
+      #location-status {
+        display: none !important;
+      }
+
+      /* Clean Single-Row Mobile Search Bar */
       .search-panel {
         width: 100%;
-        max-height: calc(85vh - 24px);
-        max-height: calc(85dvh - 24px);
-        padding: 8px;
-        border-radius: 18px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
         pointer-events: auto;
       }
 
+      #map-search-controls.sidebar-expanded .search-panel {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border-radius: 18px !important;
+        padding: 10px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        max-height: calc(85vh - 24px) !important;
+        max-height: calc(85dvh - 24px) !important;
+        overflow-y: auto !important;
+      }
+
+      :root[data-theme="dark"] #map-search-controls.sidebar-expanded .search-panel {
+        background: rgba(32, 33, 36, 0.96) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+      }
+
       .search-inputs-wrapper {
-        border-radius: 14px;
-        padding: 5px;
-        gap: 6px;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        gap: 0 !important;
       }
 
-      .search-row {
-        padding: 5px 8px;
-        min-height: 44px;
-        gap: 6px;
+      .search-row.destination-row {
+        height: 44px !important;
+        min-height: 44px !important;
+        border-radius: 24px !important;
+        padding: 4px 12px !important;
+        background: #ffffff !important;
+        border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14) !important;
       }
 
-      #source-input,
+      :root[data-theme="dark"] .search-row.destination-row {
+        background: #202124 !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+      }
+
       #destination,
       .search-input {
         font-size: 16px !important; /* Critical: prevents iOS auto-zoom on focus */
+        height: 36px !important;
       }
 
       /* Floating Action Buttons below the Search Panel:
