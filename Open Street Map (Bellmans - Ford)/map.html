@@ -2170,6 +2170,67 @@
       box-shadow: 0 0 0 2px #d93025, 0 4px 12px rgba(217, 48, 37, 0.2);
     }
 
+    .emergency-assistance-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #5f6368;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 12px 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .emergency-specialty-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .emergency-specialty-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #202124;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .emergency-specialty-chip:hover,
+    .emergency-specialty-chip:active {
+      background: #e8f0fe;
+      border-color: #1a73e8;
+      color: #1a73e8;
+      transform: translateY(-1px);
+    }
+
+    :root[data-theme="dark"] .emergency-assistance-section-title {
+      color: #9aa0a6;
+    }
+
+    :root[data-theme="dark"] .emergency-specialty-chip {
+      background: #282a2d;
+      border-color: #3c4043;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="dark"] .emergency-specialty-chip:hover,
+    :root[data-theme="dark"] .emergency-specialty-chip:active {
+      background: #1e3a5f;
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+    }
+
     .emergency-assistance-results {
       margin-top: 10px;
       display: flex;
@@ -5310,11 +5371,34 @@
       Select an emergency service type below to find the nearest facilities.
     </div>
     <hr class="emergency-assistance-divider">
+    <div class="emergency-assistance-section-title">🚨 Primary Emergency Units</div>
     <div class="emergency-assistance-buttons">
       <button type="button" data-emergency-type="ambulance">🚑 Ambulance</button>
       <button type="button" data-emergency-type="responder">🛟 Rescue / Responder</button>
       <button type="button" data-emergency-type="police">🚓 Police</button>
       <button type="button" data-emergency-type="fire">🚒 Fire Truck</button>
+    </div>
+    <div class="emergency-assistance-section-title">🩺 Doctor Specialization (Nearest Specialist)</div>
+    <div class="emergency-specialty-chips">
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="pedia">👶 Pedia</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="cardio">🫀 Cardio</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ent">👂 ENT</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="obgyn">🤰 OB-GYN</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ortho">🦴 Ortho</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="neuro">🧠 Neuro</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="pulmo">🫁 Pulmo</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ophthal">👁️ Eye</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="derma">🧴 Derma</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="gastro">🩺 Gastro</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="nephro">🩸 Nephro</button>
+      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="surgery">⚕️ Surgery</button>
+    </div>
+    <div class="emergency-assistance-section-title">🏥 Immediate Specialized Facilities</div>
+    <div class="emergency-specialty-chips">
+      <button type="button" class="emergency-specialty-chip" data-service-category="healthMentalHealth">🧠 Mental Health</button>
+      <button type="button" class="emergency-specialty-chip" data-service-category="healthClinics">🩺 Clinics & Urgent Care</button>
+      <button type="button" class="emergency-specialty-chip" data-service-category="healthCare">♿ Rehab & Care</button>
+      <button type="button" class="emergency-specialty-chip" data-service-category="healthOther">💊 24/7 Pharmacy / Labs</button>
     </div>
     <div id="responder-situation-selector" class="responder-situation-prompt" title="Click empty area to de-select scenario" hidden>
       <div style="font-weight:700;color:#b3261e;display:flex;align-items:center;gap:5px;">
@@ -6702,6 +6786,188 @@
       return scored;
     }
 
+    function findFastestSpecializationService(specialtyId) {
+      const spec = typeof matchDoctorSpecializationQuery === 'function' ? DOCTOR_SPECIALIZATIONS_METADATA.find(function (s) { return s.id === specialtyId; }) : null;
+      const specLabel = spec ? spec.specialtyName : 'Doctor Specialty';
+      const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
+      const originCoords = (userLoc && userLoc.coords) || (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) || routeOrigin || initialCenter || [122.5368, 10.7196];
+      const originPoint = L.latLng(originCoords[1], originCoords[0]);
+      routeOrigin = originCoords;
+      emergencySearchType = 'ambulance';
+      isAssistanceSearch = true;
+
+      const sorted = queryNearestFacilitiesByDoctorSpecialization(specialtyId, originPoint);
+      if (!sorted || sorted.length === 0) return;
+
+      if (emergencyAssistance) {
+        emergencyAssistance.hidden = true;
+        document.body.classList.remove('emergency-panel-open');
+      }
+      if (emergencyOpenButton) {
+        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+      }
+      expandSidebar();
+      syncEmergencyOpenButtonVisibility();
+
+      const mappedCandidates = sorted.map(function (s) {
+        return {
+          name: s.name,
+          category: s.departmentService || (spec ? spec.doctorTitle : 'Specialist Department'),
+          coordinates: s.coordinates,
+          distanceMeters: s.distMeters,
+          phone: s.phone || '',
+          address: s.address || '',
+          type: 'ambulance',
+          selectService: function () {
+            selectedServiceCoordinates = s.coordinates;
+            expandSidebar();
+            destinationInput.value = s.name;
+            showServiceDetails(
+              s.name,
+              s.category,
+              [
+                ['Address', s.address],
+                ['Phone', s.phone, 'phone'],
+                ['Specialization', s.departmentService || (spec ? spec.doctorTitle : 'Specialist Care')]
+              ],
+              '#d93025',
+              '',
+              {
+                callNumber: s.phone,
+                messageNumber: s.phone,
+                type: 'ambulance',
+                onNeedAssistance: function () {
+                  openAssistanceChat({
+                    name: s.name,
+                    category: s.category,
+                    phone: s.phone,
+                    coordinates: s.coordinates,
+                    type: 'ambulance'
+                  });
+                }
+              }
+            );
+            searchDestination(s.name, s.coordinates, { emergencyType: 'ambulance', facility: s.facility });
+          }
+        };
+      });
+
+      const sidebarContainer = document.getElementById('emergency-results-list');
+      if (sidebarContainer) {
+        sidebarContainer.hidden = false;
+      }
+
+      renderEmergencyFacilitiesList(mappedCandidates.slice(0, 8), 'ambulance', specLabel);
+
+      const nearest = mappedCandidates[0];
+      const distKm = (nearest.distanceMeters / 1000).toFixed(1);
+      const estMins = Math.max(1, Math.round(nearest.distanceMeters / 500));
+      nearest.selectService();
+
+      showEmergencyRouteConfirmationBar({
+        name: nearest.name,
+        category: nearest.category,
+        distKm: distKm,
+        durationMins: estMins,
+        coordinates: nearest.coordinates,
+        phone: nearest.phone,
+        type: 'ambulance'
+      });
+
+      setStatus('Route Preview: Viewing route to nearest ' + specLabel + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+    }
+
+    function findFastestCategoryService(categoryId) {
+      const cat = typeof matchServiceCategoryQuery === 'function' ? SERVICE_CATEGORIES_METADATA.find(function (c) { return c.id === categoryId; }) : null;
+      const catLabel = cat ? cat.name : 'Specialized Care';
+      const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
+      const originCoords = (userLoc && userLoc.coords) || (userLocationMarker && [userLocationMarker.getLatLng().lng, userLocationMarker.getLatLng().lat]) || routeOrigin || initialCenter || [122.5368, 10.7196];
+      const originPoint = L.latLng(originCoords[1], originCoords[0]);
+      routeOrigin = originCoords;
+      emergencySearchType = 'ambulance';
+      isAssistanceSearch = true;
+
+      const sorted = queryNearestFacilitiesByServiceCategory(categoryId, originPoint);
+      if (!sorted || sorted.length === 0) return;
+
+      if (emergencyAssistance) {
+        emergencyAssistance.hidden = true;
+        document.body.classList.remove('emergency-panel-open');
+      }
+      if (emergencyOpenButton) {
+        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+      }
+      expandSidebar();
+      syncEmergencyOpenButtonVisibility();
+
+      const mappedCandidates = sorted.map(function (s) {
+        return {
+          name: s.name,
+          category: s.services || s.category,
+          coordinates: s.coordinates,
+          distanceMeters: s.distMeters,
+          phone: s.phone || '',
+          address: s.address || '',
+          type: 'ambulance',
+          selectService: function () {
+            selectedServiceCoordinates = s.coordinates;
+            expandSidebar();
+            destinationInput.value = s.name;
+            showServiceDetails(
+              s.name,
+              s.category,
+              [
+                ['Address', s.address],
+                ['Phone', s.phone, 'phone'],
+                ['Emergency Service', s.services || s.category]
+              ],
+              '#d93025',
+              '',
+              {
+                callNumber: s.phone,
+                messageNumber: s.phone,
+                type: 'ambulance',
+                onNeedAssistance: function () {
+                  openAssistanceChat({
+                    name: s.name,
+                    category: s.category,
+                    phone: s.phone,
+                    coordinates: s.coordinates,
+                    type: 'ambulance'
+                  });
+                }
+              }
+            );
+            searchDestination(s.name, s.coordinates, { emergencyType: 'ambulance', facility: s.facility });
+          }
+        };
+      });
+
+      const sidebarContainer = document.getElementById('emergency-results-list');
+      if (sidebarContainer) {
+        sidebarContainer.hidden = false;
+      }
+
+      renderEmergencyFacilitiesList(mappedCandidates.slice(0, 8), 'ambulance', catLabel);
+
+      const nearest = mappedCandidates[0];
+      const distKm = (nearest.distanceMeters / 1000).toFixed(1);
+      const estMins = Math.max(1, Math.round(nearest.distanceMeters / 500));
+      nearest.selectService();
+
+      showEmergencyRouteConfirmationBar({
+        name: nearest.name,
+        category: nearest.category,
+        distKm: distKm,
+        durationMins: estMins,
+        coordinates: nearest.coordinates,
+        phone: nearest.phone,
+        type: 'ambulance'
+      });
+
+      setStatus('Route Preview: Viewing route to nearest ' + catLabel + ': ' + nearest.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
+    }
+
     const baseLayers = {
       'Satellite': satelliteLayer,
       'Terrain': terrainLayer,
@@ -7557,6 +7823,20 @@
         }
       });
     });
+
+    emergencyAssistance.querySelectorAll('[data-doctor-specialty]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const specId = button.dataset.doctorSpecialty;
+        findFastestSpecializationService(specId);
+      });
+    });
+
+    emergencyAssistance.querySelectorAll('[data-service-category]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const catId = button.dataset.serviceCategory;
+        findFastestCategoryService(catId);
+      });
+    });
     emergencyOpenButton.addEventListener('click', function () {
       if (emergencyAssistance.hidden) {
         showNearbyEmergencyServices();
@@ -7771,6 +8051,10 @@
         'Please choose an emergency service below, or ask any question in the chatbox:',
         [
           { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+          { label: '👶 Nearest Pedia / Child Care', action: function () { answerUserEmergencyQuestion('pedia'); } },
+          { label: '🫀 Nearest Cardio / Heart Care', action: function () { answerUserEmergencyQuestion('cardio'); } },
+          { label: '👂 Nearest ENT Specialist', action: function () { answerUserEmergencyQuestion('ent'); } },
+          { label: '🧠 Mental Health & Specialized Care', action: function () { answerUserEmergencyQuestion('mental health'); } },
           { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
           { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
           { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
@@ -8004,6 +8288,10 @@
       chatboxQuickChips.innerHTML = '';
       const chips = [
         { label: '🏠 24/7 Dispatch', intent: 'dispatch' },
+        { label: '👶 Pedia', intent: 'specialty:pedia' },
+        { label: '🫀 Cardio', intent: 'specialty:cardio' },
+        { label: '👂 ENT', intent: 'specialty:ent' },
+        { label: '🧠 Mental Health', intent: 'category:healthMentalHealth' },
         { label: '🚑 Medical', intent: 'ambulance' },
         { label: '🚓 Police', intent: 'police' },
         { label: '🚒 Fire', intent: 'fire' },
@@ -9266,6 +9554,16 @@
             { label: '📞 Call Fire Dept', href: 'tel:0333374444' }
           ]
         );
+      } else if (intent && intent.startsWith('specialty:')) {
+        const specId = intent.split(':')[1];
+        answerUserEmergencyQuestion(specId);
+      } else if (intent && intent.startsWith('category:')) {
+        const catId = intent.split(':')[1];
+        if (catId === 'healthMentalHealth') {
+          answerUserEmergencyQuestion('mental health');
+        } else {
+          answerUserEmergencyQuestion(catId);
+        }
       } else if (intent === 'my_location') {
         answerUserEmergencyQuestion('where am i');
       } else if (intent === 'traffic_conditions') {
@@ -11540,48 +11838,27 @@
 
       // Check if user is searching for a doctor specialization (e.g. "pedia", "ent", "cardio", "cardiologist", "nearest pedia")
       const specialtySearch = typeof matchDoctorSpecializationQuery === 'function' ? matchDoctorSpecializationQuery(value) : null;
-      if (specialtySearch && typeof queryNearestFacilitiesByDoctorSpecialization === 'function') {
+      if (specialtySearch && typeof findFastestSpecializationService === 'function') {
         const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
         const originCoords = (userLoc && userLoc.coords) || (typeof routeOrigin !== 'undefined' && routeOrigin) || [122.5368, 10.7196];
         const originPoint = L.latLng(originCoords[1], originCoords[0]);
         const sorted = queryNearestFacilitiesByDoctorSpecialization(specialtySearch.id, originPoint);
         if (sorted && sorted.length > 0) {
-          const nearest = sorted[0];
-          setStatus('Nearest ' + specialtySearch.specialtyName + ': Routing to ' + nearest.name + ' (~' + nearest.etaMins + ' min drive)...');
-
-          if (typeof renderEmergencyFacilitiesList === 'function') {
-            const mappedCandidates = sorted.map(function (s) {
-              return {
-                name: s.name,
-                category: s.departmentService || specialtySearch.doctorTitle,
-                coordinates: s.coordinates,
-                distanceMeters: s.distMeters,
-                phone: s.phone || '',
-                address: s.address || '',
-                type: 'ambulance',
-                selectService: function () {
-                  destinationInput.value = s.name;
-                  searchDestination(s.name, s.coordinates, { emergencyType: 'ambulance', facility: s.facility });
-                }
-              };
-            });
-            renderEmergencyFacilitiesList(mappedCandidates.slice(0, 8), 'ambulance');
-          }
-          return nearest.coordinates;
+          findFastestSpecializationService(specialtySearch.id);
+          return sorted[0].coordinates;
         }
       }
 
       // Check if user is searching for a service category (e.g. "nearest mental health facility", "clinic", "pharmacy")
       const catSearch = typeof matchServiceCategoryQuery === 'function' ? matchServiceCategoryQuery(value) : null;
-      if (catSearch && typeof queryNearestFacilitiesByServiceCategory === 'function') {
+      if (catSearch && typeof findFastestCategoryService === 'function') {
         const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
         const originCoords = (userLoc && userLoc.coords) || (typeof routeOrigin !== 'undefined' && routeOrigin) || [122.5368, 10.7196];
         const originPoint = L.latLng(originCoords[1], originCoords[0]);
         const sorted = queryNearestFacilitiesByServiceCategory(catSearch.id, originPoint);
         if (sorted && sorted.length > 0) {
-          const nearest = sorted[0];
-          setStatus('Nearest ' + catSearch.name + ': Routing to ' + nearest.name + ' (~' + nearest.etaMins + ' min drive)...');
-          return nearest.coordinates;
+          findFastestCategoryService(catSearch.id);
+          return sorted[0].coordinates;
         }
       }
       const cacheKey = 'search:' + value.trim().toLowerCase();
@@ -12205,7 +12482,7 @@
       });
     }
 
-    function renderEmergencyFacilitiesList(candidates, type) {
+    function renderEmergencyFacilitiesList(candidates, type, customLabel) {
       if (emergencyOpenButton) {
         emergencyOpenButton.hidden = true;
       }
@@ -12215,7 +12492,7 @@
         police: 'Police',
         fire: 'Fire Truck'
       };
-      const label = typeLabels[type] || 'Emergency';
+      const label = customLabel || typeLabels[type] || 'Emergency';
 
       // 1. Populate the merged list in #emergency-assistance-results (modal dialog)
       const assistanceContainer = document.getElementById('emergency-assistance-results');
@@ -12315,6 +12592,23 @@
               actionDescription: 'Routed to facility: ' + candidate.name
             });
             candidate.selectService();
+
+            const distKm = candidate.distanceMeters >= 1000
+              ? (candidate.distanceMeters / 1000).toFixed(1)
+              : (candidate.distanceMeters / 1000).toFixed(2);
+            const estMins = Math.max(1, Math.round(candidate.distanceMeters / 500));
+
+            showEmergencyRouteConfirmationBar({
+              name: candidate.name,
+              category: candidate.category || label,
+              distKm: distKm,
+              durationMins: estMins,
+              coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
+              phone: candidate.phone || '',
+              type: type
+            });
+
+            setStatus('Route Preview: Viewing route to ' + candidate.name + ' (~' + estMins + ' min). Confirm emergency below to alert responders.');
           });
 
           sList.appendChild(card);
