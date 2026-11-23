@@ -2262,6 +2262,11 @@
       font-size: 11px;
       font-weight: 500;
       color: #1a73e8;
+      flex-wrap: wrap;
+    }
+
+    .emergency-facility-badges span {
+      white-space: nowrap;
     }
 
     .emergency-facility-card.active-facility .emergency-facility-badges {
@@ -5831,14 +5836,29 @@
       []
     );
     const KNOWN_EMERGENCY_FACILITIES = [
-      // Ambulance / Hospitals
+      // Ambulance / Hospitals with Doctor Specialization Departments
       {
         name: "Western Visayas Medical Center (WVMC)",
         type: "ambulance",
         category: "Tertiary Government Hospital / Ambulance Base",
         coordinates: [122.5342, 10.7188],
         address: "Q. Abeto St, Mandurriao, Iloilo City",
-        phone: "(033) 321-2841"
+        phone: "(033) 321-2841",
+        specializations: ['pedia', 'cardio', 'ent', 'obgyn', 'ortho', 'neuro', 'pulmo', 'ophthal', 'derma', 'gastro', 'nephro', 'surgery'],
+        specialtyNotes: {
+          pedia: "24/7 Pediatric Emergency Room, Neonatal Intensive Care Unit (NICU), Pediatric Subspecialties",
+          cardio: "Cardiac Care Unit (CCU), 24/7 Acute Coronary Triage & Interventional Cardiology",
+          ent: "Department of Otorhinolaryngology - Head and Neck Surgery (Foreign body extraction, airway emergencies)",
+          obgyn: "Comprehensive Emergency Obstetric & Newborn Care (CEmONC), High-Risk Pregnancy Center",
+          ortho: "Trauma & Orthopedic Surgery, Acute Fracture Stabilization & Bone Joint Reconstruction",
+          neuro: "Acute Stroke Unit, Neurosurgery & Neurological Intensive Care",
+          pulmo: "Pulmonary Critical Care Unit, Respiratory Therapy & Acute Asthma Interventions",
+          ophthal: "Ophthalmology Eye Center, Eye Trauma & Ocular Emergency Treatment",
+          derma: "Dermatology Emergency & Acute Skin Lesion/Burn Consultation",
+          gastro: "Digestive Health & Endoscopy Unit, GI Bleeding Interventions",
+          nephro: "Nephrology & 24/7 Hemodialysis Unit, Acute Renal Failure Care",
+          surgery: "General & Advanced Trauma Surgery, 24/7 Operating Theatres"
+        }
       },
       {
         name: "Iloilo Doctors' Hospital",
@@ -5846,7 +5866,18 @@
         category: "Private Hospital / 24/7 Ambulance Service",
         coordinates: [122.5489, 10.7001],
         address: "West Timawa, Molo, Iloilo City",
-        phone: "(033) 337-7702"
+        phone: "(033) 337-7702",
+        specializations: ['pedia', 'cardio', 'ent', 'obgyn', 'ortho', 'nephro', 'ophthal', 'surgery'],
+        specialtyNotes: {
+          pedia: "Department of Pediatrics, Well & Sick Baby Nurseries, Pediatric Emergency",
+          cardio: "Heart Station, Electrocardiography & Cardiovascular Evaluations",
+          ent: "ENT-HNS Clinic, Otolaryngology & Sinus Emergency Management",
+          obgyn: "Obstetrics & Gynecology Center, Labor & Delivery Suites",
+          ortho: "Bone & Joint Fracture Clinic, Orthopedic Surgery & Cast Application",
+          nephro: "Renal Center & Hemodialysis Services",
+          ophthal: "Ophthalmology Consultation & Eye Care Clinic",
+          surgery: "General Surgery, Emergency Abdominal Operations & Wound Debridement"
+        }
       },
       {
         name: "QualiMed Hospital Iloilo",
@@ -5854,7 +5885,15 @@
         category: "General Hospital / Ambulance Service",
         coordinates: [122.5475, 10.7102],
         address: "Atria Park District, San Rafael, Mandurriao, Iloilo City",
-        phone: "(033) 501-4848"
+        phone: "(033) 501-4848",
+        specializations: ['pedia', 'cardio', 'obgyn', 'ortho', 'surgery'],
+        specialtyNotes: {
+          pedia: "Pediatric Clinic & Emergency Triage, Well Baby Care",
+          cardio: "Cardiology Diagnostics & Outpatient Heart Clinic",
+          obgyn: "Maternal Health, Prenatal & Delivery Services",
+          ortho: "Orthopedics & Fracture Casting Clinic",
+          surgery: "General Surgery & Emergency Trauma Stabilization"
+        }
       },
       {
         name: "St. Paul's Hospital Iloilo",
@@ -5862,7 +5901,20 @@
         category: "Level 3 Hospital / 24/7 Emergency & Ambulance",
         coordinates: [122.5647, 10.6975],
         address: "General Luna St, City Proper, Iloilo City",
-        phone: "(033) 337-2741"
+        phone: "(033) 337-2741",
+        specializations: ['pedia', 'cardio', 'ent', 'obgyn', 'ortho', 'neuro', 'pulmo', 'ophthal', 'gastro', 'surgery'],
+        specialtyNotes: {
+          pedia: "Pediatric Emergency Ward, Child Health Specialists & Neonatology",
+          cardio: "Heart Station, Non-Invasive Cardiovascular Lab, Echocardiography & Stress Testing",
+          ent: "Hearing & Balance Center, Ear-Nose-Throat Emergency Consultation",
+          obgyn: "Maternity & Delivery Complex, Women's Health & Gynecologic Surgery",
+          ortho: "Orthopedic Surgery, Fracture Care & Musculoskeletal Rehabilitation",
+          neuro: "Neurology Clinic & Neurological Emergency Triage",
+          pulmo: "Pulmonary Medicine & Respiratory Care Services",
+          ophthal: "St. Paul's Eye Clinic & Comprehensive Vision Diagnostics",
+          gastro: "Gastroenterology & Digestive Endoscopy Center",
+          surgery: "General Surgery, Surgical Intensive Care & Trauma Care"
+        }
       },
       {
         name: "The Medical City Iloilo",
@@ -5870,7 +5922,18 @@
         category: "Tertiary Hospital / Emergency Ambulance",
         coordinates: [122.5412, 10.6953],
         address: "Locsin St, Tap-oc, Molo, Iloilo City",
-        phone: "(033) 500-1000"
+        phone: "(033) 500-1000",
+        specializations: ['cardio', 'pedia', 'neuro', 'gastro', 'pulmo', 'ortho', 'ent', 'surgery'],
+        specialtyNotes: {
+          cardio: "Cardiovascular Center & Cardiac Catheterization Lab (Cath Lab), Angioplasty, 24/7 CCU",
+          pedia: "Pediatric Intensive Care Unit (PICU), General & Subspecialty Pediatrics",
+          neuro: "Certified Acute Stroke Center, Neuro-critical Care & Advanced Brain Imaging",
+          gastro: "Center for Endoscopic & Digestive Surgery, Acute GI Triage",
+          pulmo: "Pulmonary Diagnostic & Respiratory Care Unit",
+          ortho: "Bone & Joint Center, Sports Medicine & Joint Replacement",
+          ent: "ENT Clinic, Audiology & Head/Neck Evaluation",
+          surgery: "Trauma & Minimally Invasive Laparoscopic Surgery"
+        }
       },
       {
         name: "Iloilo Mission Hospital",
@@ -5878,7 +5941,17 @@
         category: "Tertiary Hospital / Ambulance Service",
         coordinates: [122.5643, 10.7259],
         address: "Mission Road, Jaro, Iloilo City",
-        phone: "(033) 320-0315"
+        phone: "(033) 320-0315",
+        specializations: ['pedia', 'cardio', 'ent', 'obgyn', 'ortho', 'neuro', 'surgery'],
+        specialtyNotes: {
+          pedia: "Pediatric Department & Emergency Child Care",
+          cardio: "Cardiology Station & Cardiac Monitoring",
+          ent: "ENT Clinic & Hearing Diagnostic Services",
+          obgyn: "Obstetrics, Labor & Delivery Ward",
+          ortho: "Orthopedic Surgery & Bone Fracture Center",
+          neuro: "Neurology & Neurosurgical Emergency Care",
+          surgery: "General Surgery & Emergency Trauma Bays"
+        }
       },
       {
         name: "Medicus Medical Center",
@@ -5886,7 +5959,17 @@
         category: "Tertiary General Hospital / Ambulance",
         coordinates: [122.5441, 10.7153],
         address: "Diversion Road, Mandurriao, Iloilo City",
-        phone: "(033) 328-7777"
+        phone: "(033) 328-7777",
+        specializations: ['cardio', 'ent', 'ortho', 'ophthal', 'derma', 'nephro', 'surgery'],
+        specialtyNotes: {
+          cardio: "Heart & Vascular Diagnostic Center, 2D Echo, Vascular Studies",
+          ent: "ENT & Hearing Diagnostic Clinic",
+          ortho: "Orthopedic & Physical Rehabilitation Department",
+          ophthal: "Medicus Eye & Laser Center, Advanced Retinal & Ocular Diagnostics",
+          derma: "Dermatology & Skin Laser Center",
+          nephro: "Hemodialysis Center & Nephrology Consultation",
+          surgery: "Ambulatory & Inpatient General Surgery"
+        }
       },
       {
         name: "West Visayas State University Medical Center",
@@ -5894,7 +5977,18 @@
         category: "University Training Hospital / Ambulance",
         coordinates: [122.5583, 10.7176],
         address: "E. Lopez St, Jaro, Iloilo City",
-        phone: "(033) 320-2431"
+        phone: "(033) 320-2431",
+        specializations: ['pedia', 'cardio', 'ent', 'obgyn', 'ortho', 'neuro', 'pulmo', 'surgery'],
+        specialtyNotes: {
+          pedia: "University Child Health & Pediatric Critical Care, 24/7 Pediatric Ward",
+          cardio: "Cardiology Service, Heart Diagnostics & CCU",
+          ent: "ENT Head & Neck Surgery Clinic, Emergency Airway & Foreign Body Removal",
+          obgyn: "Obstetrics & Gynecology Department, High-Risk Delivery Management",
+          ortho: "Orthopedics Department, Musculoskeletal Trauma & Spine Surgery",
+          neuro: "Neurology & Neurosurgery Service, Traumatic Brain Injury Care",
+          pulmo: "Pulmonology & Respiratory Medicine Unit",
+          surgery: "University Trauma Surgery & 24/7 Emergency Operations"
+        }
       },
       {
         name: "Philippine Red Cross - Iloilo Ambulance Unit",
@@ -5910,7 +6004,16 @@
         category: "Level 2 Hospital / Emergency Ambulance",
         coordinates: [122.5532, 10.7486],
         address: "Metropolis Ave, Jaro, Iloilo City",
-        phone: "(033) 327-1527"
+        phone: "(033) 327-1527",
+        specializations: ['pedia', 'cardio', 'obgyn', 'ortho', 'pulmo', 'surgery'],
+        specialtyNotes: {
+          pedia: "Pediatrics Ward & Newborn Nursery Care",
+          cardio: "Cardiovascular Monitoring & Diagnostic Cardiology",
+          obgyn: "Obstetrics & Gynecology Department, Birthing Suites",
+          ortho: "Orthopedic Trauma & Bone Fracture Management",
+          pulmo: "Pulmonary & Respiratory Therapy Services",
+          surgery: "General Surgery & 24/7 Operating Theater"
+        }
       },
 
       // Police
@@ -6432,6 +6535,159 @@
           phone: fac.phone,
           coordinates: fac.coordinates,
           services: fac.services || fac.category,
+          distMeters: distMeters,
+          distKm: distKm,
+          etaMins: etaMins
+        };
+      });
+
+      // Sort nearest first
+      scored.sort(function (a, b) {
+        return a.distMeters - b.distMeters;
+      });
+
+      return scored;
+    }
+
+    const DOCTOR_SPECIALIZATIONS_METADATA = [
+      {
+        id: 'pedia',
+        specialtyName: 'Pediatrics (Pedia / Child Care)',
+        doctorTitle: 'Pediatrician / Child Specialist',
+        icon: '👶',
+        description: '24/7 pediatric emergency rooms, neonatal ICU (NICU), acute childhood illnesses, and pediatric specialists',
+        regex: /\b(?:pedia|pediatric\w*|pediatrician|child\s*(?:doctor|specialist|care)|baby\s*doctor|kid\s*doctor|children\s*(?:hospital|clinic)|neonatal|pedia\s*clinic)\b/i
+      },
+      {
+        id: 'cardio',
+        specialtyName: 'Cardiology (Cardio / Heart Care)',
+        doctorTitle: 'Cardiologist / Heart Specialist',
+        icon: '🫀',
+        description: 'cardiac catheterization labs (Cath Lab), heart centers, coronary intensive care, and acute chest pain triage',
+        regex: /\b(?:cardio|cardiology|cardiologist|heart\s*(?:doctor|specialist|center|station)|cardiac|coronary|chest\s*pain\s*clinic)\b/i
+      },
+      {
+        id: 'ent',
+        specialtyName: 'ENT (Ear, Nose & Throat / Otolaryngology)',
+        doctorTitle: 'ENT Specialist / Otolaryngologist',
+        icon: '👂',
+        description: 'ear-nose-throat emergency clinics, foreign body airway extraction, hearing diagnostics, and head & neck surgery',
+        regex: /\b(?:ent|otorhinolaryngol\w*|otolaryngol\w*|ear\s*nose\s*throat|ear\s*(?:doctor|specialist)|nose\s*(?:doctor|specialist)|throat\s*(?:doctor|specialist)|audiolog\w*)\b/i
+      },
+      {
+        id: 'obgyn',
+        specialtyName: 'OB-GYN (Obstetrics & Gynecology / Maternity)',
+        doctorTitle: 'OB-GYN / Maternity Specialist',
+        icon: '🤰',
+        description: 'emergency obstetric delivery, maternal-fetal medicine, high-risk pregnancy triage, and gynecologic surgery',
+        regex: /\b(?:ob[- ]?gyn|obstetric\w*|gynecol\w*|maternity|maternal|pregnancy\s*doctor|birthing|prenatal|women\s*doctor|gynecologist)\b/i
+      },
+      {
+        id: 'ortho',
+        specialtyName: 'Orthopedics (Ortho / Bone & Joint)',
+        doctorTitle: 'Orthopedic Surgeon / Bone Specialist',
+        icon: '🦴',
+        description: 'bone fracture trauma centers, joint replacement, emergency casting, spine stabilization, and orthopedic surgery',
+        regex: /\b(?:ortho|orthopedic\w*|orthopedist|bone\s*(?:doctor|specialist|clinic)|fracture\s*clinic|joint\s*specialist|spine\s*(?:doctor|specialist)|musculoskeletal)\b/i
+      },
+      {
+        id: 'neuro',
+        specialtyName: 'Neurology & Neurosurgery (Brain & Spine)',
+        doctorTitle: 'Neurologist / Neurosurgeon',
+        icon: '🧠',
+        description: 'comprehensive acute stroke centers, neuro-intensive care, intracranial hemorrhage triage, and neurosurgery',
+        regex: /\b(?:neuro|neurolog\w*|neurosurgeon|brain\s*(?:doctor|specialist)|stroke\s*center|spine\s*surgeon|neuropathy)\b/i
+      },
+      {
+        id: 'pulmo',
+        specialtyName: 'Pulmonology (Pulmo / Lung & Respiratory)',
+        doctorTitle: 'Pulmonologist / Lung Specialist',
+        icon: '🫁',
+        description: 'pulmonary critical care, acute respiratory distress, severe asthma triage, and mechanical ventilation units',
+        regex: /\b(?:pulmo|pulmonolog\w*|lung\s*(?:doctor|specialist)|chest\s*(?:doctor|specialist)|respiratory\s*clinic|asthma\s*doctor)\b/i
+      },
+      {
+        id: 'ophthal',
+        specialtyName: 'Ophthalmology (Eye & Vision Care)',
+        doctorTitle: 'Ophthalmologist / Eye Specialist',
+        icon: '👁️',
+        description: 'ocular emergency triage, corneal trauma, retinal detachment, and specialized eye surgery clinics',
+        regex: /\b(?:ophthal\w*|eye\s*(?:doctor|specialist|clinic|center)|optometr\w*|cornea\s*specialist|retina\s*specialist)\b/i
+      },
+      {
+        id: 'derma',
+        specialtyName: 'Dermatology (Derma / Skin Care)',
+        doctorTitle: 'Dermatologist / Skin Specialist',
+        icon: '🧴',
+        description: 'acute dermatology consultation, allergic skin eruptions, severe burns, and dermatologic diagnostics',
+        regex: /\b(?:derma|dermatolog\w*|skin\s*(?:doctor|specialist|clinic))\b/i
+      },
+      {
+        id: 'gastro',
+        specialtyName: 'Gastroenterology (Gastro / Digestive)',
+        doctorTitle: 'Gastroenterologist / GI Specialist',
+        icon: '🩺',
+        description: 'gastrointestinal endoscopy units, acute GI hemorrhage intervention, liver, and digestive emergency care',
+        regex: /\b(?:gastro|gastroenterolog\w*|gi\s*specialist|digestive\s*doctor|stomach\s*doctor|endoscopy)\b/i
+      },
+      {
+        id: 'nephro',
+        specialtyName: 'Nephrology (Kidney & Dialysis)',
+        doctorTitle: 'Nephrologist / Kidney Specialist',
+        icon: '🩸',
+        description: '24/7 hemodialysis centers, acute kidney injury resuscitation, and renal specialty inpatient units',
+        regex: /\b(?:nephro|nephrolog\w*|kidney\s*(?:doctor|specialist)|renal\s*clinic|hemodialysis\s*center)\b/i
+      },
+      {
+        id: 'surgery',
+        specialtyName: 'General & Trauma Surgery',
+        doctorTitle: 'Trauma Surgeon / General Surgeon',
+        icon: '⚕️',
+        description: '24/7 emergency operating theaters, acute surgical trauma resuscitation, and acute abdomen intervention',
+        regex: /\b(?:surgeon|surgery|trauma\s*surgeon|general\s*surgeon|surgical\s*clinic|operating\s*room)\b/i
+      }
+    ];
+
+    function matchDoctorSpecializationQuery(queryText) {
+      if (!queryText) return null;
+      const q = String(queryText).trim().toLowerCase();
+      for (let i = 0; i < DOCTOR_SPECIALIZATIONS_METADATA.length; i++) {
+        const spec = DOCTOR_SPECIALIZATIONS_METADATA[i];
+        if (spec.regex.test(q)) {
+          return spec;
+        }
+      }
+      return null;
+    }
+
+    function queryNearestFacilitiesByDoctorSpecialization(specialtyId, originPoint) {
+      if (!originPoint) {
+        const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
+        const originCoords = (userLoc && userLoc.coords) || [122.5368, 10.7196];
+        originPoint = L.latLng(originCoords[1], originCoords[0]);
+      }
+
+      // Filter facilities that provide this doctor specialization
+      const candidates = KNOWN_EMERGENCY_FACILITIES.filter(function (fac) {
+        if (!fac.specializations || !Array.isArray(fac.specializations)) return false;
+        return fac.specializations.includes(specialtyId);
+      });
+
+      // Calculate distance and driving ETA for each
+      const scored = candidates.map(function (fac) {
+        const facPoint = L.latLng(fac.coordinates[1], fac.coordinates[0]);
+        const distMeters = Math.round(originPoint.distanceTo(facPoint));
+        const distKm = (distMeters / 1000).toFixed(1);
+        const etaMins = Math.max(1, Math.round((distMeters / 1000) / 30 * 60)); // ~30 km/h city corridor speed
+        const deptNote = (fac.specialtyNotes && fac.specialtyNotes[specialtyId]) || fac.services || fac.category;
+        return {
+          facility: fac,
+          name: fac.name,
+          category: fac.category,
+          address: fac.address,
+          phone: fac.phone,
+          coordinates: fac.coordinates,
+          departmentService: deptNote,
           distMeters: distMeters,
           distKm: distKm,
           etaMins: etaMins
@@ -7884,6 +8140,57 @@
           ]
         );
         return;
+      }
+
+      // 2.4. Doctor Specialization Facility Query Handler (Pedia, ENT, Cardio, Ortho, Neuro, etc.)
+      const matchedSpecialty = typeof matchDoctorSpecializationQuery === 'function' ? matchDoctorSpecializationQuery(q) : null;
+      if (matchedSpecialty && typeof queryNearestFacilitiesByDoctorSpecialization === 'function') {
+        const sortedFacilities = queryNearestFacilitiesByDoctorSpecialization(matchedSpecialty.id, originPoint);
+        if (sortedFacilities && sortedFacilities.length > 0) {
+          const nearest = sortedFacilities[0];
+          let resultsHtml = matchedSpecialty.icon + ' <strong>Nearest ' + escapeHtml(matchedSpecialty.specialtyName) + ':</strong><br>' +
+            'Specialist: <strong>' + escapeHtml(matchedSpecialty.doctorTitle) + '</strong><br>' +
+            'Found <strong>' + sortedFacilities.length + ' verified nearby medical facilities</strong> with specialized ' + escapeHtml(matchedSpecialty.id.toUpperCase()) + ' departments:<br><br>';
+
+          sortedFacilities.forEach(function (item, idx) {
+            resultsHtml += '<strong>' + (idx + 1) + '. ' + escapeHtml(item.name) + '</strong><br>' +
+              '• <strong>Department / Capability:</strong> ' + escapeHtml(item.departmentService) + '<br>' +
+              '• <strong>Proximity:</strong> ' + item.distKm + ' km away (~' + item.etaMins + ' min drive)' + (idx === 0 ? ' — <strong style="color:#188038;">Nearest Specialist</strong>' : '') + '<br>' +
+              '• <strong>Address:</strong> ' + escapeHtml(item.address) + '<br>' +
+              '• <strong>Direct Hotline:</strong> ' + escapeHtml(item.phone) + '<br><br>';
+          });
+
+          resultsHtml += '<em>Select a quick action below to plot the fastest factor-aware route immediately:</em>';
+
+          const actions = [
+            {
+              label: '🗺️ Route to ' + (nearest.name.length > 22 ? nearest.name.slice(0, 20) + '…' : nearest.name),
+              emergency: true,
+              action: function () {
+                destinationInput.value = nearest.name;
+                searchDestination(nearest.name, nearest.coordinates, { emergencyType: nearest.facility.type || 'ambulance', facility: nearest.facility });
+              }
+            },
+            {
+              label: '📞 Call ' + nearest.phone,
+              href: 'tel:' + nearest.phone.replace(/[^\d+*#;]/g, '')
+            }
+          ];
+
+          if (sortedFacilities.length > 1) {
+            const second = sortedFacilities[1];
+            actions.push({
+              label: '🗺️ Route to #2 ' + (second.name.length > 20 ? second.name.slice(0, 18) + '…' : second.name),
+              action: function () {
+                destinationInput.value = second.name;
+                searchDestination(second.name, second.coordinates, { emergencyType: second.facility.type || 'ambulance', facility: second.facility });
+              }
+            });
+          }
+
+          appendBotMessage(resultsHtml, actions);
+          return;
+        }
       }
 
       // 2.5. Service Categories Facility Query Handler (Mental Health, Clinics, Care/Rehab, Pharmacies, etc.)
@@ -11230,6 +11537,39 @@
     async function findLocation(value) {
       const coordinates = parseCoordinates(value);
       if (coordinates) return coordinates;
+
+      // Check if user is searching for a doctor specialization (e.g. "pedia", "ent", "cardio", "cardiologist", "nearest pedia")
+      const specialtySearch = typeof matchDoctorSpecializationQuery === 'function' ? matchDoctorSpecializationQuery(value) : null;
+      if (specialtySearch && typeof queryNearestFacilitiesByDoctorSpecialization === 'function') {
+        const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : null;
+        const originCoords = (userLoc && userLoc.coords) || (typeof routeOrigin !== 'undefined' && routeOrigin) || [122.5368, 10.7196];
+        const originPoint = L.latLng(originCoords[1], originCoords[0]);
+        const sorted = queryNearestFacilitiesByDoctorSpecialization(specialtySearch.id, originPoint);
+        if (sorted && sorted.length > 0) {
+          const nearest = sorted[0];
+          setStatus('Nearest ' + specialtySearch.specialtyName + ': Routing to ' + nearest.name + ' (~' + nearest.etaMins + ' min drive)...');
+
+          if (typeof renderEmergencyFacilitiesList === 'function') {
+            const mappedCandidates = sorted.map(function (s) {
+              return {
+                name: s.name,
+                category: s.departmentService || specialtySearch.doctorTitle,
+                coordinates: s.coordinates,
+                distanceMeters: s.distMeters,
+                phone: s.phone || '',
+                address: s.address || '',
+                type: 'ambulance',
+                selectService: function () {
+                  destinationInput.value = s.name;
+                  searchDestination(s.name, s.coordinates, { emergencyType: 'ambulance', facility: s.facility });
+                }
+              };
+            });
+            renderEmergencyFacilitiesList(mappedCandidates.slice(0, 8), 'ambulance');
+          }
+          return nearest.coordinates;
+        }
+      }
 
       // Check if user is searching for a service category (e.g. "nearest mental health facility", "clinic", "pharmacy")
       const catSearch = typeof matchServiceCategoryQuery === 'function' ? matchServiceCategoryQuery(value) : null;
