@@ -7152,6 +7152,16 @@
       }
     }
 
+    function endAssistanceChat(reason) {
+      appendBotMessage(
+        '👋 <strong>Assistance Ended:</strong><br>' +
+        (reason || 'Understood. Closing emergency assistance. Stay safe! You can reopen this chat anytime by tapping the emergency button.')
+      );
+      setTimeout(function () {
+        closeAssistanceChat();
+      }, 1000);
+    }
+
     function appendUserMessage(text) {
       if (!chatboxMessages) return;
       const msg = document.createElement('div');
@@ -7189,7 +7199,11 @@
 
       // Automatically include "Emergency Assistance & 24/7 Dispatch" return option on any opened choices
       let effectiveActions = Array.isArray(actions) ? actions.slice() : [];
-      const isDispatchMenu = Boolean(htmlContent && htmlContent.includes('Emergency Assistance & 24/7 Dispatch'));
+      const isDispatchMenu = Boolean(htmlContent && (
+        htmlContent.includes('Emergency Assistance & 24/7 Dispatch') ||
+        htmlContent.includes('How can we assist your emergency or navigation needs right now') ||
+        htmlContent.includes('Assistance Ended')
+      ));
       const hasBackToDispatch = effectiveActions.some(function (act) {
         return act && act.label && (act.label.includes('Emergency Assistance') || act.label.includes('24/7 Dispatch'));
       });
@@ -7424,6 +7438,13 @@
 
     function answerUserEmergencyQuestion(userText) {
       const q = (userText || '').trim().toLowerCase();
+      const cleanQ = q.replace(/[.?!,]+$/, '').trim();
+
+      // Check if user answered "no" to assistance or wants to end chat
+      if (/^(?:no|nope|no thanks|no thank you|no need|none|nothing|wala|hindi|not now|not right now|im good|i'm good|all good|nah|cancel|end|end chat|close|close chat|stop|bye|goodbye)$/i.test(cleanQ)) {
+        endAssistanceChat('Understood. Closing emergency assistance. Stay safe!');
+        return;
+      }
       const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
         coords: [122.5368, 10.7196],
         lat: 10.7196,
@@ -8327,25 +8348,43 @@
         directAnswer = 'I am actively monitoring emergency routes, hospital readiness, traffic conditions, and local disaster advisories. Here are the immediate emergency actions available for your position:';
       }
 
+      // 1. Direct answer the user's inquiry first
       appendBotMessage(
         '💬 <strong>Direct Answer:</strong><br>' +
         'Regarding your inquiry: <em>"' + escapeHtml(userText) + '"</em><br><br>' +
-        directAnswer + '<br><br>' +
-        'How can we assist your emergency or navigation needs right now?',
-        [
-          { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
-          { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
-          { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
-          { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
-          { label: '☎️ Official 911 Hotlines', action: function () { handleChatIntent('hotlines'); } },
-          { label: '🩹 First Aid Guide', action: function () { handleChatIntent('first_aid'); } }
-        ]
+        directAnswer
       );
+
+      // 2. Appear "How can we assist your emergency or navigation needs right now?" and its options after the question has been answered
+      setTimeout(function () {
+        appendBotMessage(
+          'How can we assist your emergency or navigation needs right now?',
+          [
+            { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
+            { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
+            { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
+            { label: '📍 My Current Location', action: function () { handleChatIntent('my_location'); } },
+            { label: '☎️ Official 911 Hotlines', action: function () { handleChatIntent('hotlines'); } },
+            { label: '🩹 First Aid Guide', action: function () { handleChatIntent('first_aid'); } },
+            {
+              label: '❌ No (End Chat)',
+              secondary: true,
+              action: function () {
+                appendUserMessage('No');
+                endAssistanceChat('Understood. Closing emergency assistance. Stay safe!');
+              }
+            }
+          ]
+        );
+      }, 500);
     }
 
     function handleChatIntent(intent, userText) {
       if (intent === 'dispatch' || intent === 'main_menu') {
         displayEmergencyAssistanceDispatchMenu();
+        return;
+      } else if (intent === 'end_chat' || intent === 'close_chat') {
+        endAssistanceChat('Understood. Closing emergency assistance. Stay safe!');
         return;
       } else if (intent === 'ambulance') {
         appendBotMessage(
