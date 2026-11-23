@@ -205,20 +205,6 @@
       border-color: #ceead6;
       color: #137333;
     }
-    .responder-role-btn {
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: #1a73e8;
-      color: #fff;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-    .responder-role-btn:hover {
-      background: #1557b0;
-    }
-
     /* Live User Activity Card */
     .user-activity-card {
       background: #1f2327;
@@ -1104,7 +1090,6 @@
     <!-- Role notification banner -->
     <div id="responder-role-banner" class="responder-role-banner" hidden>
       <span id="responder-role-text">👤 Personal Account Detected</span>
-      <a href="map.html" id="responder-role-action-btn" class="responder-role-btn">Go to Map</a>
     </div>
 
     <!-- Live User Activity Feed Card -->
@@ -2718,7 +2703,6 @@
     function checkResponderAccountRole() {
       const banner = document.getElementById('responder-role-banner');
       const text = document.getElementById('responder-role-text');
-      const actionBtn = document.getElementById('responder-role-action-btn');
       if (!banner || !text) return;
 
       const OFFLINE_CACHE_PREFIX = 'osm-map-offline-v1:';
@@ -2739,28 +2723,16 @@
               if (metaRole === 'responder') {
                 banner.className = 'responder-role-banner role-responder';
                 text.textContent = '🚨 Verified Emergency Responder: ' + (user.user_metadata && user.user_metadata.display_name || user.email || 'Unit');
-                if (actionBtn) {
-                  actionBtn.textContent = '🗺️ Map';
-                  actionBtn.href = 'map.html';
-                }
                 banner.hidden = false;
               } else {
                 banner.className = 'responder-role-banner';
                 text.textContent = '👤 Signed in with Personal Account.';
-                if (actionBtn) {
-                  actionBtn.textContent = 'Go to Map (map.html)';
-                  actionBtn.href = 'map.html';
-                }
                 banner.hidden = false;
               }
             } else {
               if (lastRole === 'responder') {
                 banner.className = 'responder-role-banner role-responder';
                 text.textContent = '🚨 Emergency Responder Dispatch Mode';
-                if (actionBtn) {
-                  actionBtn.textContent = '🗺️ Map';
-                  actionBtn.href = 'map.html';
-                }
                 banner.hidden = false;
               }
             }
@@ -2770,10 +2742,6 @@
         if (lastRole === 'responder') {
           banner.className = 'responder-role-banner role-responder';
           text.textContent = '🚨 Emergency Responder Dispatch Mode';
-          if (actionBtn) {
-            actionBtn.textContent = '🗺️ Map';
-            actionBtn.href = 'map.html';
-          }
           banner.hidden = false;
         }
       }
