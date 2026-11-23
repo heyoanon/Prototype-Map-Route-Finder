@@ -7173,19 +7173,11 @@
           '</div>' +
         '</div><br>' +
 
-        '⏱️ <strong>Factors Affecting Overall Travel Time:</strong><br>' +
-        '1. <strong>Base Road Speed:</strong> Free-flow arterial speed (40–50 km/h) = <strong>' + baseMinutes + ' min base</strong>.<br>' +
-        '2. <strong>Live Traffic Congestion:</strong> Bottlenecks & corridor queueing = <strong>+' + trafficDelayMin + ' min delay</strong>.<br>' +
-        '3. <strong>Spatial Hazard Buffers:</strong> ' + (hazardDelayMin > 0 ? 'Active flood caution buffers evaluated = <strong>+' + hazardDelayMin + ' min detour</strong>.' : 'No active impassable floods detected along corridor (<strong>0 min</strong>).') + '<br>' +
-        '4. <strong>Intersections & Turn Maneuvers:</strong> Deceleration & signal cycles (' + estTurns + ' maneuvers @ ~18s) = <strong>+' + turnDelayMin + ' min</strong>.<br>' +
-        '5. <strong>Road Traction:</strong> Nominal dry asphalt friction coefficient (μ ≈ 0.82).<br>' +
-        '• <strong>Net Formula:</strong> <code>T(overall) = T(base)[' + baseMinutes + 'm] + ΔT(traffic)[+' + trafficDelayMin + 'm] + ΔT(hazards)[+' + hazardDelayMin + 'm] + ΔT(turns)[+' + turnDelayMin + 'm] = ~' + totalEtaMin + ' min</code><br><br>' +
-
-        '🗺️ <strong>Factors Affecting Overall Path Selection:</strong><br>' +
-        '• <strong>Corridor Proximity:</strong> Evaluates shortest radial path with >80% directness ratio.<br>' +
-        '• <strong>Corridor Hazard Avoidance:</strong> Automated detours around flooded or obstructed streets.<br>' +
-        '• <strong>Road Hierarchy:</strong> Prioritizes wide multi-lane boulevards (e.g. Benigno Aquino Ave / Diversion Rd) over narrow residential alleys for emergency vehicle maneuverability.<br>' +
-        '• <strong>Turn Minimization:</strong> Favors linear continuous corridors to maintain speed and patient stability.<br><br>' +
+        '⏱️ <strong>Conditions Affecting Overall Travel Time:</strong><br>' +
+        '1. <strong>Live Traffic Congestion:</strong> ' + (trafficDelayMin > 0 ? 'Bottlenecks & corridor queueing adds <strong>+' + trafficDelayMin + ' min delay</strong>.' : 'Free-flow traffic conditions (0 min delay).') + '<br>' +
+        '2. <strong>Corridor Hazards:</strong> ' + (hazardDelayMin > 0 ? 'Active flood caution buffers evaluated = <strong>+' + hazardDelayMin + ' min detour</strong>.' : 'No active impassable floods detected along corridor (<strong>0 min</strong>).') + '<br>' +
+        '3. <strong>Intersection Maneuvers:</strong> ' + estTurns + ' turning maneuvers and signalized crossings (~' + turnDelayMin + ' min deceleration).<br>' +
+        '4. <strong>Road Surface Grip:</strong> Standard asphalt friction coefficient (μ ≈ 0.82) under nominal dry conditions.<br><br>' +
 
         '<em>The route line and turn-by-turn maneuvers have been plotted on the map. Click below to inspect the full route:</em>';
 
@@ -10798,18 +10790,19 @@
           card.appendChild(facilityCard);
         }
 
-        // 2. Factors Affecting Overall Travel Time
+        // 2. Conditions Affecting Overall Travel Time
         const timeFactorsBlock = document.createElement('div');
         timeFactorsBlock.className = 'factors-block travel-time-factors';
 
         const timeHeader = document.createElement('div');
         timeHeader.className = 'factors-header';
-        timeHeader.innerHTML = '<span class="factors-title">⏱️ Factors Affecting Overall Travel Time</span><span class="factors-pill-tag">Live Model</span>';
+        timeHeader.innerHTML = '<span class="factors-title">⏱️ Conditions Affecting Overall Travel Time</span><span class="factors-pill-tag">Live Conditions</span>';
         timeFactorsBlock.appendChild(timeHeader);
 
-        // 4-Tile summary grid
+        // 2-Tile summary grid: Travel Time and Distance only
         const grid = document.createElement('div');
         grid.className = 'breakdown-grid';
+        grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
 
         const addTile = function (label, value, className) {
           const tile = document.createElement('div');
@@ -10824,13 +10817,11 @@
           grid.appendChild(tile);
         };
 
-        addTile('Base Time', formatDuration(baseSec));
-        addTile('Traffic Delay', trafficSec > 0 ? '+' + formatDuration(trafficSec) : '0 min', trafficSec > 0 ? 'delayed' : '');
-        addTile('Hazard / Turns', (eventSec + turnDelaySec) > 0 ? '+' + formatDuration(eventSec + turnDelaySec) : '0 min', (eventSec > 0) ? 'delayed' : '');
-        addTile('Overall Time', formatDuration(totalSec), 'total');
+        addTile('Travel Time', formatDuration(totalSec), 'total');
+        addTile('Distance', formatDistance(route.distance || 0));
         timeFactorsBlock.appendChild(grid);
 
-        // Itemized list of factors affecting travel time
+        // Itemized list of conditions that can affect overall travel time
         const factorList = document.createElement('ul');
         factorList.className = 'factor-item-list';
 
@@ -10878,78 +10869,7 @@
         factorList.appendChild(surfaceItem);
 
         timeFactorsBlock.appendChild(factorList);
-
-        // Travel Time Formula & Calculation Box
-        const formulaBox = document.createElement('div');
-        formulaBox.className = 'formula-box';
-        const delayPct = Math.round((delaySec / Math.max(1, baseSec)) * 100);
-        const mathSummary = delaySec > 0
-          ? 'Live congestion and hazard caution add <strong>+' + formatDuration(delaySec) + ' (+' + delayPct + '%)</strong> over uncongested baseline.'
-          : 'Path is free-flowing. Net travel duration matches uncongested road network velocity.';
-        formulaBox.innerHTML = '<div class="formula-math-line">T(overall) = T(base) + ΔT(traffic) + ΔT(hazards) + ΔT(maneuvers)</div>' +
-          '<div><strong>Overall Calculation:</strong> ' + formatDuration(baseSec) + ' (Base) + ' + formatDuration(trafficSec) + ' (Traffic) + ' + formatDuration(eventSec) + ' (Hazard) + ~' + formatDuration(turnDelaySec) + ' (Turns) = <strong>' + formatDuration(totalSec) + ' Net Travel Time</strong>.</div>' +
-          '<div style="font-size: 10px; color: #5f6368; margin-top: 3px;">' + mathSummary + '</div>';
-        timeFactorsBlock.appendChild(formulaBox);
-
         card.appendChild(timeFactorsBlock);
-
-        // 3. Factors Affecting Overall Path Selection
-        const pathFactorsBlock = document.createElement('div');
-        pathFactorsBlock.className = 'factors-block path-factors';
-
-        const pathHeader = document.createElement('div');
-        pathHeader.className = 'factors-header';
-        pathHeader.innerHTML = '<span class="factors-title">🗺️ Factors Affecting Overall Path Selection</span><span class="factors-pill-tag">Path Optimization</span>';
-        pathFactorsBlock.appendChild(pathHeader);
-
-        // Calculate radial distance vs network distance
-        let firstCoord = null;
-        let lastCoord = null;
-        if (route.geometry && Array.isArray(route.geometry.coordinates) && route.geometry.coordinates.length > 0) {
-          firstCoord = route.geometry.coordinates[0];
-          lastCoord = route.geometry.coordinates[route.geometry.coordinates.length - 1];
-        }
-        let radialMeters = 0;
-        if (firstCoord && lastCoord) {
-          radialMeters = Math.round(L.latLng(firstCoord[1], firstCoord[0]).distanceTo(L.latLng(lastCoord[1], lastCoord[0])));
-        }
-        const roadMeters = route.distance || 1;
-        const directnessRatio = radialMeters > 0 ? Math.min(100, Math.round((radialMeters / roadMeters) * 100)) : 84;
-
-        const pathList = document.createElement('ul');
-        pathList.className = 'factor-item-list';
-
-        // Path Factor 1: Proximity & Tortuosity
-        const directnessItem = document.createElement('li');
-        directnessItem.className = 'factor-item-card safe';
-        directnessItem.innerHTML = '<span class="factor-icon">🎯</span><div class="factor-content"><div class="factor-label">Directness & Proximity Efficiency (' + directnessRatio + '% Ratio)</div><div class="factor-desc">Radial straight-line distance is ' + formatDistance(radialMeters) + ' vs actual network road path of ' + formatDistance(roadMeters) + ', confirming low tortuosity and high corridor efficiency.</div></div>';
-        pathList.appendChild(directnessItem);
-
-        // Path Factor 2: Hazard Avoidance / Detour
-        const detourItem = document.createElement('li');
-        if (route.isDetourBypass) {
-          detourItem.className = 'factor-item-card delayed';
-          detourItem.innerHTML = '<span class="factor-icon">🛡️</span><div class="factor-content"><div class="factor-label">Dynamic Hazard Bypass Routing</div><div class="factor-desc">Path was rerouted around ' + escapeHtml(route.bypassedIncident || 'road closure') + ' to prevent vehicle stall and ensure an open roadway.</div></div>';
-        } else {
-          detourItem.className = 'factor-item-card safe';
-          detourItem.innerHTML = '<span class="factor-icon">✅</span><div class="factor-content"><div class="factor-label">Direct Unobstructed Corridor</div><div class="factor-desc">No impassable road closures or emergency barricades detected along selected streets.</div></div>';
-        }
-        pathList.appendChild(detourItem);
-
-        // Path Factor 3: Road Class & Arterial Prioritization
-        const arterialItem = document.createElement('li');
-        arterialItem.className = 'factor-item-card';
-        arterialItem.innerHTML = '<span class="factor-icon">🛣️</span><div class="factor-content"><div class="factor-label">Road Hierarchy Prioritization</div><div class="factor-desc">Favors primary multilane arterials, national highways, and wide boulevards over narrow interior residential streets for emergency vehicle maneuverability and siren projection.</div></div>';
-        pathList.appendChild(arterialItem);
-
-        // Path Factor 4: Turn Minimization Optimization
-        const turnMinItem = document.createElement('li');
-        turnMinItem.className = 'factor-item-card';
-        turnMinItem.innerHTML = '<span class="factor-icon">🔄</span><div class="factor-content"><div class="factor-label">Linear Corridor Continuity</div><div class="factor-desc">Minimizes sharp direction changes (' + turnCount + ' turns along entire corridor) to maintain vehicle momentum, improve passenger stability, and reduce blind-spot collision risks.</div></div>';
-        pathList.appendChild(turnMinItem);
-
-        pathFactorsBlock.appendChild(pathList);
-        card.appendChild(pathFactorsBlock);
       }
 
       // Step-by-step turn directions with factor badges
