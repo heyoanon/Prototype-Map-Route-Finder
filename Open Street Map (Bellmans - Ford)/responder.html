@@ -2416,8 +2416,17 @@
       const dataTimestamp = rawData ? (rawData.timestamp || rawData.lastActionTime || 0) : 0;
 
       // Only stay cleared if user explicitly clicked "Cleared" during this session AND caller hasn't sent new updates
+      const isNewEmergencyAction = Boolean(
+        rawData && (
+          rawData.isConfirmed === true ||
+          rawData.lastAction === 'emergency_confirmed' ||
+          rawData.lastAction === 'facility_route_selected' ||
+          (rawData.targetFacility && rawData.lastAction !== 'emergency_cleared')
+        )
+      );
+
       if (isMissionCleared && clearedTimestamp > 0) {
-        if (dataTimestamp <= clearedTimestamp) {
+        if (!isNewEmergencyAction && dataTimestamp <= clearedTimestamp) {
           renderBlankClearedState();
           return;
         }
@@ -2659,6 +2668,11 @@
           }
           const payload = event.data.data || event.data;
           if (payload && (payload.lat || payload.coords || payload.scenario || payload.activityLog)) {
+            if (payload.isConfirmed === true || payload.lastAction === 'emergency_confirmed' || payload.lastAction === 'facility_route_selected') {
+              isMissionCleared = false;
+              clearedTimestamp = 0;
+              try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+            }
             loadTrackedUser(payload);
             flashSyncBadge();
           }

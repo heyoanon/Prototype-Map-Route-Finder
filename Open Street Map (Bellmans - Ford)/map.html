@@ -8120,6 +8120,53 @@
       chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
     }
 
+    function activateEmergencyRouteFromChat(facilityName, coordinates, facilityData, emergencyType) {
+      try {
+        localStorage.removeItem('responder_cleared_time');
+      } catch (e) {}
+
+      if (destinationInput) {
+        destinationInput.value = facilityName;
+      }
+
+      const fType = emergencyType || (facilityData && facilityData.type) || 'ambulance';
+      const fData = facilityData || { name: facilityName, coordinates: coordinates, type: fType };
+      searchDestination(facilityName, coordinates, { emergencyType: fType, facility: fData });
+
+      const distKm = (fData && fData.distanceMeters)
+        ? (fData.distanceMeters / 1000).toFixed(1)
+        : (fData && fData.stats && fData.stats.distKm)
+          ? fData.stats.distKm
+          : '1.5';
+      const estMins = (fData && fData.durationMins)
+        ? fData.durationMins
+        : (fData && fData.stats && fData.stats.etaMins)
+          ? fData.stats.etaMins
+          : 3;
+
+      showEmergencyRouteConfirmationBar({
+        name: facilityName,
+        category: (fData && (fData.category || fData.services)) || 'Emergency Facility',
+        distKm: distKm,
+        durationMins: estMins,
+        coordinates: coordinates,
+        phone: (fData && fData.phone) || '',
+        type: fType
+      }, true);
+
+      // On mobile viewports, close chat sheet so the route path on the map is immediately visible
+      if (window.innerWidth <= 640) {
+        closeAssistanceChat();
+        expandSidebar();
+      }
+
+      setTimeout(function () {
+        if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+          fitMapBoundsSafely(routeLayers.getBounds(), true);
+        }
+      }, 500);
+    }
+
     function displayFacilityRouteInChat(facilityContext, customOptions) {
       if (!facilityContext) return;
 
@@ -8185,12 +8232,24 @@
       const totalEtaMin = baseMinutes + trafficDelayMin + hazardDelayMin + turnDelayMin;
 
       // 4. Trigger active route computation on Leaflet map in background
+      try {
+        localStorage.removeItem('responder_cleared_time');
+      } catch (e) {}
       if (typeof destinationInput !== 'undefined' && destinationInput) {
         destinationInput.value = facilityName;
       }
       if (typeof searchDestination === 'function') {
         searchDestination(facilityName, destCoords, { emergencyType: facilityType, facility: facility });
       }
+      showEmergencyRouteConfirmationBar({
+        name: facilityName,
+        category: facilityCategory,
+        distKm: roadDistKm,
+        durationMins: totalEtaMin,
+        coordinates: destCoords,
+        phone: facilityPhone,
+        type: facilityType
+      }, true);
 
       // 5. Construct rich HTML response with factors, metrics, and actions
       const fTypeIcon = (facilityType === 'police') ? '🚓' : (facilityType === 'fire' ? '🚒' : (facilityType === 'responder' ? '🛟' : '🏥'));
@@ -8517,8 +8576,7 @@
               label: '🗺️ Route to ' + (nearest.name.length > 22 ? nearest.name.slice(0, 20) + '…' : nearest.name),
               emergency: true,
               action: function () {
-                destinationInput.value = nearest.name;
-                searchDestination(nearest.name, nearest.coordinates, { emergencyType: nearest.facility.type || 'ambulance', facility: nearest.facility });
+                activateEmergencyRouteFromChat(nearest.name, nearest.coordinates, nearest.facility, nearest.facility.type || 'ambulance');
               }
             },
             {
@@ -8568,8 +8626,7 @@
               label: '🗺️ Route to ' + (nearest.name.length > 22 ? nearest.name.slice(0, 20) + '…' : nearest.name),
               emergency: true,
               action: function () {
-                destinationInput.value = nearest.name;
-                searchDestination(nearest.name, nearest.coordinates, { emergencyType: nearest.facility.type, facility: nearest.facility });
+                activateEmergencyRouteFromChat(nearest.name, nearest.coordinates, nearest.facility, nearest.facility.type || 'ambulance');
               }
             },
             {
@@ -8628,8 +8685,7 @@
                 label: '🗺️ Route to ' + (nearest.facility.name.length > 20 ? nearest.facility.name.slice(0, 18) + '...' : nearest.facility.name),
                 emergency: true,
                 action: function () {
-                  destinationInput.value = nearest.facility.name;
-                  searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance', facility: nearest.facility });
+                  activateEmergencyRouteFromChat(nearest.facility.name, nearest.facility.coordinates, nearest.facility, 'ambulance');
                 }
               },
               {
@@ -9473,8 +9529,7 @@
                   label: '🗺️ Route Now',
                   emergency: true,
                   action: function () {
-                    destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'ambulance', facility: nearest.facility });
+                    activateEmergencyRouteFromChat(nearest.facility.name, nearest.facility.coordinates, nearest.facility, 'ambulance');
                   }
                 },
                 {
@@ -9520,8 +9575,7 @@
                   label: '🗺️ Route to Station',
                   emergency: true,
                   action: function () {
-                    destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'police', facility: nearest.facility });
+                    activateEmergencyRouteFromChat(nearest.facility.name, nearest.facility.coordinates, nearest.facility, 'police');
                   }
                 },
                 {
@@ -9567,8 +9621,7 @@
                   label: '🗺️ Route to Station',
                   emergency: true,
                   action: function () {
-                    destinationInput.value = nearest.facility.name;
-                    searchDestination(nearest.facility.name, nearest.facility.coordinates, { emergencyType: 'fire', facility: nearest.facility });
+                    activateEmergencyRouteFromChat(nearest.facility.name, nearest.facility.coordinates, nearest.facility, 'fire');
                   }
                 },
                 {
@@ -10283,6 +10336,9 @@
       if (distSpan) distSpan.textContent = facilityData.distKm ? ('📍 ' + facilityData.distKm + ' km') : '📍 Nearest Base';
 
       if (isDirectConfirmed) {
+        try {
+          localStorage.removeItem('responder_cleared_time');
+        } catch (e) {}
         if (badge) badge.classList.add('confirmed');
         if (badgeText) badgeText.textContent = '🚨 Emergency Route Active · Responders Notified';
         if (promptText) promptText.textContent = 'Active emergency route to ' + (facilityData.name || 'nearest facility') + '. Responders notified.';
@@ -12893,6 +12949,9 @@
     }
 
     function findFastestEmergencyService(type) {
+      try {
+        localStorage.removeItem('responder_cleared_time');
+      } catch (e) {}
       const labels = {
         ambulance: 'ambulance facilities & hospitals',
         responder: 'rescue & responder units',
