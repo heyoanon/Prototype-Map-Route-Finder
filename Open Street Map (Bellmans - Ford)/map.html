@@ -5371,34 +5371,11 @@
       Select an emergency service type below to find the nearest facilities.
     </div>
     <hr class="emergency-assistance-divider">
-    <div class="emergency-assistance-section-title">🚨 Primary Emergency Units</div>
     <div class="emergency-assistance-buttons">
       <button type="button" data-emergency-type="ambulance">🚑 Ambulance</button>
       <button type="button" data-emergency-type="responder">🛟 Rescue / Responder</button>
       <button type="button" data-emergency-type="police">🚓 Police</button>
       <button type="button" data-emergency-type="fire">🚒 Fire Truck</button>
-    </div>
-    <div class="emergency-assistance-section-title">🩺 Doctor Specialization (Nearest Specialist)</div>
-    <div class="emergency-specialty-chips">
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="pedia">👶 Pedia</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="cardio">🫀 Cardio</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ent">👂 ENT</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="obgyn">🤰 OB-GYN</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ortho">🦴 Ortho</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="neuro">🧠 Neuro</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="pulmo">🫁 Pulmo</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="ophthal">👁️ Eye</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="derma">🧴 Derma</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="gastro">🩺 Gastro</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="nephro">🩸 Nephro</button>
-      <button type="button" class="emergency-specialty-chip" data-doctor-specialty="surgery">⚕️ Surgery</button>
-    </div>
-    <div class="emergency-assistance-section-title">🏥 Immediate Specialized Facilities</div>
-    <div class="emergency-specialty-chips">
-      <button type="button" class="emergency-specialty-chip" data-service-category="healthMentalHealth">🧠 Mental Health</button>
-      <button type="button" class="emergency-specialty-chip" data-service-category="healthClinics">🩺 Clinics & Urgent Care</button>
-      <button type="button" class="emergency-specialty-chip" data-service-category="healthCare">♿ Rehab & Care</button>
-      <button type="button" class="emergency-specialty-chip" data-service-category="healthOther">💊 24/7 Pharmacy / Labs</button>
     </div>
     <div id="responder-situation-selector" class="responder-situation-prompt" title="Click empty area to de-select scenario" hidden>
       <div style="font-weight:700;color:#b3261e;display:flex;align-items:center;gap:5px;">
@@ -7824,19 +7801,7 @@
       });
     });
 
-    emergencyAssistance.querySelectorAll('[data-doctor-specialty]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const specId = button.dataset.doctorSpecialty;
-        findFastestSpecializationService(specId);
-      });
-    });
 
-    emergencyAssistance.querySelectorAll('[data-service-category]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const catId = button.dataset.serviceCategory;
-        findFastestCategoryService(catId);
-      });
-    });
     emergencyOpenButton.addEventListener('click', function () {
       if (emergencyAssistance.hidden) {
         showNearbyEmergencyServices();
@@ -8044,6 +8009,40 @@
       chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
     }
 
+    function displayDoctorSpecialtiesChatMenu() {
+      appendBotMessage(
+        '🩺 <strong>Doctor Specialization (Nearest Specialist):</strong><br>' +
+        'Select a doctor specialization below to locate the nearest verified hospitals and specialty clinics with real-time distance and driving ETA:',
+        [
+          { label: '👶 Pediatrics (Pedia / Child Care)', action: function () { answerUserEmergencyQuestion('pedia'); } },
+          { label: '🫀 Cardiology (Cardio / Heart Care)', action: function () { answerUserEmergencyQuestion('cardio'); } },
+          { label: '👂 ENT (Ear, Nose & Throat)', action: function () { answerUserEmergencyQuestion('ent'); } },
+          { label: '🤰 OB-GYN (Maternity & Obstetrics)', action: function () { answerUserEmergencyQuestion('ob-gyn'); } },
+          { label: '🦴 Orthopedics (Bone & Joint)', action: function () { answerUserEmergencyQuestion('ortho'); } },
+          { label: '🧠 Neurology & Neurosurgery (Brain & Spine)', action: function () { answerUserEmergencyQuestion('neuro'); } },
+          { label: '🫁 Pulmonology (Lung & Respiratory)', action: function () { answerUserEmergencyQuestion('pulmo'); } },
+          { label: '👁️ Ophthalmology (Eye Care)', action: function () { answerUserEmergencyQuestion('eye doctor'); } },
+          { label: '🧴 Dermatology (Skin Care)', action: function () { answerUserEmergencyQuestion('derma'); } },
+          { label: '🩺 Gastroenterology (Digestive)', action: function () { answerUserEmergencyQuestion('gastro'); } },
+          { label: '🩸 Nephrology (Kidney & Dialysis)', action: function () { answerUserEmergencyQuestion('nephro'); } },
+          { label: '⚕️ General & Trauma Surgery', action: function () { answerUserEmergencyQuestion('surgery'); } }
+        ]
+      );
+    }
+
+    function displaySpecializedFacilitiesChatMenu() {
+      appendBotMessage(
+        '🏥 <strong>Immediate Specialized Facilities:</strong><br>' +
+        'Select an immediate emergency service category below to view all verified nearby facilities ranked by proximity:',
+        [
+          { label: '🧠 Mental Health & Crisis Services', action: function () { answerUserEmergencyQuestion('mental health'); } },
+          { label: '🩺 Clinics & Health Centers', action: function () { answerUserEmergencyQuestion('clinic'); } },
+          { label: '♿ Nursing, Care & Rehabilitation', action: function () { answerUserEmergencyQuestion('rehab'); } },
+          { label: '💊 Pharmacies & Diagnostic Labs', action: function () { answerUserEmergencyQuestion('pharmacy'); } }
+        ]
+      );
+    }
+
     function displayEmergencyAssistanceDispatchMenu() {
       appendBotMessage(
         '👋 <strong>Emergency Assistance & 24/7 Dispatch</strong><br>' +
@@ -8051,10 +8050,8 @@
         'Please choose an emergency service below, or ask any question in the chatbox:',
         [
           { label: '🚑 Medical / Ambulance', emergency: true, action: function () { handleChatIntent('ambulance'); } },
-          { label: '👶 Nearest Pedia / Child Care', action: function () { answerUserEmergencyQuestion('pedia'); } },
-          { label: '🫀 Nearest Cardio / Heart Care', action: function () { answerUserEmergencyQuestion('cardio'); } },
-          { label: '👂 Nearest ENT Specialist', action: function () { answerUserEmergencyQuestion('ent'); } },
-          { label: '🧠 Mental Health & Specialized Care', action: function () { answerUserEmergencyQuestion('mental health'); } },
+          { label: '🩺 Doctor Specialization (Nearest Specialist)', emergency: true, action: function () { displayDoctorSpecialtiesChatMenu(); } },
+          { label: '🏥 Immediate Specialized Facilities', action: function () { displaySpecializedFacilitiesChatMenu(); } },
           { label: '🚓 Police Assistance', emergency: true, action: function () { handleChatIntent('police'); } },
           { label: '🚒 Fire & Rescue', emergency: true, action: function () { handleChatIntent('fire'); } },
           { label: '🛟 Flood / Water Rescue', action: function () { handleChatIntent('responder-scenario:flood'); } },
@@ -8288,10 +8285,8 @@
       chatboxQuickChips.innerHTML = '';
       const chips = [
         { label: '🏠 24/7 Dispatch', intent: 'dispatch' },
-        { label: '👶 Pedia', intent: 'specialty:pedia' },
-        { label: '🫀 Cardio', intent: 'specialty:cardio' },
-        { label: '👂 ENT', intent: 'specialty:ent' },
-        { label: '🧠 Mental Health', intent: 'category:healthMentalHealth' },
+        { label: '🩺 Doctor Specialization', intent: 'specialties_menu' },
+        { label: '🏥 Specialized Facilities', intent: 'specialized_facilities_menu' },
         { label: '🚑 Medical', intent: 'ambulance' },
         { label: '🚓 Police', intent: 'police' },
         { label: '🚒 Fire', intent: 'fire' },
@@ -9371,6 +9366,12 @@
     function handleChatIntent(intent, userText) {
       if (intent === 'dispatch' || intent === 'main_menu') {
         displayEmergencyAssistanceDispatchMenu();
+        return;
+      } else if (intent === 'specialties_menu') {
+        displayDoctorSpecialtiesChatMenu();
+        return;
+      } else if (intent === 'specialized_facilities_menu') {
+        displaySpecializedFacilitiesChatMenu();
         return;
       } else if (intent === 'end_chat' || intent === 'close_chat') {
         endAssistanceChat('Understood. Closing emergency assistance. Stay safe!');
