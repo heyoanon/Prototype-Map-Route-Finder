@@ -964,7 +964,19 @@
 
     
 
-          /* Factors Access Button & Drawer in Responder HUD */
+          /* Move copyright / attribution to area where user cannot see (desktop & mobile) */
+    .leaflet-bottom.leaflet-right .leaflet-control-attribution,
+    .leaflet-control-attribution {
+      display: none !important;
+      position: absolute !important;
+      left: -9999px !important;
+      bottom: -9999px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translate(-9999px, -9999px) !important;
+    }
+
+    /* Factors Access Button & Drawer in Responder HUD */
     .factors-access-section {
       margin: 10px 0 6px;
     }

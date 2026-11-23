@@ -2687,16 +2687,16 @@
       display: none;
     }
 
-    .leaflet-bottom.leaflet-right .leaflet-control-attribution {
-      max-width: min(72vw, 560px);
-      margin: 0 10px 0 0;
-      padding: 3px 7px;
-      border-radius: 8px;
-      background: #fffffff0;
-      box-shadow: 0 1px 5px #0002;
-      font-size: 9px;
-      line-height: 1.35;
-      text-align: right;
+    /* Move copyright / attribution to area where user cannot see (desktop & mobile) */
+    .leaflet-bottom.leaflet-right .leaflet-control-attribution,
+    .leaflet-control-attribution {
+      display: none !important;
+      position: absolute !important;
+      left: -9999px !important;
+      bottom: -9999px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translate(-9999px, -9999px) !important;
     }
 
     .leaflet-control-zoom.leaflet-bar {
