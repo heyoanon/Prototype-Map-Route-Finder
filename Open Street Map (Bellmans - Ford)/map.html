@@ -2501,6 +2501,64 @@
       color: #202124;
     }
 
+    .route-confirm-btn-options {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #1a73e8;
+      background: rgba(26, 115, 232, 0.1);
+      border: 1px solid rgba(26, 115, 232, 0.28);
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.15s ease;
+    }
+
+    .route-confirm-btn-options:hover {
+      background: rgba(26, 115, 232, 0.18);
+    }
+
+    :root[data-theme="dark"] .route-confirm-btn-options {
+      background: rgba(138, 180, 248, 0.15);
+      border-color: rgba(138, 180, 248, 0.35);
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="dark"] .route-confirm-btn-options:hover {
+      background: rgba(138, 180, 248, 0.25);
+    }
+
+    .emergency-panel-collapse-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a73e8;
+      background: rgba(26, 115, 232, 0.1);
+      border: 1px solid rgba(26, 115, 232, 0.25);
+      border-radius: 999px;
+      cursor: pointer;
+      margin-left: auto;
+      margin-right: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .emergency-panel-collapse-btn:hover {
+      background: rgba(26, 115, 232, 0.2);
+    }
+
+    :root[data-theme="dark"] .emergency-panel-collapse-btn {
+      color: #8ab4f8;
+      background: rgba(138, 180, 248, 0.12);
+      border-color: rgba(138, 180, 248, 0.3);
+    }
+
     @media (max-width: 600px) {
       .route-emergency-confirm-bar {
         bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -4742,15 +4800,24 @@
       }
 
       .emergency-assistance-header {
-        justify-content: center !important;
-        text-align: center;
-        margin-bottom: 6px;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 8px;
+        gap: 8px;
       }
 
       .emergency-assistance-header-title {
-        font-size: 16px !important;
+        font-size: 14.5px !important;
         font-weight: 700;
-        text-align: center;
+        text-align: left !important;
+        flex: 1;
+      }
+
+      .emergency-panel-collapse-btn {
+        display: inline-flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
       /* Remove the x button in emergency service on mobile (as requested) */
@@ -5157,6 +5224,9 @@
       <button type="button" id="route-confirm-emergency-btn" class="route-confirm-btn-primary">
         🚨 Confirm Emergency
       </button>
+      <button type="button" id="route-toggle-options-btn" class="route-confirm-btn-options" title="View emergency options and facilities">
+        📋 Options
+      </button>
       <button type="button" id="route-cancel-preview-btn" class="route-confirm-btn-cancel">
         Cancel Route
       </button>
@@ -5315,6 +5385,9 @@
   <section id="emergency-assistance" aria-label="Find emergency service" hidden>
     <div class="emergency-assistance-header">
       <span class="emergency-assistance-header-title">Find a nearby emergency service</span>
+      <button id="emergency-assistance-collapse-btn" class="emergency-panel-collapse-btn" type="button" title="Collapse panel to view map and route">
+        <span>🗺️ View Map & Route</span> ▼
+      </button>
       <button id="emergency-assistance-close" class="emergency-assistance-close" type="button" aria-label="Close emergency services" title="Close">&times;</button>
     </div>
     <div id="emergency-status-text" class="emergency-status-text">
@@ -7520,21 +7593,55 @@
       }
     });
 
+    function collapseEmergencyServicePanel() {
+      if (emergencyAssistance) {
+        emergencyAssistance.hidden = true;
+      }
+      document.body.classList.remove('emergency-panel-open');
+      syncEmergencyOpenButtonVisibility();
+      if (typeof map !== 'undefined' && map) {
+        setTimeout(function () {
+          map.invalidateSize();
+          if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+            fitMapBoundsSafely(routeLayers.getBounds(), true);
+          }
+        }, 80);
+      }
+    }
+
     function fitMapBoundsSafely(bounds, force) {
       if (!bounds || !bounds.isValid()) return;
       if (userManualZoomActive && !force) {
         return;
       }
+      const isMobile = window.innerWidth <= 640;
       const size = map.getSize();
-      const padLeft = Math.min(380, Math.max(30, Math.floor(size.x * 0.35)));
-      const padTop = Math.min(80, Math.max(30, Math.floor(size.y * 0.15)));
-      try {
-        map.fitBounds(bounds, {
-          paddingTopLeft: [padLeft, padTop],
-          paddingBottomRight: [30, 30]
-        });
-      } catch (e) {
-        map.fitBounds(bounds, { padding: [20, 20] });
+
+      if (isMobile) {
+        const confirmBar = document.getElementById('route-emergency-confirm-bar');
+        const hasConfirmBar = confirmBar && !confirmBar.hidden;
+        const padBottom = hasConfirmBar ? Math.min(240, Math.max(140, Math.floor(size.y * 0.32))) : 50;
+        const padTop = Math.min(90, Math.max(35, Math.floor(size.y * 0.12)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [20, padTop],
+            paddingBottomRight: [20, padBottom],
+            maxZoom: 16
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [25, 25], maxZoom: 16 });
+        }
+      } else {
+        const padLeft = Math.min(380, Math.max(30, Math.floor(size.x * 0.35)));
+        const padTop = Math.min(80, Math.max(30, Math.floor(size.y * 0.15)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [padLeft, padTop],
+            paddingBottomRight: [30, 30]
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [20, 20] });
+        }
       }
     }
 
@@ -7761,7 +7868,33 @@
     });
     const emergencyAssistanceClose = document.getElementById('emergency-assistance-close');
     if (emergencyAssistanceClose) {
-      emergencyAssistanceClose.addEventListener('click', collapseSidebar);
+      emergencyAssistanceClose.addEventListener('click', function () {
+        if (typeof collapseEmergencyServicePanel === 'function') {
+          collapseEmergencyServicePanel();
+        } else {
+          collapseSidebar({ keepRoutes: true });
+        }
+      });
+    }
+
+    const emergencyAssistanceCollapseBtn = document.getElementById('emergency-assistance-collapse-btn');
+    if (emergencyAssistanceCollapseBtn) {
+      emergencyAssistanceCollapseBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        collapseEmergencyServicePanel();
+      });
+    }
+
+    const routeToggleOptionsBtn = document.getElementById('route-toggle-options-btn');
+    if (routeToggleOptionsBtn) {
+      routeToggleOptionsBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (emergencyAssistance && !emergencyAssistance.hidden) {
+          collapseEmergencyServicePanel();
+        } else {
+          showNearbyEmergencyServices();
+        }
+      });
     }
     if (emergencyAssistance) {
       emergencyAssistance.addEventListener('click', function (e) {
@@ -10353,6 +10486,24 @@
       }
 
       bar.hidden = false;
+
+      // On mobile viewports, automatically collapse emergency service panel and sidebar so the route path is immediately visible
+      if (window.innerWidth <= 640) {
+        collapseEmergencyServicePanel();
+        const mapSearchControls = document.getElementById('map-search-controls');
+        if (mapSearchControls) {
+          mapSearchControls.classList.remove('sidebar-expanded');
+        }
+        document.body.classList.remove('sidebar-expanded');
+        if (typeof map !== 'undefined' && map) {
+          setTimeout(function () {
+            map.invalidateSize();
+            if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+              fitMapBoundsSafely(routeLayers.getBounds(), true);
+            }
+          }, 150);
+        }
+      }
     }
 
     function confirmCurrentEmergencyRoute() {
@@ -12963,10 +13114,14 @@
 
       if (type === 'responder') {
         const dispatchData = recommendResponderDispatch('', currentResponderScenario || 'flood');
-        // Show nearest route in the options both in desktop and mobile
-        if (emergencyAssistance) {
-          emergencyAssistance.hidden = false;
-          document.body.classList.add('emergency-panel-open');
+        // On desktop, keep emergencyAssistance open; on mobile collapse so route path is visible
+        if (window.innerWidth <= 640) {
+          collapseEmergencyServicePanel();
+        } else {
+          if (emergencyAssistance) {
+            emergencyAssistance.hidden = false;
+            document.body.classList.add('emergency-panel-open');
+          }
         }
         const situationSelector = document.getElementById('responder-situation-selector');
         if (situationSelector) {
@@ -13046,10 +13201,14 @@
         });
 
         if (knownForType.length > 0) {
-          // Keep emergencyAssistance OPEN so the nearest route is shown in the options both on desktop & mobile!
-          if (emergencyAssistance) {
-            emergencyAssistance.hidden = false;
-            document.body.classList.add('emergency-panel-open');
+          // On desktop keep open; on mobile collapse so route path is visible
+          if (window.innerWidth <= 640) {
+            collapseEmergencyServicePanel();
+          } else {
+            if (emergencyAssistance) {
+              emergencyAssistance.hidden = false;
+              document.body.classList.add('emergency-panel-open');
+            }
           }
           const sidebarContainer = document.getElementById('emergency-results-list');
           syncEmergencyOpenButtonVisibility();

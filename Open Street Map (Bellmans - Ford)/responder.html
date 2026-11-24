@@ -2885,18 +2885,34 @@
         return;
       }
 
+      const isMobile = window.innerWidth <= 640;
       const size = map.getSize();
-      const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
-      const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
 
-      try {
-        map.fitBounds(bounds, {
-          paddingTopLeft: [padLeft, padTop],
-          paddingBottomRight: [25, 25],
-          maxZoom: 17
-        });
-      } catch (e) {
-        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 17 });
+      if (isMobile) {
+        const hud = document.getElementById('responder-hud');
+        const isHudCollapsed = hud && hud.classList.contains('hud-collapsed');
+        const padTop = isHudCollapsed ? 65 : Math.min(260, Math.max(130, Math.floor(size.y * 0.32)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [20, padTop],
+            paddingBottomRight: [20, 30],
+            maxZoom: 16
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
+        }
+      } else {
+        const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
+        const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [padLeft, padTop],
+            paddingBottomRight: [25, 25],
+            maxZoom: 17
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [20, 20], maxZoom: 17 });
+        }
       }
     }
 
