@@ -1696,41 +1696,6 @@
     const routesElement = document.getElementById('routes');
     const searchButton = document.getElementById('search-button');
     const routeAlgorithmInput = document.getElementById('route-algorithm');
-    const routeAlgorithmLabels = {
-      bellman_ford: 'Bellman-Ford',
-      spfa: 'SPFA',
-      a_star: 'A*'
-    };
-    function resetRouteAlgorithmTimes() {
-      if (!routeAlgorithmInput) return;
-      Array.prototype.forEach.call(routeAlgorithmInput.options, function (option) {
-        option.dataset.baseLabel = option.dataset.baseLabel || option.textContent;
-        option.textContent = option.dataset.baseLabel;
-        option.removeAttribute('title');
-      });
-    }
-    function showRouteAlgorithmTimes(results, isSyntheticFallback) {
-      if (!routeAlgorithmInput) return;
-      const timesByAlgorithm = Object.create(null);
-      results.forEach(function (result) {
-        const algorithm = Object.keys(routeAlgorithmLabels).find(function (key) {
-          return routeAlgorithmLabels[key] === result.algorithm;
-        });
-        if (algorithm && Number.isFinite(result.execution_time_seconds) &&
-          result.execution_time_seconds >= 0) {
-          timesByAlgorithm[algorithm] = result.execution_time_seconds;
-        }
-      });
-      Array.prototype.forEach.call(routeAlgorithmInput.options, function (option) {
-        const seconds = timesByAlgorithm[option.value];
-        if (seconds === undefined) return;
-        const timeLabel = (seconds * 1000).toFixed(2) + ' ms';
-        const graphLabel = isSyntheticFallback ? ' · fallback grid' : '';
-        option.textContent = option.dataset.baseLabel + ' (' + timeLabel + graphLabel + ')';
-        option.title = 'Measured algorithm execution time: ' + timeLabel +
-          (isSyntheticFallback ? ' on the fallback grid, not a road graph.' : ' on the loaded road graph.');
-      });
-    }
     const accountStatus = document.getElementById('account-status');
     const historyStatus = document.getElementById('history-status');
     const accountToggle = document.getElementById('account-toggle');
@@ -2161,6 +2126,7 @@
     let isSearching = false;
     let searchRequestId = 0;
     let lastRouteRequest = null;
+    let lastAlgorithmTimingSummary = '';
     if (routeAlgorithmInput) {
       routeAlgorithmInput.addEventListener('change', function () {
         if (!lastRouteRequest) return;
@@ -6923,6 +6889,12 @@
       const metadata = document.createElement('span');
       metadata.className = 'route-meta';
       metadata.textContent = formatDistance(route.distance) + ' · ' + formatDuration(route.duration);
+      if (route.algorithmStats && Number.isFinite(route.algorithmStats.execution_time_seconds)) {
+        metadata.textContent += ' · ' +
+          (route.algorithmStats.execution_time_seconds * 1000).toFixed(2) + ' ms execution';
+      } else if (index === 0 && lastAlgorithmTimingSummary) {
+        metadata.textContent += ' · ' + lastAlgorithmTimingSummary;
+      }
       if (isFastest && route.totalDelaySeconds && route.totalDelaySeconds > 60) {
         const delayBadge = document.createElement('span');
         delayBadge.className = 'delay-badge';
@@ -7331,7 +7303,7 @@
           origin_lon: start[0],
           destination_lat: end[1],
           destination_lon: end[0],
-          algorithm: 'all'
+          algorithm: algorithm
         })
       });
       const data = await response.json();
@@ -7340,16 +7312,20 @@
       const graphInfo = data.graph || (results[0] && results[0].graph);
       const isSyntheticFallback = Boolean(graphInfo &&
         (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120)));
-      showRouteAlgorithmTimes(results, isSyntheticFallback);
+      const timingResults = results.filter(function (result) {
+        return Number.isFinite(result.execution_time_seconds) && result.execution_time_seconds >= 0;
+      });
+      lastAlgorithmTimingSummary = timingResults.length
+        ? 'Algorithm execution times: ' + timingResults.map(function (result) {
+          return result.algorithm + ' ' + (result.execution_time_seconds * 1000).toFixed(2) + ' ms';
+        }).join(' · ') + (isSyntheticFallback
+          ? ' · fallback grid only; the displayed road path uses OSRM'
+          : '')
+        : '';
       if (isSyntheticFallback) {
         throw new Error('The server has only a synthetic grid graph, not road data.');
       }
-      const selectedResults = algorithm === 'all'
-        ? results
-        : results.filter(function (result) {
-          return result.algorithm === routeAlgorithmLabels[algorithm];
-        });
-      const routes = selectedResults.filter(function (result) {
+      const routes = results.filter(function (result) {
         return Array.isArray(result.route_coordinates) && result.route_coordinates.length > 0;
       }).map(function (result) {
         const graphCoordinates = result.route_coordinates.map(function (point) {
@@ -8541,7 +8517,7 @@
     }
 
     async function searchDestination(destination, knownCoordinates, routePurpose, originOverride) {
-      resetRouteAlgorithmTimes();
+      lastAlgorithmTimingSummary = '';
       lastRouteRequest = {
         destination: destination,
         knownCoordinates: knownCoordinates,
@@ -8684,8 +8660,7 @@
           try {
             routes = await findAlgorithmRoutes(start, end, selectedAlgorithm);
           } catch (algorithmError) {
-            const selectedOption = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex];
-            const selectedLabel = selectedOption.dataset.baseLabel || selectedOption.textContent;
+            const selectedLabel = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex].text;
             algorithmFallbackMessage = selectedLabel + ' could not calculate a road route (' +
               (algorithmError.message || 'routing service unavailable') +
               '). Showing OSRM road directions instead.';
