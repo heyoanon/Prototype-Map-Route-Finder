@@ -2567,6 +2567,12 @@
         gap: 8px;
       }
 
+      /* Remove options button on mobile so route bar is clean and compact */
+      #route-toggle-options-btn,
+      .route-confirm-btn-options {
+        display: none !important;
+      }
+
       .route-confirm-bar-title {
         font-size: 14px;
       }
@@ -4764,6 +4770,59 @@
         display: none !important;
       }
 
+      /* Remove Options button on mobile */
+      #route-toggle-options-btn,
+      .route-confirm-btn-options {
+        display: none !important;
+      }
+
+      /* When an emergency route is active or confirmation bar is visible on mobile, ensure route path is fully visible and not covered */
+      body.mobile-route-active #emergency-assistance,
+      body.emergency-panel-open.mobile-route-active #emergency-assistance,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #emergency-assistance {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      body.mobile-route-active #service-details,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #service-details,
+      body.mobile-route-active #emergency-results-list,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #emergency-results-list {
+        display: none !important;
+      }
+
+      body.mobile-route-active #map-search-controls,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #map-search-controls {
+        pointer-events: none !important;
+      }
+
+      body.mobile-route-active #map-search-controls .search-panel,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #map-search-controls .search-panel {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+
+      body.mobile-route-active #map-search-controls .search-panel > *:not(#search-form),
+      body:has(#route-emergency-confirm-bar:not([hidden])) #map-search-controls .search-panel > *:not(#search-form) {
+        display: none !important;
+      }
+
+      body.mobile-route-active .search-row.destination-row,
+      body:has(#route-emergency-confirm-bar:not([hidden])) .search-row.destination-row {
+        pointer-events: auto !important;
+      }
+
+      body.mobile-route-active #route-emergency-confirm-bar,
+      body:has(#route-emergency-confirm-bar:not([hidden])) #route-emergency-confirm-bar {
+        pointer-events: auto !important;
+        display: flex !important;
+      }
+
       /* Emergency Assistance Window as Mobile Bottom Sheet Drawer */
       #emergency-assistance {
         position: fixed !important;
@@ -6820,7 +6879,9 @@
           type: 'ambulance',
           selectService: function () {
             selectedServiceCoordinates = s.coordinates;
-            expandSidebar();
+            if (window.innerWidth > 640) {
+              expandSidebar();
+            }
             destinationInput.value = s.name;
             showServiceDetails(
               s.name,
@@ -6911,7 +6972,9 @@
           type: 'ambulance',
           selectService: function () {
             selectedServiceCoordinates = s.coordinates;
-            expandSidebar();
+            if (window.innerWidth > 640) {
+              expandSidebar();
+            }
             destinationInput.value = s.name;
             showServiceDetails(
               s.name,
@@ -7598,6 +7661,18 @@
         emergencyAssistance.hidden = true;
       }
       document.body.classList.remove('emergency-panel-open');
+      if (window.innerWidth <= 640) {
+        const mapSearchControls = document.getElementById('map-search-controls');
+        if (mapSearchControls) {
+          mapSearchControls.classList.remove('sidebar-expanded');
+        }
+        document.body.classList.remove('sidebar-expanded');
+        isSidebarExpanded = false;
+        const serviceDetails = document.getElementById('service-details');
+        if (serviceDetails && currentEmergencyTarget) {
+          serviceDetails.hidden = true;
+        }
+      }
       syncEmergencyOpenButtonVisibility();
       if (typeof map !== 'undefined' && map) {
         setTimeout(function () {
@@ -8242,7 +8317,12 @@
       // On mobile viewports, close chat sheet so the route path on the map is immediately visible
       if (window.innerWidth <= 640) {
         closeAssistanceChat();
-        expandSidebar();
+        collapseSidebar();
+        document.body.classList.add('mobile-route-active');
+        if (serviceDetails) {
+          serviceDetails.hidden = true;
+          serviceDetails.replaceChildren();
+        }
       }
 
       setTimeout(function () {
@@ -8409,7 +8489,13 @@
                 emergency: true,
                 action: function () {
                   closeAssistanceChat();
-                  expandSidebar();
+                  if (window.innerWidth <= 640) {
+                    collapseSidebar();
+                    document.body.classList.add('mobile-route-active');
+                    if (serviceDetails) { serviceDetails.hidden = true; serviceDetails.replaceChildren(); }
+                  } else {
+                    expandSidebar();
+                  }
                   if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
                     fitMapBoundsSafely(routeLayers.getBounds(), true);
                   }
@@ -8479,7 +8565,13 @@
                 emergency: true,
                 action: function () {
                   closeAssistanceChat();
-                  expandSidebar();
+                  if (window.innerWidth <= 640) {
+                    collapseSidebar();
+                    document.body.classList.add('mobile-route-active');
+                    if (serviceDetails) { serviceDetails.hidden = true; serviceDetails.replaceChildren(); }
+                  } else {
+                    expandSidebar();
+                  }
                   if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
                     fitMapBoundsSafely(routeLayers.getBounds(), true);
                   }
@@ -10489,12 +10581,19 @@
 
       // On mobile viewports, automatically collapse emergency service panel and sidebar so the route path is immediately visible
       if (window.innerWidth <= 640) {
+        document.body.classList.add('mobile-route-active');
         collapseEmergencyServicePanel();
+        const serviceDetails = document.getElementById('service-details');
+        if (serviceDetails) {
+          serviceDetails.hidden = true;
+          serviceDetails.replaceChildren();
+        }
         const mapSearchControls = document.getElementById('map-search-controls');
         if (mapSearchControls) {
           mapSearchControls.classList.remove('sidebar-expanded');
         }
         document.body.classList.remove('sidebar-expanded');
+        isSidebarExpanded = false;
         if (typeof map !== 'undefined' && map) {
           setTimeout(function () {
             map.invalidateSize();
@@ -10557,6 +10656,15 @@
     }
 
     function clearEmergencyRoute(isFromResponder) {
+      document.body.classList.remove('mobile-route-active');
+      document.body.classList.remove('emergency-panel-open');
+      const mapSearchControls = document.getElementById('map-search-controls');
+      if (mapSearchControls) {
+        mapSearchControls.classList.remove('sidebar-expanded');
+      }
+      document.body.classList.remove('sidebar-expanded');
+      isSidebarExpanded = false;
+
       const bar = document.getElementById('route-emergency-confirm-bar');
       if (bar) bar.hidden = true;
 
@@ -12704,7 +12812,15 @@
     }
 
     function showNearbyEmergencyServices() {
-      expandSidebar();
+      if (window.innerWidth <= 640) {
+        collapseSidebar();
+        if (serviceDetails) {
+          serviceDetails.hidden = true;
+          serviceDetails.replaceChildren();
+        }
+      } else {
+        expandSidebar();
+      }
       isAssistanceSearch = true;
       emergencySearchType = null;
       form.hidden = false;
@@ -13116,24 +13232,32 @@
         const dispatchData = recommendResponderDispatch('', currentResponderScenario || 'flood');
         // On desktop, keep emergencyAssistance open; on mobile collapse so route path is visible
         if (window.innerWidth <= 640) {
+          document.body.classList.add('mobile-route-active');
           collapseEmergencyServicePanel();
+          if (serviceDetails) {
+            serviceDetails.hidden = true;
+            serviceDetails.replaceChildren();
+          }
+          const mapSearchControls = document.getElementById('map-search-controls');
+          if (mapSearchControls) mapSearchControls.classList.remove('sidebar-expanded');
+          document.body.classList.remove('sidebar-expanded');
+          isSidebarExpanded = false;
         } else {
           if (emergencyAssistance) {
             emergencyAssistance.hidden = false;
             document.body.classList.add('emergency-panel-open');
           }
+          const situationSelector = document.getElementById('responder-situation-selector');
+          if (situationSelector) {
+            situationSelector.hidden = false;
+          }
+          const assistanceContainer = document.getElementById('emergency-assistance-results');
+          if (assistanceContainer) {
+            assistanceContainer.hidden = false;
+            assistanceContainer.innerHTML = buildResponderAssessmentHtml(dispatchData);
+          }
+          expandSidebar();
         }
-        const situationSelector = document.getElementById('responder-situation-selector');
-        if (situationSelector) {
-          situationSelector.hidden = false;
-        }
-        const assistanceContainer = document.getElementById('emergency-assistance-results');
-        if (assistanceContainer) {
-          assistanceContainer.hidden = false;
-          assistanceContainer.innerHTML = buildResponderAssessmentHtml(dispatchData);
-        }
-
-        expandSidebar();
         syncEmergencyOpenButtonVisibility();
         plotResponderRoute(dispatchData);
         showEmergencyRouteConfirmationBar({
@@ -13163,7 +13287,9 @@
             distanceMeters: originPoint.distanceTo(L.latLng(known.coordinates[1], known.coordinates[0])),
             selectService: function () {
               selectedServiceCoordinates = known.coordinates;
-              expandSidebar();
+              if (window.innerWidth > 640) {
+                expandSidebar();
+              }
               destinationInput.value = known.name;
               showServiceDetails(
                 known.name,
@@ -13203,7 +13329,16 @@
         if (knownForType.length > 0) {
           // On desktop keep open; on mobile collapse so route path is visible
           if (window.innerWidth <= 640) {
+            document.body.classList.add('mobile-route-active');
             collapseEmergencyServicePanel();
+            if (serviceDetails) {
+              serviceDetails.hidden = true;
+              serviceDetails.replaceChildren();
+            }
+            const mapSearchControls = document.getElementById('map-search-controls');
+            if (mapSearchControls) mapSearchControls.classList.remove('sidebar-expanded');
+            document.body.classList.remove('sidebar-expanded');
+            isSidebarExpanded = false;
           } else {
             if (emergencyAssistance) {
               emergencyAssistance.hidden = false;
@@ -13213,11 +13348,13 @@
           const sidebarContainer = document.getElementById('emergency-results-list');
           syncEmergencyOpenButtonVisibility();
           if (sidebarContainer) {
-            sidebarContainer.hidden = false;
+            sidebarContainer.hidden = (window.innerWidth <= 640);
           }
 
-          // Populate the options list in emergencyAssistance dialog and sidebar
-          renderEmergencyFacilitiesList(knownForType.slice(0, 8), type);
+          // Populate options list on desktop
+          if (window.innerWidth > 640) {
+            renderEmergencyFacilitiesList(knownForType.slice(0, 8), type);
+          }
 
           const nearest = knownForType[0];
           const distKm = (nearest.distanceMeters / 1000).toFixed(1);
@@ -13812,7 +13949,9 @@
       if (isSearching) return;
       const requestId = ++searchRequestId;
       markUserInteracted();
-      expandSidebar();
+      if (window.innerWidth > 640 || !routePurpose) {
+        expandSidebar();
+      }
       recordActivity('search', { query: destination });
       broadcastUserEmergencyActivity('search', { destination: destination, actionDescription: 'Searched destination: ' + destination });
       isSearching = true;
@@ -14192,7 +14331,13 @@
                 emergency: true,
                 action: function () {
                   closeAssistanceChat();
-                  expandSidebar();
+                  if (window.innerWidth <= 640) {
+                    collapseSidebar();
+                    document.body.classList.add('mobile-route-active');
+                    if (serviceDetails) { serviceDetails.hidden = true; serviceDetails.replaceChildren(); }
+                  } else {
+                    expandSidebar();
+                  }
                   if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
                     fitMapBoundsSafely(routeLayers.getBounds(), true);
                   }
