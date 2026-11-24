@@ -6817,6 +6817,17 @@
       return meters < 1000 ? Math.round(meters) + ' m' : (meters / 1000).toFixed(1) + ' km';
     }
 
+    function formatMemorySize(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      let value = bytes;
+      let unitIndex = 0;
+      while (value >= 1000 && unitIndex < units.length - 1) {
+        value /= 1000;
+        unitIndex += 1;
+      }
+      return value.toFixed(1) + ' ' + units[unitIndex];
+    }
+
     function formatDuration(seconds) {
       const minutes = Math.round(seconds / 60);
       if (minutes < 60) return minutes + ' min';
@@ -6904,7 +6915,7 @@
         const stats = route.algorithmStats;
         const statsLine = document.createElement('p');
         statsLine.className = 'algorithm-route-stats';
-        statsLine.textContent = 'Peak memory ' + (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB · ' +
+        statsLine.textContent = 'Peak memory ' + formatMemorySize(stats.peak_traced_memory_bytes) + ' · ' +
           stats.unique_explored_nodes + ' explored nodes · ' + stats.nodes_processed + ' processed · ' +
           stats.edge_checks + ' edge checks · ' + stats.successful_relaxations + ' relaxations' +
           (stats.iterations == null ? '' : ' · ' + stats.iterations + ' passes') +
@@ -7200,7 +7211,7 @@
       }
       if (route.algorithmStats && Number.isFinite(route.algorithmStats.peak_traced_memory_bytes)) {
         metadata.textContent += ' · Memory: ' + route.algorithmStats.algorithm + ' ' +
-          (route.algorithmStats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
+          formatMemorySize(route.algorithmStats.peak_traced_memory_bytes);
       } else if (index === 0 && lastAlgorithmMemorySummary) {
         metadata.textContent += ' · ' + lastAlgorithmMemorySummary;
       }
@@ -7346,7 +7357,7 @@
       });
       lastAlgorithmMemorySummary = memoryResults.length
         ? 'Engine memory: ' + memoryResults.map(function (result) {
-          return result.algorithm + ' ' + (result.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
+          return result.algorithm + ' ' + formatMemorySize(result.peak_traced_memory_bytes);
         }).join(' · ')
         : '';
       if (isSyntheticFallback) {
@@ -8949,7 +8960,7 @@
         if (activeRoute && activeRoute.algorithmStats) {
           const stats = activeRoute.algorithmStats;
           factorStatus = stats.algorithm + ' used ' +
-            (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB peak memory.';
+            formatMemorySize(stats.peak_traced_memory_bytes) + ' peak memory.';
         } else if (activeRoute && activeRoute.isDetourBypass) {
           factorStatus = 'Fastest route: detoured around ' + activeRoute.bypassedIncident + ' (' + formatDuration(activeRoute.duration) + ' overall travel time).';
         } else if (activeRoute && activeRoute.totalDelaySeconds > 60) {
