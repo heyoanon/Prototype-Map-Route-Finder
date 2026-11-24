@@ -68,8 +68,9 @@ Bellman-Ford, SPFA, A*, or an all-algorithm comparison. OSRM remains the default
 for road-shaped routes and turn-by-turn directions. The Python algorithms return
 graph routes and work counters; they do not provide street names or turn
 instructions. Algorithm cards display peak traced memory, explored nodes, and
-edge checks. Route cards separately display the elapsed time until the route is
-shown; algorithm execution time remains in the API response but is not shown in
+edge checks. Route cards display elapsed time until the route appears, followed
+by memory usage for the selected algorithm (or all algorithms in comparison
+mode); algorithm execution time remains in the API response but is not shown in
 the UI.
 
 Tests use synthetic data and do not call Overpass. Algorithm and benchmark

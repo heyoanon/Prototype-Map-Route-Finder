@@ -6890,12 +6890,6 @@
       const metadata = document.createElement('span');
       metadata.className = 'route-meta';
       metadata.textContent = formatDistance(route.distance) + ' · ' + formatDuration(route.duration);
-      if (route.algorithmStats && Number.isFinite(route.algorithmStats.peak_traced_memory_bytes)) {
-        metadata.textContent += ' · Memory: ' + route.algorithmStats.algorithm + ' ' +
-          (route.algorithmStats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
-      } else if (index === 0 && lastAlgorithmMemorySummary) {
-        metadata.textContent += ' · ' + lastAlgorithmMemorySummary;
-      }
       if (isFastest && route.totalDelaySeconds && route.totalDelaySeconds > 60) {
         const delayBadge = document.createElement('span');
         delayBadge.className = 'delay-badge';
@@ -7203,6 +7197,12 @@
           ? Math.round(routeDisplayTimeMs) + ' ms'
           : (routeDisplayTimeMs / 1000).toFixed(2) + ' s';
         metadata.textContent += ' · Route shown in ' + routeDisplayTime;
+      }
+      if (route.algorithmStats && Number.isFinite(route.algorithmStats.peak_traced_memory_bytes)) {
+        metadata.textContent += ' · Memory: ' + route.algorithmStats.algorithm + ' ' +
+          (route.algorithmStats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
+      } else if (index === 0 && lastAlgorithmMemorySummary) {
+        metadata.textContent += ' · ' + lastAlgorithmMemorySummary;
       }
       routesElement.appendChild(card);
     }
