@@ -2126,7 +2126,7 @@
     let isSearching = false;
     let searchRequestId = 0;
     let lastRouteRequest = null;
-    let lastAlgorithmTimingSummary = '';
+    let lastAlgorithmMemorySummary = '';
     let lastRouteSearchStartedAt = 0;
     if (routeAlgorithmInput) {
       routeAlgorithmInput.addEventListener('change', function () {
@@ -6890,11 +6890,11 @@
       const metadata = document.createElement('span');
       metadata.className = 'route-meta';
       metadata.textContent = formatDistance(route.distance) + ' · ' + formatDuration(route.duration);
-      if (route.algorithmStats && Number.isFinite(route.algorithmStats.execution_time_seconds)) {
-        metadata.textContent += ' · ' +
-          (route.algorithmStats.execution_time_seconds * 1000).toFixed(2) + ' ms execution';
-      } else if (index === 0 && lastAlgorithmTimingSummary) {
-        metadata.textContent += ' · ' + lastAlgorithmTimingSummary;
+      if (route.algorithmStats && Number.isFinite(route.algorithmStats.peak_traced_memory_bytes)) {
+        metadata.textContent += ' · Memory: ' + route.algorithmStats.algorithm + ' ' +
+          (route.algorithmStats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
+      } else if (index === 0 && lastAlgorithmMemorySummary) {
+        metadata.textContent += ' · ' + lastAlgorithmMemorySummary;
       }
       if (isFastest && route.totalDelaySeconds && route.totalDelaySeconds > 60) {
         const delayBadge = document.createElement('span');
@@ -6910,8 +6910,7 @@
         const stats = route.algorithmStats;
         const statsLine = document.createElement('p');
         statsLine.className = 'algorithm-route-stats';
-        statsLine.textContent = 'Execution ' + (stats.execution_time_seconds * 1000).toFixed(2) + ' ms · ' +
-          'peak memory ' + (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB · ' +
+        statsLine.textContent = 'Peak memory ' + (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB · ' +
           stats.unique_explored_nodes + ' explored nodes · ' + stats.nodes_processed + ' processed · ' +
           stats.edge_checks + ' edge checks · ' + stats.successful_relaxations + ' relaxations' +
           (stats.iterations == null ? '' : ' · ' + stats.iterations + ' passes') +
@@ -7340,15 +7339,15 @@
       const graphInfo = data.graph || (results[0] && results[0].graph);
       const isSyntheticFallback = Boolean(graphInfo &&
         (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120)));
-      const timingResults = results.filter(function (result) {
-        return Number.isFinite(result.execution_time_seconds) && result.execution_time_seconds >= 0;
+      const memoryResults = results.filter(function (result) {
+        return typeof result.algorithm === 'string' &&
+          Number.isFinite(result.peak_traced_memory_bytes) &&
+          result.peak_traced_memory_bytes >= 0;
       });
-      lastAlgorithmTimingSummary = timingResults.length
-        ? 'Engine execution: ' + timingResults.map(function (result) {
-          return result.algorithm + ' ' + (result.execution_time_seconds * 1000).toFixed(2) + ' ms';
-        }).join(' · ') + (isSyntheticFallback
-          ? ' (fallback grid; OSRM route)'
-          : '')
+      lastAlgorithmMemorySummary = memoryResults.length
+        ? 'Engine memory: ' + memoryResults.map(function (result) {
+          return result.algorithm + ' ' + (result.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB';
+        }).join(' · ')
         : '';
       if (isSyntheticFallback) {
         throw new Error('The server has only a synthetic grid graph, not road data.');
@@ -8545,7 +8544,7 @@
     }
 
     async function searchDestination(destination, knownCoordinates, routePurpose, originOverride) {
-      lastAlgorithmTimingSummary = '';
+      lastAlgorithmMemorySummary = '';
       lastRouteSearchStartedAt = performance.now();
       lastRouteRequest = {
         destination: destination,
@@ -8949,9 +8948,8 @@
         let factorStatus = '';
         if (activeRoute && activeRoute.algorithmStats) {
           const stats = activeRoute.algorithmStats;
-          factorStatus = stats.algorithm + ' computed the route in ' +
-            (stats.execution_time_seconds * 1000).toFixed(2) + ' ms (' +
-            (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB peak traced memory).';
+          factorStatus = stats.algorithm + ' used ' +
+            (stats.peak_traced_memory_bytes / 1024).toFixed(1) + ' KiB peak memory.';
         } else if (activeRoute && activeRoute.isDetourBypass) {
           factorStatus = 'Fastest route: detoured around ' + activeRoute.bypassedIncident + ' (' + formatDuration(activeRoute.duration) + ' overall travel time).';
         } else if (activeRoute && activeRoute.totalDelaySeconds > 60) {
