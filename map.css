@@ -239,6 +239,66 @@
       padding: 2px;
     }
 
+    /* Shared marker visuals used by the responder dispatch map. */
+    .user-incident-icon,
+    .responder-unit-icon,
+    .facility-marker-div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-incident-pin,
+    .responder-unit-pin,
+    .facility-map-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .user-incident-pin {
+      width: 38px;
+      height: 38px;
+      background: #d93025;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(217, 48, 37, 0.5);
+      position: relative;
+      z-index: 2;
+    }
+
+    .radar-ping {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(217, 48, 37, 0.6);
+      animation: radar-ripple 2s infinite ease-out;
+      z-index: 1;
+    }
+
+    @keyframes radar-ripple {
+      0% { transform: scale(1); opacity: 0.9; }
+      100% { transform: scale(3.2); opacity: 0; }
+    }
+
+    .responder-unit-pin {
+      width: 36px;
+      height: 36px;
+      background: #1a73e8;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5);
+    }
+
+    .facility-map-pin {
+      width: 28px;
+      height: 28px;
+      font-size: 13px;
+    }
+
     /* Route path map tooltip */
     .route-path-tooltip {
       background: rgba(32, 33, 36, 0.94);

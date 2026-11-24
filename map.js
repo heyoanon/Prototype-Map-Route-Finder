@@ -1977,10 +1977,10 @@
         userLocationMarker.setPopupContent(popupHtml);
       } else {
         const userLocIcon = L.divIcon({
-          className: 'user-device-location-icon',
-          html: '<div class="user-radar-pulse"></div><div class="user-pin-circle">📍</div>',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
+          className: 'user-incident-icon',
+          html: '<div class="radar-ping"></div><div class="user-incident-pin">📍</div>',
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
         });
 
         userLocationMarker = L.marker(latlng, {
@@ -2125,6 +2125,18 @@
     let destinationMarker = null;
     let isSearching = false;
     let searchRequestId = 0;
+    let lastRouteRequest = null;
+    if (routeAlgorithmInput) {
+      routeAlgorithmInput.addEventListener('change', function () {
+        if (!lastRouteRequest) return;
+        searchDestination(
+          lastRouteRequest.destination,
+          lastRouteRequest.knownCoordinates,
+          lastRouteRequest.routePurpose,
+          lastRouteRequest.originOverride
+        );
+      });
+    }
     let serviceRefreshTimer = null;
     let serviceRequestId = 0;
     let serviceRequestController = null;
@@ -7290,17 +7302,22 @@
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Algorithm routing is unavailable.');
       const results = data.algorithm === 'all' ? data.results : [data];
+      const graphInfo = data.graph || (results[0] && results[0].graph);
+      if (graphInfo && (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120))) {
+        throw new Error('The server has only a synthetic grid graph, not road data.');
+      }
       const routes = results.filter(function (result) {
         return Array.isArray(result.route_coordinates) && result.route_coordinates.length > 0;
       }).map(function (result) {
+        const graphCoordinates = result.route_coordinates.map(function (point) {
+          return [point.longitude, point.latitude];
+        });
         return {
           distance: result.route_distance_meters || 0,
           duration: result.travel_time_seconds || 0,
           geometry: {
             type: 'LineString',
-            coordinates: result.route_coordinates.map(function (point) {
-              return [point.longitude, point.latitude];
-            })
+            coordinates: [start].concat(graphCoordinates, [end])
           },
           legs: [],
           algorithmStats: result
@@ -8481,6 +8498,12 @@
     }
 
     async function searchDestination(destination, knownCoordinates, routePurpose, originOverride) {
+      lastRouteRequest = {
+        destination: destination,
+        knownCoordinates: knownCoordinates,
+        routePurpose: routePurpose,
+        originOverride: originOverride
+      };
       lastEmergencyActionTime = Date.now();
       isSearching = false;
       try {
@@ -8508,6 +8531,7 @@
         originMarker = null;
       }
 
+      let algorithmFallbackMessage = '';
       try {
         const end = knownCoordinates || await findLocation(destination);
         if (requestId !== searchRequestId) return;
@@ -8538,7 +8562,18 @@
             'Location: ' + escapeHtml(routePurpose.dispatchData.userLoc.districtName)
           );
         } else {
-          destinationMarker = L.marker([end[1], end[0]]).addTo(map).bindPopup(popupContent);
+          const facilityType = (routePurpose && routePurpose.facility && routePurpose.facility.type) ||
+            emergencySearchType || (currentEmergencyTarget && currentEmergencyTarget.type) || 'responder';
+          const facilityIcons = { ambulance: '🚑', police: '🚓', fire: '🚒', responder: '🛟' };
+          const facilityColors = { ambulance: '#ea4335', police: '#1a73e8', fire: '#f29900', responder: '#d93025' };
+          const facilityIcon = L.divIcon({
+            className: 'facility-marker-div',
+            html: '<div class="facility-map-pin" style="background-color:' + (facilityColors[facilityType] || facilityColors.responder) + ';">' +
+              (facilityIcons[facilityType] || facilityIcons.responder) + '</div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+          destinationMarker = L.marker([end[1], end[0]], { icon: facilityIcon }).addTo(map).bindPopup(popupContent);
         }
 
         // Resolve user source / origin
@@ -8571,19 +8606,47 @@
         } else {
           originPopup.textContent = 'Starting point: ' + (sourceInput && sourceInput.value ? sourceInput.value : 'Your location');
         }
-        originMarker = L.circleMarker([start[1], start[0]], {
-          radius: 8,
-          color: '#fff',
-          weight: 3,
-          fillColor: (routePurpose && routePurpose.emergencyType === 'responder') ? '#d93025' : '#1a73e8',
-          fillOpacity: 1
-        }).addTo(map).bindPopup(originPopup);
+        const isResponderOrigin = routePurpose && routePurpose.emergencyType === 'responder';
+        const unitType = isResponderOrigin && routePurpose.dispatchData && routePurpose.dispatchData.responder
+          ? routePurpose.dispatchData.responder.type
+          : 'responder';
+        const unitIcons = { ambulance: '🚑', police: '🚓', fire: '🚒', responder: '🛟' };
+        const originIcon = isResponderOrigin
+          ? L.divIcon({
+              className: 'responder-unit-icon',
+              html: '<div class="responder-unit-pin">' + (unitIcons[unitType] || unitIcons.responder) + '</div>',
+              iconSize: [38, 38],
+              iconAnchor: [19, 19]
+            })
+          : L.divIcon({
+              className: 'user-incident-icon',
+              html: '<div class="radar-ping"></div><div class="user-incident-pin">📍</div>',
+              iconSize: [42, 42],
+              iconAnchor: [21, 21]
+            });
+        const userMarkerPosition = userLocationMarker && userLocationMarker.getLatLng();
+        const originMatchesUserMarker = !isResponderOrigin && userMarkerPosition &&
+          userMarkerPosition.distanceTo(L.latLng(start[1], start[0])) < 15;
+        if (originMatchesUserMarker) {
+          userLocationMarker.bindPopup(originPopup);
+        } else {
+          originMarker = L.marker([start[1], start[0]], { icon: originIcon, zIndexOffset: 1200 }).addTo(map).bindPopup(originPopup);
+        }
 
         const selectedAlgorithm = routeAlgorithmInput ? routeAlgorithmInput.value : 'osrm';
         let usesLiveTraffic = selectedAlgorithm === 'osrm' && Boolean(esriTrafficApiKey);
         let routes;
         if (selectedAlgorithm !== 'osrm') {
-          routes = await findAlgorithmRoutes(start, end, selectedAlgorithm);
+          try {
+            routes = await findAlgorithmRoutes(start, end, selectedAlgorithm);
+          } catch (algorithmError) {
+            const selectedLabel = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex].text;
+            algorithmFallbackMessage = selectedLabel + ' could not calculate a road route (' +
+              (algorithmError.message || 'routing service unavailable') +
+              '). Showing OSRM road directions instead.';
+            console.warn(algorithmFallbackMessage, algorithmError);
+            routes = await findStandardRoutes(start, end);
+          }
         } else if (usesLiveTraffic) {
           try {
             routes = await findEsriRoute(start, end);
@@ -8760,27 +8823,12 @@
           const isPrimary = (i === 0);
           const color = route.isBlocked ? '#d93025' : isPrimary ? '#188038' : ['#1684ff', '#ffb300', '#e04f9b'][(i - 1) % 3];
 
-          // High-contrast casing outline for fastest route
-          if (isPrimary) {
-            L.geoJSON(route.geometry, {
-              pane: 'routePane',
-              style: {
-                color: '#ffffff',
-                weight: 12,
-                opacity: 0.92,
-                lineCap: 'round',
-                lineJoin: 'round'
-              },
-              interactive: false
-            }).addTo(routeLayers);
-          }
-
           const layer = L.geoJSON(route.geometry, {
             pane: 'routePane',
             style: {
               color: color,
-              weight: isPrimary ? 8 : 5,
-              opacity: isPrimary ? 1.0 : 0.65,
+              weight: isPrimary ? 7 : 5,
+              opacity: isPrimary ? 0.95 : 0.65,
               dashArray: route.isBlocked ? '6, 6' : null,
               lineCap: 'round',
               lineJoin: 'round'
@@ -8860,7 +8908,7 @@
           factorStatus = 'Fastest route: ' + formatDuration(activeRoute.duration) + ' overall travel time (clear conditions).';
         }
 
-        setStatus(factorStatus + ' ' + (usesLiveTraffic ? 'Live traffic connected.' : 'Live event & hazard detection active.'));
+        setStatus(algorithmFallbackMessage || (factorStatus + ' ' + (usesLiveTraffic ? 'Live traffic connected.' : 'Live event & hazard detection active.')));
 
         if (document.body.classList.contains('chat-open') && activeRoute) {
           const calculatedDistKm = (activeRoute.distance / 1000).toFixed(1);
@@ -8898,8 +8946,8 @@
       } catch (error) {
         if (requestId !== searchRequestId) return;
         if (routeAlgorithmInput && routeAlgorithmInput.value !== 'osrm') {
-          setStatus(error.message || 'The selected algorithm could not calculate a route.');
-          return;
+          algorithmFallbackMessage = (algorithmFallbackMessage ? algorithmFallbackMessage + ' ' : '') +
+            (error.message || 'The selected algorithm could not calculate a route.');
         }
         const start = routeOrigin;
         let end = knownCoordinates;
@@ -8955,7 +9003,9 @@
             addRouteCard(route, index, layer, false, offlineCtx);
           });
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
-          setStatus('Showing a previously saved offline route.');
+          setStatus(algorithmFallbackMessage
+            ? algorithmFallbackMessage + ' Showing a previously saved offline road route.'
+            : 'Showing a previously saved offline route.');
         } else if (end) {
           // Generate direct offline navigation fallback route so map is never empty
           const originPoint = L.latLng(start[1], start[0]);
@@ -8989,14 +9039,16 @@
           const layer = L.geoJSON(directRoute.geometry, {
             pane: 'routePane',
             style: {
-              color: '#1684ff', weight: 8,
-              opacity: 0.98
+              color: '#1a73e8', weight: 4,
+              opacity: 1,
+              dashArray: '8, 8'
             },
             bubblingMouseEvents: false
           }).addTo(routeLayers);
           addRouteCard(directRoute, 0, layer, false, offlineCtx);
           fitMapBoundsSafely(routeLayers.getBounds(), Boolean(routePurpose));
-          setStatus('Offline Mode: Displaying estimated direct route path (' + (distanceM / 1000).toFixed(1) + ' km).');
+          setStatus((algorithmFallbackMessage ? algorithmFallbackMessage + ' ' : '') +
+            'Offline Mode: Displaying estimated direct route path (' + (distanceM / 1000).toFixed(1) + ' km).');
           if (document.body.classList.contains('chat-open')) {
             appendBotMessage(
               '🧭 <strong>Offline Direct Vector Plotted:</strong><br>' +

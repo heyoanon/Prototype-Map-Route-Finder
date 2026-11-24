@@ -79,6 +79,16 @@ def load_live_graph() -> tuple[dict[int, Node], list[Edge]]:
     return build_graph(osm_data, ROAD_HINDRANCES, HAZARD_ZONES)
 
 
+def _is_synthetic_fallback_graph(nodes: dict[int, Node], edges: list[Edge]) -> bool:
+    """Identify the fixed grid fallback used when Overpass is unavailable."""
+    return (
+        len(nodes) == 36
+        and len(edges) == 120
+        and set(nodes) == set(range(1, 37))
+        and all(edge.road_name.startswith(("Fallback Avenue ", "Fallback Street ")) for edge in edges)
+    )
+
+
 def _run_bellman_ford(nodes, edges, source, target, metrics):
     route, cost, unique, checks, relaxations, iterations = bellman_ford(
         nodes, edges, source, target, metrics=metrics
@@ -238,6 +248,7 @@ class RoutingApi:
             "node_count": len(nodes),
             "edge_count": len(edges),
             "cached": graph_cached,
+            "synthetic_fallback": _is_synthetic_fallback_graph(nodes, edges),
         }
         for result in results:
             result["graph"] = graph_info

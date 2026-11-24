@@ -9,7 +9,9 @@ MAX_TRAVEL_SPEED_MPS = 11.11
 DEFAULT_SPEED_MPS = MAX_TRAVEL_SPEED_MPS
 HINDRANCE_ADDITION_SECONDS = 60.0
 HAZARD_PENALTY_SECONDS = 600.0
-ILOILO_BOUNDS = (10.6900, 122.5400, 10.7250, 122.5800)
+# Include the western Arevalo/Oton corridor so caller locations are not snapped
+# to the graph's boundary before the algorithm starts routing.
+ILOILO_BOUNDS = (10.6850, 122.5000, 10.7300, 122.5850)
 ROAD_HINDRANCES = {
     "General Luna Street": 4.0,
     "Benigno Aquino Avenue": 3.5,
