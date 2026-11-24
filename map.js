@@ -2127,6 +2127,7 @@
     let searchRequestId = 0;
     let lastRouteRequest = null;
     let lastAlgorithmTimingSummary = '';
+    let lastRouteSearchStartedAt = 0;
     if (routeAlgorithmInput) {
       routeAlgorithmInput.addEventListener('change', function () {
         if (!lastRouteRequest) return;
@@ -7197,6 +7198,13 @@
           layer.bringToFront();
         }
       });
+      if (lastRouteSearchStartedAt > 0) {
+        const routeDisplayTimeMs = Math.max(0, performance.now() - lastRouteSearchStartedAt);
+        const routeDisplayTime = routeDisplayTimeMs < 1000
+          ? Math.round(routeDisplayTimeMs) + ' ms'
+          : (routeDisplayTimeMs / 1000).toFixed(2) + ' s';
+        metadata.textContent += ' · Route shown in ' + routeDisplayTime;
+      }
       routesElement.appendChild(card);
     }
 
@@ -7316,10 +7324,10 @@
         return Number.isFinite(result.execution_time_seconds) && result.execution_time_seconds >= 0;
       });
       lastAlgorithmTimingSummary = timingResults.length
-        ? 'Algorithm execution times: ' + timingResults.map(function (result) {
+        ? 'Engine execution: ' + timingResults.map(function (result) {
           return result.algorithm + ' ' + (result.execution_time_seconds * 1000).toFixed(2) + ' ms';
         }).join(' · ') + (isSyntheticFallback
-          ? ' · fallback grid only; the displayed road path uses OSRM'
+          ? ' (fallback grid; OSRM route)'
           : '')
         : '';
       if (isSyntheticFallback) {
@@ -8518,6 +8526,7 @@
 
     async function searchDestination(destination, knownCoordinates, routePurpose, originOverride) {
       lastAlgorithmTimingSummary = '';
+      lastRouteSearchStartedAt = performance.now();
       lastRouteRequest = {
         destination: destination,
         knownCoordinates: knownCoordinates,
@@ -8661,9 +8670,12 @@
             routes = await findAlgorithmRoutes(start, end, selectedAlgorithm);
           } catch (algorithmError) {
             const selectedLabel = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex].text;
-            algorithmFallbackMessage = selectedLabel + ' could not calculate a road route (' +
-              (algorithmError.message || 'routing service unavailable') +
-              '). Showing OSRM road directions instead.';
+            const isSyntheticGraphError = (algorithmError.message || '').includes('synthetic grid graph');
+            algorithmFallbackMessage = isSyntheticGraphError
+              ? 'Live road graph unavailable for ' + selectedLabel + '; showing OSRM road directions instead.'
+              : selectedLabel + ' routing failed (' +
+                (algorithmError.message || 'routing service unavailable') +
+                '). Showing OSRM road directions instead.';
             console.warn(algorithmFallbackMessage, algorithmError);
             routes = await findStandardRoutes(start, end);
           }
