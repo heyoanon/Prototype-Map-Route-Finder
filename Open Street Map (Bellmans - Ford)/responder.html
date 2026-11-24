@@ -2335,8 +2335,12 @@
       if (chatContainer) chatContainer.style.display = 'none';
     }
 
-    function setMissionCleared() {
+    function setMissionCleared(isFromMap) {
+      if (isMissionCleared && routeLayers.getLayers().length === 0) {
+        return;
+      }
       isMissionCleared = true;
+      responderManualRouteActive = false;
       clearedTimestamp = Date.now();
       try {
         localStorage.setItem('responder_cleared_time', String(clearedTimestamp));
@@ -2350,7 +2354,7 @@
         map.panTo(resetCenter);
       }
 
-      if (responderBroadcastChannel) {
+      if (!isFromMap && responderBroadcastChannel) {
         try {
           responderBroadcastChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
         } catch (e) {}
@@ -2628,7 +2632,7 @@
       responderBroadcastChannel.onmessage = function (event) {
         if (event && event.data) {
           if (event.data.type === 'MISSION_CLEARED' || (event.data.data && event.data.data.lastAction === 'emergency_cleared')) {
-            setMissionCleared();
+            setMissionCleared(true);
             return;
           }
           const payload = event.data.data || event.data;

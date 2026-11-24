@@ -2989,6 +2989,23 @@
       cursor: not-allowed;
     }
 
+    .service-details-action.route-btn {
+      border-color: #1a73e8;
+      background: #1a73e8;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .service-details-action.route-btn:hover {
+      background: #1557b0;
+    }
+
+    :root[data-theme="dark"] .service-details-action.route-btn {
+      border-color: #8ab4f8;
+      background: #1a73e8;
+      color: #ffffff;
+    }
+
     .service-details-action.assistance {
       border-color: #d93025;
       color: #d93025;
@@ -10635,100 +10652,132 @@
     }
 
     function clearEmergencyRoute(isFromResponder) {
-      document.body.classList.remove('mobile-route-active');
-      document.body.classList.remove('emergency-panel-open');
-      const mapSearchControls = document.getElementById('map-search-controls');
-      if (mapSearchControls) {
-        mapSearchControls.classList.remove('sidebar-expanded');
-      }
-      document.body.classList.remove('sidebar-expanded');
-      isSidebarExpanded = false;
-
-      const bar = document.getElementById('route-emergency-confirm-bar');
-      if (bar) bar.hidden = true;
-
-      // Automatically erase route polyline from map on both desktop and mobile
-      routeLayers.clearLayers();
-
-      isSearching = false;
-      searchRequestId += 1;
-      if (typeof searchButton !== 'undefined' && searchButton) {
-        searchButton.disabled = false;
-      }
-
-      if (destinationMarker) {
-        map.removeLayer(destinationMarker);
-        destinationMarker = null;
-      }
-      if (destinationInput) {
-        destinationInput.value = '';
-      }
-
-      const resultsList = document.getElementById('emergency-results-list');
-      if (resultsList) {
-        resultsList.hidden = true;
-        resultsList.replaceChildren();
-      }
-      const assistanceResults = document.getElementById('emergency-assistance-results');
-      if (assistanceResults) {
-        assistanceResults.hidden = true;
-        assistanceResults.replaceChildren();
-      }
-      if (emergencyAssistance) {
-        emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
-          btn.classList.remove('active');
-        });
-      }
-      const situationSelector = document.getElementById('responder-situation-selector');
-      if (situationSelector) {
-        situationSelector.hidden = true;
-        situationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
-          c.classList.remove('active');
-        });
-      }
-      const emergencyStatusEl = document.getElementById('emergency-status-text');
-      if (emergencyStatusEl) {
-        emergencyStatusEl.textContent = 'Select an emergency service type below to find the nearest facilities.';
-      }
-      const emergencyOpenChat = document.getElementById('emergency-open-chat');
-      if (emergencyOpenChat) emergencyOpenChat.hidden = false;
-
-      const serviceDetails = document.getElementById('service-details');
-      if (serviceDetails) {
-        serviceDetails.hidden = true;
-        serviceDetails.replaceChildren();
-      }
-      const routesEl = document.getElementById('routes');
-      if (routesEl) {
-        routesEl.replaceChildren();
-      }
-      const responderBanner = document.getElementById('responder-dispatch-banner');
-      if (responderBanner) {
-        responderBanner.hidden = true;
-        responderBanner.innerHTML = '';
-      }
-
-      currentEmergencyTarget = null;
-      isCurrentEmergencyConfirmed = false;
-
       try {
-        localStorage.removeItem('tracked_user_emergency');
-        if (!isFromResponder && emergencyDispatchChannel) {
-          emergencyDispatchChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: Date.now() });
+        // Prevent repeated clear calls / re-entrant loops
+        const bar = document.getElementById('route-emergency-confirm-bar');
+        const isBarHidden = !bar || bar.hidden;
+        const hasNoLayers = (typeof routeLayers === 'undefined' || !routeLayers || routeLayers.getLayers().length === 0);
+        if (isBarHidden && hasNoLayers && !isCurrentEmergencyConfirmed && !currentEmergencyTarget) {
+          return;
         }
-      } catch (e) {}
 
-      broadcastUserEmergencyActivity('emergency_cleared', {
-        isConfirmed: false,
-        actionDescription: isFromResponder ? 'Mission cleared by dispatch console' : 'Emergency route cleared / standby'
-      });
+        document.body.classList.remove('mobile-route-active');
+        document.body.classList.remove('emergency-panel-open');
+        const mapSearchControls = document.getElementById('map-search-controls');
+        if (mapSearchControls) {
+          mapSearchControls.classList.remove('sidebar-expanded');
+        }
+        document.body.classList.remove('sidebar-expanded');
+        isSidebarExpanded = false;
 
-      if (emergencyOpenButton) {
-        emergencyOpenButton.hidden = false;
-        emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        if (bar) bar.hidden = true;
+
+        // Erase route polyline from map safely on both desktop and mobile
+        if (typeof routeLayers !== 'undefined' && routeLayers && typeof routeLayers.clearLayers === 'function') {
+          routeLayers.clearLayers();
+        }
+
+        isSearching = false;
+        searchRequestId += 1;
+        if (typeof searchButton !== 'undefined' && searchButton) {
+          searchButton.disabled = false;
+        }
+
+        if (destinationMarker && typeof map !== 'undefined' && map) {
+          try {
+            map.removeLayer(destinationMarker);
+          } catch (e) {}
+          destinationMarker = null;
+        }
+        if (destinationInput) {
+          destinationInput.value = '';
+        }
+
+        const resultsList = document.getElementById('emergency-results-list');
+        if (resultsList) {
+          resultsList.hidden = true;
+          try { resultsList.replaceChildren(); } catch (e) { resultsList.innerHTML = ''; }
+        }
+        const assistanceResults = document.getElementById('emergency-assistance-results');
+        if (assistanceResults) {
+          assistanceResults.hidden = true;
+          try { assistanceResults.replaceChildren(); } catch (e) { assistanceResults.innerHTML = ''; }
+        }
+        if (emergencyAssistance) {
+          emergencyAssistance.querySelectorAll('[data-emergency-type]').forEach(function (btn) {
+            btn.classList.remove('active');
+          });
+        }
+        const situationSelector = document.getElementById('responder-situation-selector');
+        if (situationSelector) {
+          situationSelector.hidden = true;
+          situationSelector.querySelectorAll('.responder-scenario-chip').forEach(function (c) {
+            c.classList.remove('active');
+          });
+        }
+        const emergencyStatusEl = document.getElementById('emergency-status-text');
+        if (emergencyStatusEl) {
+          emergencyStatusEl.textContent = 'Select an emergency service type below to find the nearest facilities.';
+        }
+        const emergencyOpenChat = document.getElementById('emergency-open-chat');
+        if (emergencyOpenChat) emergencyOpenChat.hidden = false;
+
+        const serviceDetails = document.getElementById('service-details');
+        if (serviceDetails) {
+          serviceDetails.hidden = true;
+          try { serviceDetails.replaceChildren(); } catch (e) { serviceDetails.innerHTML = ''; }
+        }
+        const routesEl = document.getElementById('routes');
+        if (routesEl) {
+          try { routesEl.replaceChildren(); } catch (e) { routesEl.innerHTML = ''; }
+        }
+        const responderBanner = document.getElementById('responder-dispatch-banner');
+        if (responderBanner) {
+          responderBanner.hidden = true;
+          responderBanner.innerHTML = '';
+        }
+
+        currentEmergencyTarget = null;
+        isCurrentEmergencyConfirmed = false;
+        emergencySearchType = null;
+        isAssistanceSearch = false;
+
+        // ONLY post to channel if caller manually initiated clear on map.html (DO NOT echo back if from responder!)
+        if (!isFromResponder) {
+          try {
+            localStorage.removeItem('tracked_user_emergency');
+            if (emergencyDispatchChannel) {
+              emergencyDispatchChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: Date.now() });
+            }
+          } catch (e) {}
+
+          broadcastUserEmergencyActivity('emergency_cleared', {
+            isConfirmed: false,
+            actionDescription: 'Emergency route cleared / standby'
+          });
+        } else {
+          // Cleared from responder: just clean local storage safely without echoing back
+          try {
+            localStorage.removeItem('tracked_user_emergency');
+          } catch (e) {}
+        }
+
+        if (emergencyOpenButton) {
+          emergencyOpenButton.hidden = false;
+          emergencyOpenButton.setAttribute('aria-expanded', 'false');
+        }
+        syncEmergencyOpenButtonVisibility();
+        setStatus(isFromResponder ? '🚨 Route cleared by dispatch console. System ready.' : 'Route cleared.');
+
+        // Invalidate map size safely without crashing
+        if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+          setTimeout(function () {
+            map.invalidateSize();
+          }, 60);
+        }
+      } catch (err) {
+        console.warn('Safe clearEmergencyRoute error handled:', err);
       }
-      syncEmergencyOpenButtonVisibility();
-      setStatus(isFromResponder ? '🚨 Mission cleared by dispatch. Emergency route reset.' : 'Route cleared.');
     }
 
     const routeConfirmEmergencyBtn = document.getElementById('route-confirm-emergency-btn');
@@ -10745,7 +10794,7 @@
       });
     }
 
-    // Global listener for plot-responder-route buttons
+    // Global listener for plot-responder-route buttons (Active Route)
     document.addEventListener('click', function (e) {
       const btn = e.target.closest('[data-action="plot-responder-route"]');
       if (btn && lastResponderDispatchData) {
@@ -10757,7 +10806,16 @@
             emergencyOpenButton.setAttribute('aria-expanded', 'false');
           }
         }
-        expandSidebar();
+        if (window.innerWidth <= 640) {
+          document.body.classList.add('mobile-route-active');
+          collapseSidebar();
+          if (serviceDetails) {
+            serviceDetails.hidden = true;
+            serviceDetails.replaceChildren();
+          }
+        } else {
+          expandSidebar();
+        }
         syncEmergencyOpenButtonVisibility();
         plotResponderRoute(lastResponderDispatchData);
         showEmergencyRouteConfirmationBar({
@@ -10769,7 +10827,15 @@
           phone: lastResponderDispatchData.responder.phone,
           dispatchData: lastResponderDispatchData,
           type: 'responder'
-        });
+        }, false);
+        setTimeout(function () {
+          if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+            if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+              fitMapBoundsSafely(routeLayers.getBounds(), true);
+            }
+          }
+        }, 150);
       }
     });
 
@@ -12112,6 +12178,66 @@
       addContactAction('Call', 'tel:', actions && actions.callNumber);
       addContactAction('Message', 'sms:', actions && actions.messageNumber);
 
+      if (selectedServiceCoordinates) {
+        const routeAction = addAction('Active Route', '', function () {
+          if (window.innerWidth <= 640) {
+            document.body.classList.add('mobile-route-active');
+            collapseSidebar();
+            if (serviceDetails) {
+              serviceDetails.hidden = true;
+            }
+          }
+          if (emergencyAssistance) {
+            emergencyAssistance.hidden = true;
+            document.body.classList.remove('emergency-panel-open');
+          }
+          if (emergencyOpenButton) {
+            emergencyOpenButton.setAttribute('aria-expanded', 'false');
+            syncEmergencyOpenButtonVisibility();
+          }
+
+          let distKm = '';
+          let estMins = 5;
+          if (currentLocationCoords && selectedServiceCoordinates) {
+            const d = computeDistanceInMeters(
+              currentLocationCoords.lat,
+              currentLocationCoords.lng,
+              selectedServiceCoordinates[1],
+              selectedServiceCoordinates[0]
+            );
+            distKm = d >= 1000 ? (d / 1000).toFixed(1) : (d / 1000).toFixed(2);
+            estMins = Math.max(1, Math.round(d / 500));
+          }
+
+          searchDestination(name, selectedServiceCoordinates, { emergencyType: actionType || 'emergency' });
+
+          showEmergencyRouteConfirmationBar({
+            name: name,
+            category: categoryLabel,
+            distKm: distKm,
+            durationMins: estMins,
+            coordinates: selectedServiceCoordinates,
+            phone: actions && (actions.callNumber || actions.phone),
+            type: actionType || 'emergency'
+          }, false);
+
+          setStatus('🧭 Route Preview: Routing to ' + name + (estMins ? ' (~' + estMins + ' min).' : '.'));
+
+          setTimeout(function () {
+            if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+              map.invalidateSize();
+              if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                fitMapBoundsSafely(routeLayers.getBounds(), true);
+              }
+            }
+          }, 150);
+        }, 'route-btn');
+        if (routeAction) {
+          routeAction.title = 'Active Route to ' + name;
+          routeAction.setAttribute('aria-label', 'Active Route to ' + name);
+        }
+      }
+
       let actionType = (actions && actions.type) || emergencySearchType || null;
       if (!actionType) {
         const textToMatch = ((name || '') + ' ' + (categoryLabel || '')).toLowerCase();
@@ -12959,15 +13085,25 @@
         candidates.forEach(function (candidate, index) {
           const card = createUnifiedFacilityCard(candidate, index, label, index === 0);
 
-          card.addEventListener('click', function () {
+          function handleFacilityRouteSelection(e) {
+            if (e) e.stopPropagation();
             syncFacilityCardSelection(index);
             if (emergencyAssistance) {
               emergencyAssistance.hidden = true;
               document.body.classList.remove('emergency-panel-open');
             }
-            const sidebarContainer = document.getElementById('emergency-results-list');
-            if (sidebarContainer) {
-              sidebarContainer.hidden = false;
+            if (window.innerWidth <= 640) {
+              document.body.classList.add('mobile-route-active');
+              collapseSidebar();
+              if (serviceDetails) {
+                serviceDetails.hidden = true;
+                serviceDetails.replaceChildren();
+              }
+            } else {
+              const sidebarContainer = document.getElementById('emergency-results-list');
+              if (sidebarContainer) {
+                sidebarContainer.hidden = false;
+              }
             }
             if (emergencyOpenButton) {
               emergencyOpenButton.setAttribute('aria-expanded', 'false');
@@ -12991,7 +13127,22 @@
             }, false);
 
             setStatus('🧭 Route Preview: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
-          });
+
+            setTimeout(function () {
+              if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+                map.invalidateSize();
+                if (typeof routeLayers !== 'undefined' && routeLayers.getBounds && routeLayers.getBounds().isValid()) {
+                  fitMapBoundsSafely(routeLayers.getBounds(), true);
+                }
+              }
+            }, 120);
+          }
+
+          card.addEventListener('click', handleFacilityRouteSelection);
+          const routeBtn = card.querySelector('.emergency-facility-route-btn');
+          if (routeBtn) {
+            routeBtn.addEventListener('click', handleFacilityRouteSelection);
+          }
 
           listEl.appendChild(card);
         });
