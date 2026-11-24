@@ -1696,6 +1696,41 @@
     const routesElement = document.getElementById('routes');
     const searchButton = document.getElementById('search-button');
     const routeAlgorithmInput = document.getElementById('route-algorithm');
+    const routeAlgorithmLabels = {
+      bellman_ford: 'Bellman-Ford',
+      spfa: 'SPFA',
+      a_star: 'A*'
+    };
+    function resetRouteAlgorithmTimes() {
+      if (!routeAlgorithmInput) return;
+      Array.prototype.forEach.call(routeAlgorithmInput.options, function (option) {
+        option.dataset.baseLabel = option.dataset.baseLabel || option.textContent;
+        option.textContent = option.dataset.baseLabel;
+        option.removeAttribute('title');
+      });
+    }
+    function showRouteAlgorithmTimes(results, isSyntheticFallback) {
+      if (!routeAlgorithmInput) return;
+      const timesByAlgorithm = Object.create(null);
+      results.forEach(function (result) {
+        const algorithm = Object.keys(routeAlgorithmLabels).find(function (key) {
+          return routeAlgorithmLabels[key] === result.algorithm;
+        });
+        if (algorithm && Number.isFinite(result.execution_time_seconds) &&
+          result.execution_time_seconds >= 0) {
+          timesByAlgorithm[algorithm] = result.execution_time_seconds;
+        }
+      });
+      Array.prototype.forEach.call(routeAlgorithmInput.options, function (option) {
+        const seconds = timesByAlgorithm[option.value];
+        if (seconds === undefined) return;
+        const timeLabel = (seconds * 1000).toFixed(2) + ' ms';
+        const graphLabel = isSyntheticFallback ? ' · fallback grid' : '';
+        option.textContent = option.dataset.baseLabel + ' (' + timeLabel + graphLabel + ')';
+        option.title = 'Measured algorithm execution time: ' + timeLabel +
+          (isSyntheticFallback ? ' on the fallback grid, not a road graph.' : ' on the loaded road graph.');
+      });
+    }
     const accountStatus = document.getElementById('account-status');
     const historyStatus = document.getElementById('history-status');
     const accountToggle = document.getElementById('account-toggle');
@@ -7296,17 +7331,25 @@
           origin_lon: start[0],
           destination_lat: end[1],
           destination_lon: end[0],
-          algorithm: algorithm
+          algorithm: 'all'
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Algorithm routing is unavailable.');
       const results = data.algorithm === 'all' ? data.results : [data];
       const graphInfo = data.graph || (results[0] && results[0].graph);
-      if (graphInfo && (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120))) {
+      const isSyntheticFallback = Boolean(graphInfo &&
+        (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120)));
+      showRouteAlgorithmTimes(results, isSyntheticFallback);
+      if (isSyntheticFallback) {
         throw new Error('The server has only a synthetic grid graph, not road data.');
       }
-      const routes = results.filter(function (result) {
+      const selectedResults = algorithm === 'all'
+        ? results
+        : results.filter(function (result) {
+          return result.algorithm === routeAlgorithmLabels[algorithm];
+        });
+      const routes = selectedResults.filter(function (result) {
         return Array.isArray(result.route_coordinates) && result.route_coordinates.length > 0;
       }).map(function (result) {
         const graphCoordinates = result.route_coordinates.map(function (point) {
@@ -8498,6 +8541,7 @@
     }
 
     async function searchDestination(destination, knownCoordinates, routePurpose, originOverride) {
+      resetRouteAlgorithmTimes();
       lastRouteRequest = {
         destination: destination,
         knownCoordinates: knownCoordinates,
@@ -8640,7 +8684,8 @@
           try {
             routes = await findAlgorithmRoutes(start, end, selectedAlgorithm);
           } catch (algorithmError) {
-            const selectedLabel = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex].text;
+            const selectedOption = routeAlgorithmInput.options[routeAlgorithmInput.selectedIndex];
+            const selectedLabel = selectedOption.dataset.baseLabel || selectedOption.textContent;
             algorithmFallbackMessage = selectedLabel + ' could not calculate a road route (' +
               (algorithmError.message || 'routing service unavailable') +
               '). Showing OSRM road directions instead.';
