@@ -173,7 +173,6 @@
           </div>
         </div>
       </form>
-      <div class="route-algorithm-control"><label for="route-algorithm">Routing engine</label><select id="route-algorithm"><option value="osrm">Road directions (OSRM)</option><option value="bellman_ford">Bellman-Ford</option><option value="spfa">SPFA</option><option value="a_star">A*</option><option value="all">Compare all algorithms</option></select></div>
       <div id="incident-banner" hidden>
         <span id="incident-banner-text">📍 Click anywhere on the map to place a live event or hazard zone.</span>
         <button id="incident-banner-cancel" type="button">Cancel</button>
@@ -185,6 +184,16 @@
       <div id="service-details" aria-label="Selected service details" aria-live="polite" hidden></div>
       <div id="routes" aria-label="Available routes"></div>
     </section>
+    <div class="route-algorithm-control">
+      <label for="route-algorithm">Routing engine</label>
+      <select id="route-algorithm">
+        <option value="osrm">Road directions (OSRM)</option>
+        <option value="bellman_ford">Bellman-Ford</option>
+        <option value="spfa">SPFA</option>
+        <option value="a_star">A*</option>
+        <option value="all">Compare all algorithms</option>
+      </select>
+    </div>
     <button id="emergency-open" type="button" aria-label="Emergency services" title="Emergency services"
       aria-expanded="false" aria-controls="emergency-assistance">
       <svg aria-hidden="true" viewBox="0 0 24 24">

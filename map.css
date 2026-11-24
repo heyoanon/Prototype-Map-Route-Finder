@@ -4538,6 +4538,56 @@
         transition: width 0.25s ease, max-width 0.25s ease;
       }
 
+      /* Keep the routing engine as an opaque, separate control below search */
+      .route-algorithm-control {
+        width: 100% !important;
+        min-height: 44px !important;
+        margin: 0 !important;
+        padding: 7px 9px 7px 12px !important;
+        border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+        border-radius: 12px !important;
+        background: #ffffff !important;
+        opacity: 1 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        color: #202124 !important;
+        pointer-events: auto !important;
+      }
+
+      .route-algorithm-control label {
+        flex: 0 0 auto;
+        color: #202124 !important;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .route-algorithm-control select {
+        min-height: 30px !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 8px !important;
+        background: #f8f9fa !important;
+        color: #202124 !important;
+        opacity: 1 !important;
+      }
+
+      :root[data-theme="dark"] .route-algorithm-control {
+        background: #202124 !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+        color: #e8eaed !important;
+      }
+
+      :root[data-theme="dark"] .route-algorithm-control label {
+        color: #e8eaed !important;
+      }
+
+      :root[data-theme="dark"] .route-algorithm-control select {
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        background: #303134 !important;
+        color: #e8eaed !important;
+      }
+
       /* When viewing route options or expanded details, expand to full width */
       #map-search-controls.sidebar-expanded {
         width: calc(100% - 16px) !important;
@@ -5224,10 +5274,17 @@
 .route-algorithm-control {
   display: flex;
   align-items: center;
+  width: 350px;
+  max-width: 100%;
   gap: 8px;
-  padding: 6px 10px;
-  color: #5f6368;
+  padding: 8px 10px;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  background: #ffffff;
+  opacity: 1;
+  color: #202124;
   font-size: 12px;
+  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.16);
 }
 
 .route-algorithm-control select {
@@ -5236,8 +5293,9 @@
   padding: 5px 7px;
   border: 1px solid #dadce0;
   border-radius: 6px;
-  background: inherit;
-  color: inherit;
+  background: #f8f9fa;
+  color: #202124;
+  opacity: 1;
   font: inherit;
 }
 
@@ -5251,4 +5309,16 @@
 :root[data-theme="dark"] .route-algorithm-control,
 :root[data-theme="dark"] .algorithm-route-stats {
   color: #bdc1c6;
+}
+
+:root[data-theme="dark"] .route-algorithm-control {
+  background: #202124;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme="dark"] .route-algorithm-control select {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #303134;
+  color: #e8eaed;
 }
