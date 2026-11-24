@@ -10487,6 +10487,7 @@
 
     // Floating Emergency Route Confirmation Logic (Route preview before confirming)
     let currentEmergencyTarget = null;
+    let emergencyConfirmBarHideTimer = null;
     let isCurrentEmergencyConfirmed = false;
 
     function showEmergencyRouteConfirmationBar(facilityData, isDirectConfirmed) {
@@ -10514,10 +10515,24 @@
           localStorage.removeItem('responder_cleared_time');
         } catch (e) {}
         if (badge) badge.classList.add('confirmed');
-        if (badgeText) badgeText.textContent = '🚨 Emergency Route Active · Responders Notified';
-        if (promptText) promptText.textContent = 'Active emergency route to ' + (facilityData.name || 'nearest facility') + '. Responders notified.';
+        if (badgeText) badgeText.textContent = '🚨 Emergency Confirmed · Responders Notified';
+        if (promptText) promptText.textContent = 'Active emergency confirmed. Responders notified.';
         if (confirmBtn) confirmBtn.hidden = true;
         if (cancelBtn) cancelBtn.textContent = 'End Emergency / Clear Route';
+
+        // Auto-hide confirmation bar after 5 seconds when directly confirmed
+        if (typeof emergencyConfirmBarHideTimer !== 'undefined' && emergencyConfirmBarHideTimer) {
+          clearTimeout(emergencyConfirmBarHideTimer);
+        }
+        emergencyConfirmBarHideTimer = setTimeout(function () {
+          const bar = document.getElementById('route-emergency-confirm-bar');
+          if (bar && isCurrentEmergencyConfirmed) {
+            bar.hidden = true;
+            if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+              map.invalidateSize();
+            }
+          }
+        }, 5000);
 
         // Direct broadcast confirmed emergency to responder console
         try {
@@ -10639,10 +10654,28 @@
       });
 
       setStatus('🚨 Emergency Confirmed! Route active to ' + currentEmergencyTarget.name + '. Responders notified.');
+
+      // Auto-hide confirmation bar after 5 seconds as requested, leaving route visible on map
+      if (typeof emergencyConfirmBarHideTimer !== 'undefined' && emergencyConfirmBarHideTimer) {
+        clearTimeout(emergencyConfirmBarHideTimer);
+      }
+      emergencyConfirmBarHideTimer = setTimeout(function () {
+        const bar = document.getElementById('route-emergency-confirm-bar');
+        if (bar && isCurrentEmergencyConfirmed) {
+          bar.hidden = true;
+          if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+          }
+        }
+      }, 5000);
     }
 
     function clearEmergencyRoute(isFromResponder) {
       try {
+        if (typeof emergencyConfirmBarHideTimer !== 'undefined' && emergencyConfirmBarHideTimer) {
+          clearTimeout(emergencyConfirmBarHideTimer);
+          emergencyConfirmBarHideTimer = null;
+        }
         // Prevent repeated clear calls / re-entrant loops
         const bar = document.getElementById('route-emergency-confirm-bar');
         const isBarHidden = !bar || bar.hidden;

@@ -2336,6 +2336,7 @@
     }
 
     function setMissionCleared(isFromMap) {
+      lastCalculatedRouteKey = null;
       if (isMissionCleared && routeLayers.getLayers().length === 0) {
         return;
       }
@@ -2650,7 +2651,10 @@
     }
 
     let lastSeenSyncTimestamp = 0;
-    // Polling heartbeat (every 1 second) for immediate sync responsiveness
+    let lastSeenConfirmedState = null;
+    let lastSeenEmergencyKey = '';
+
+    // Smart polling heartbeat: ONLY updates when data timestamp, confirmation, or content actually changes
     setInterval(function () {
       let raw = null;
       try {
@@ -2660,17 +2664,34 @@
 
       if (raw) {
         const ts = raw.timestamp || raw.lastActionTime || 0;
-        if (ts > lastSeenSyncTimestamp) {
+        const isConfirmed = Boolean(raw.isConfirmed);
+        const emergencyKey = (raw.lat || '') + ',' + (raw.lng || '') + ':' + (raw.serviceType || '') + ':' + isConfirmed;
+
+        if (ts !== lastSeenSyncTimestamp || isConfirmed !== lastSeenConfirmedState || emergencyKey !== lastSeenEmergencyKey) {
           lastSeenSyncTimestamp = ts;
+          lastSeenConfirmedState = isConfirmed;
+          lastSeenEmergencyKey = emergencyKey;
+
+          if (isConfirmed || raw.lastAction === 'emergency_confirmed') {
+            isMissionCleared = false;
+            clearedTimestamp = 0;
+            try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+          }
+
           loadTrackedUser(raw);
-          if (raw.isConfirmed === true || raw.lastAction === 'emergency_confirmed' || raw.lastAction === 'emergency_cleared') {
+          if (isConfirmed || raw.lastAction === 'emergency_confirmed' || raw.lastAction === 'emergency_cleared') {
             flashSyncBadge();
           }
-        } else {
-          loadTrackedUser(raw);
         }
       } else {
-        loadTrackedUser();
+        if (lastSeenSyncTimestamp !== 0 || lastSeenEmergencyKey !== '') {
+          lastSeenSyncTimestamp = 0;
+          lastSeenConfirmedState = null;
+          lastSeenEmergencyKey = '';
+          if (!isMissionCleared) {
+            setMissionCleared(true);
+          }
+        }
       }
     }, 1000);
 
@@ -3125,7 +3146,16 @@
       }
     }
 
+    let lastCalculatedRouteKey = null;
+
     async function calculateAndDrawRoute(startCoords, endCoords) {
+      if (!startCoords || !endCoords) return;
+      const routeKey = startCoords.map(function(n){ return Number(n).toFixed(5); }).join(',') + '->' + endCoords.map(function(n){ return Number(n).toFixed(5); }).join(',');
+      if (lastCalculatedRouteKey === routeKey && routeLayers && routeLayers.getLayers().length > 0) {
+        return;
+      }
+      lastCalculatedRouteKey = routeKey;
+
       routeLayers.clearLayers();
 
       const coordinatesQuery = [startCoords, endCoords].map(function (c) { return c.join(','); }).join(';');
@@ -3181,8 +3211,10 @@
         // Render live factors analysis in responder HUD
         renderResponderFactors(route, startCoords, endCoords);
 
-        // Fit bounds safely
-        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds());
+        // Fit bounds safely (respect user manual zoom/pan unless initial plot)
+        if (!userManualZoomActive) {
+          fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds());
+        }
 
       } catch (err) {
         console.warn('Could not calculate OSRM route, falling back to direct metric:', err);
