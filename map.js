@@ -7314,9 +7314,29 @@
           algorithm: algorithm
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Algorithm routing is unavailable.');
+      const responseText = await response.text();
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        const status = response.status + (response.statusText ? ' ' + response.statusText : '');
+        throw new Error(response.ok
+          ? 'Routing service returned an invalid response.'
+          : 'Routing service returned HTTP ' + status + '.');
+      }
+      if (!response.ok) {
+        const apiError = data && typeof data.error === 'string' ? data.error : '';
+        throw new Error(apiError || 'Routing service returned HTTP ' + response.status + '.');
+      }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Routing service returned an invalid response.');
+      }
       const results = data.algorithm === 'all' ? data.results : [data];
+      if (!Array.isArray(results) || results.some(function (result) {
+        return !result || typeof result !== 'object' || Array.isArray(result);
+      })) {
+        throw new Error('Routing service returned an invalid response.');
+      }
       const graphInfo = data.graph || (results[0] && results[0].graph);
       const isSyntheticFallback = Boolean(graphInfo &&
         (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120)));
