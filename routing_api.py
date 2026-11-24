@@ -12,6 +12,7 @@ from road_network import (
     Edge,
     Node,
     build_graph,
+    build_fallback_osm_data,
     fetch_overpass_roads,
     find_nearest_node,
     haversine_meters,
@@ -68,7 +69,13 @@ def route_payload(api: "RoutingApi", payload: dict) -> dict:
 
 
 def load_live_graph() -> tuple[dict[int, Node], list[Edge]]:
-    osm_data = fetch_overpass_roads(*ILOILO_BOUNDS)
+    try:
+        osm_data = fetch_overpass_roads(*ILOILO_BOUNDS)
+    except RuntimeError:
+        osm_data = build_fallback_osm_data(*ILOILO_BOUNDS)
+    elements = osm_data.get("elements") if isinstance(osm_data, dict) else None
+    if not isinstance(elements, list) or not elements:
+        osm_data = build_fallback_osm_data(*ILOILO_BOUNDS)
     return build_graph(osm_data, ROAD_HINDRANCES, HAZARD_ZONES)
 
 

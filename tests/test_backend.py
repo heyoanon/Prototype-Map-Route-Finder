@@ -143,9 +143,17 @@ class GraphBuilderTests(unittest.TestCase):
     @patch.object(road_network.requests, "post")
     def test_overpass_reports_when_both_endpoints_fail(self, post):
         post.side_effect = requests.Timeout("unavailable")
-        with self.assertRaisesRegex(RuntimeError, "either Overpass server"):
+        with self.assertRaisesRegex(RuntimeError, "available Overpass servers"):
             road_network.fetch_overpass_roads(1, 2, 3, 4)
-        self.assertEqual(post.call_count, 2)
+        self.assertEqual(post.call_count, 3)
+
+    def test_fallback_osm_data_builds_connected_grid(self):
+        osm_data = road_network.build_fallback_osm_data(
+            10.6900, 122.5400, 10.7250, 122.5800
+        )
+        nodes, edges = road_network.build_graph(osm_data, {}, [])
+        self.assertEqual(len(nodes), 36)
+        self.assertGreater(len(edges), 0)
 
 
 class BenchmarkTests(unittest.TestCase):

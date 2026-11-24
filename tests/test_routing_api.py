@@ -7,12 +7,14 @@ import unittest
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 from http.server import ThreadingHTTPServer
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import server
+import routing_api
 from road_network import Edge, Node
 from routing_api import (
     ApiRequestError,
@@ -111,6 +113,16 @@ class RoutingApiTests(unittest.TestCase):
         api = RoutingApi(GraphCache(fail))
         with self.assertRaises(GraphUnavailableError):
             api.route(10.700, 122.540, 10.701, 122.541, "bellman_ford")
+
+    @patch.object(
+        routing_api,
+        "fetch_overpass_roads",
+        side_effect=RuntimeError("Overpass unavailable"),
+    )
+    def test_live_loader_uses_fallback_when_overpass_is_unavailable(self, fetch):
+        nodes, edges = routing_api.load_live_graph()
+        self.assertGreater(len(nodes), 0)
+        self.assertGreater(len(edges), 0)
 
 
 class RoutingHttpTests(unittest.TestCase):

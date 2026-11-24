@@ -49,6 +49,7 @@ def fetch_overpass_roads(
     endpoints = (
         "https://overpass-api.de/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
     )
     headers = {"User-Agent": "IloiloCARE/1.0"}
     last_error = None
@@ -70,8 +71,65 @@ def fetch_overpass_roads(
             print(f"Server request failed: {error}")
 
     raise RuntimeError(
-        "Unable to download the road network from either Overpass server."
+        "Unable to download the road network from the available Overpass servers."
     ) from last_error
+
+
+def build_fallback_osm_data(
+    south: float, west: float, north: float, east: float
+) -> dict:
+    elements = []
+    node_id = 1
+    grid: list[list[int]] = []
+    latitudes = [
+        south + (north - south) * index / 5
+        for index in range(6)
+    ]
+    longitudes = [
+        west + (east - west) * index / 5
+        for index in range(6)
+    ]
+
+    for latitude in latitudes:
+        row = []
+        for longitude in longitudes:
+            row.append(node_id)
+            elements.append(
+                {
+                    "type": "node",
+                    "id": node_id,
+                    "lat": latitude,
+                    "lon": longitude,
+                }
+            )
+            node_id += 1
+        grid.append(row)
+
+    way_id = 1_000_000
+    for row_index, row in enumerate(grid):
+        elements.append(
+            {
+                "type": "way",
+                "id": way_id,
+                "nodes": row,
+                "tags": {"name": f"Fallback Avenue {row_index + 1}"},
+            }
+        )
+        way_id += 1
+
+    for column_index in range(len(longitudes)):
+        column = [row[column_index] for row in grid]
+        elements.append(
+            {
+                "type": "way",
+                "id": way_id,
+                "nodes": column,
+                "tags": {"name": f"Fallback Street {column_index + 1}"},
+            }
+        )
+        way_id += 1
+
+    return {"elements": elements}
 
 
 def haversine_meters(a: Node, b: Node) -> float:
