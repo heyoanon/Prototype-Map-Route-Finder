@@ -3649,14 +3649,35 @@
     updateNetworkStatus();
 
     // Register offline service worker
-    if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
+    // Support offline & online on localhost (127.0.0.1, [::1], *.localhost, custom ports) and production
+    const isLocalhostHost = (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '[::1]' ||
+      window.location.hostname.endsWith('.localhost')
+    );
+
+    if ('serviceWorker' in navigator && (window.isSecureContext || isLocalhostHost)) {
       window.addEventListener('load', function () {
-        const swPath = window.location.pathname.includes('Open Street Map (Bellmans - Ford)')
-          ? './service-worker.js'
-          : '/service-worker.js';
-        navigator.serviceWorker.register(swPath).catch(function (error) {
-          console.error('Could not register offline service worker for responder:', error);
-        });
+        if (window.location.protocol === 'file:') {
+          console.info('Direct file:// filesystem mode active. App is operating in direct local offline storage mode.');
+          return;
+        }
+
+        const decodedPath = decodeURIComponent(window.location.pathname);
+        const isSubfolder = decodedPath.includes('Open Street Map (Bellmans - Ford)');
+        const primarySwPath = isSubfolder ? './service-worker.js' : 'service-worker.js';
+
+        navigator.serviceWorker.register(primarySwPath, { scope: './' })
+          .then(function (reg) {
+            console.log('Offline Service Worker registered on responder localhost/production (scope: ' + reg.scope + ')');
+          })
+          .catch(function () {
+            return navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+          })
+          .catch(function (error) {
+            console.warn('Notice: Offline responder service worker registration handled:', error);
+          });
       });
     }
 

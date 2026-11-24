@@ -5,21 +5,36 @@
   <title>Open Street Map Route Finder</title>
   <script>
     (function () {
+      var lastRole = 'personal';
       try {
-        var lastRole = localStorage.getItem('osm-map-offline-v1:account-last-role');
-        if (lastRole === 'responder') {
-          window.location.replace('responder.html');
-          return;
-        }
+        lastRole = localStorage.getItem('osm-map-offline-v1:account-last-role') || 'personal';
       } catch (e) {}
-      window.location.replace('map.html');
+
+      var targetPage = (lastRole === 'responder') ? 'responder.html' : 'map.html';
+
+      // 1. Direct local server with clean rewrites or Vercel
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        fetch(targetPage, { method: 'HEAD' }).then(function (res) {
+          if (res.ok) {
+            window.location.replace(targetPage);
+          } else {
+            window.location.replace('Open Street Map (Bellmans - Ford)/' + targetPage);
+          }
+        }).catch(function () {
+          window.location.replace('Open Street Map (Bellmans - Ford)/' + targetPage);
+        });
+        return;
+      }
+
+      // 2. Production Vercel or standard web hosting
+      window.location.replace(targetPage);
     })();
   </script>
   <noscript>
-    <meta http-equiv="refresh" content="0; url=map.html">
+    <meta http-equiv="refresh" content="0; url=Open Street Map (Bellmans - Ford)/map.html">
   </noscript>
 </head>
 <body>
-  <p>Loading Map Route Finder... If you are not redirected automatically, <a href="map.html">click here for Map</a> or <a href="responder.html">here for Responder Console</a>.</p>
+  <p>Loading Map Route Finder... If not redirected automatically, <a href="Open Street Map (Bellmans - Ford)/map.html">click here for Map</a> or <a href="Open Street Map (Bellmans - Ford)/responder.html">here for Responder Console</a>.</p>
 </body>
 </html>
