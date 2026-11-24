@@ -7206,6 +7206,11 @@
     syncAccountButtonPlacement();
     window.addEventListener('resize', syncAccountButtonPlacement);
     window.addEventListener('resize', syncEmergencyOpenButtonVisibility);
+    window.addEventListener('resize', function () {
+      if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+        map.invalidateSize();
+      }
+    });
 
     const categoryControl = L.control({ position: 'bottomleft' });
     categoryControl.onAdd = function () {

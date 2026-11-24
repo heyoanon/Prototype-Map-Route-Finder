@@ -3230,8 +3230,35 @@
         const badge = document.getElementById('dispatch-badge');
         if (badge) badge.textContent = 'EN ROUTE';
 
-        if (Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
-          await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+        // Ensure user coordinates are active
+        if (!Number.isFinite(currentTrackedUser.lat) || !Number.isFinite(currentTrackedUser.lng)) {
+          const fallback = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
+          currentTrackedUser.lat = fallback[0];
+          currentTrackedUser.lng = fallback[1];
+          currentTrackedUser.coordsFormatted = fallback[0].toFixed(4) + '° N, ' + fallback[1].toFixed(4) + '° E';
+          currentTrackedUser.district = 'Sector Assigned';
+          currentTrackedUser.scenario = '🚨 Emergency Route Active';
+          currentTrackedUser.summary = 'Responder dispatched to caller coordinates.';
+          currentTrackedUser.tacticalAdvice = 'Maintain priority navigation corridor.';
+        }
+
+        updateUI();
+        await updateMapMarkersAndRoute();
+
+        // On mobile viewports, collapse the HUD drawer so the route path is immediately visible
+        if (window.innerWidth <= 640 && responderHud) {
+          responderHud.classList.add('hud-collapsed');
+          if (hudCollapseBtn) {
+            hudCollapseBtn.setAttribute('aria-expanded', 'false');
+            hudCollapseBtn.setAttribute('title', 'Expand HUD');
+          }
+          setTimeout(function () {
+            map.invalidateSize();
+            if (routeLayers.getBounds().isValid()) {
+              fitMapBoundsSafely(routeLayers.getBounds(), true);
+            }
+          }, 320);
+        } else {
           if (routeLayers.getBounds().isValid()) {
             fitMapBoundsSafely(routeLayers.getBounds(), true);
           }
@@ -3242,20 +3269,24 @@
     const callBtnEl = document.getElementById('btn-call-caller');
     if (callBtnEl) {
       callBtnEl.addEventListener('click', function () {
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
         responderManualRouteActive = true;
-        if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
-          calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
-        }
+        updateUI();
+        updateMapMarkersAndRoute();
       });
     }
 
     const msgBtnEl = document.getElementById('btn-message-caller');
     if (msgBtnEl) {
       msgBtnEl.addEventListener('click', function () {
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
         responderManualRouteActive = true;
-        if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
-          calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
-        }
+        updateUI();
+        updateMapMarkersAndRoute();
       });
     }
 
@@ -3295,13 +3326,37 @@
       }
     });
 
-    document.getElementById('btn-refresh-user').addEventListener('click', function () {
+    document.getElementById('btn-refresh-user').addEventListener('click', async function () {
       lastTrackedCoords = null;
       lastRenderedStationId = null;
       isMissionCleared = false;
       clearedTimestamp = 0;
       try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
-      loadTrackedUser();
+
+      let rawData = null;
+      try {
+        const raw = localStorage.getItem('tracked_user_emergency');
+        if (raw) rawData = JSON.parse(raw);
+      } catch (e) {}
+
+      if (rawData && Number.isFinite(rawData.lat) && Number.isFinite(rawData.lng)) {
+        loadTrackedUser(rawData);
+      } else {
+        const fallback = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
+        currentTrackedUser.lat = fallback[0];
+        currentTrackedUser.lng = fallback[1];
+        currentTrackedUser.coordsFormatted = fallback[0].toFixed(4) + '° N, ' + fallback[1].toFixed(4) + '° E';
+        currentTrackedUser.district = 'Sector Assigned';
+        currentTrackedUser.scenario = '🟢 Caller Position Verified';
+        currentTrackedUser.summary = 'Position detected. Ready for routing.';
+        currentTrackedUser.tacticalAdvice = 'Maintain priority navigation corridor.';
+        updateUI();
+        await updateMapMarkersAndRoute();
+        if (userMarker) {
+          map.flyTo(userMarker.getLatLng(), 15);
+        }
+      }
+
       flashSyncBadge();
       if (navigator.geolocation) {
         requestResponderDeviceLocation({ setView: false, userInitiated: false });
