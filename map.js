@@ -7351,13 +7351,12 @@
       const isSyntheticFallback = Boolean(graphInfo &&
         (graphInfo.synthetic_fallback || (graphInfo.node_count === 36 && graphInfo.edge_count === 120)));
       const memoryResults = results.filter(function (result) {
-        return typeof result.algorithm === 'string' &&
-          Number.isFinite(result.peak_traced_memory_bytes) &&
+        return Number.isFinite(result.peak_traced_memory_bytes) &&
           result.peak_traced_memory_bytes >= 0;
       });
       lastAlgorithmMemorySummary = memoryResults.length
         ? 'Engine memory: ' + memoryResults.map(function (result) {
-          return result.algorithm + ' ' + formatMemorySize(result.peak_traced_memory_bytes);
+          return formatMemorySize(result.peak_traced_memory_bytes);
         }).join(' · ')
         : '';
       if (isSyntheticFallback) {
