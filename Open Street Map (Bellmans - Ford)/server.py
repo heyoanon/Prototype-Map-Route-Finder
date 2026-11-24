@@ -17,8 +17,17 @@ import socketserver
 import os
 import sys
 import mimetypes
+import json
+from urllib.parse import urlparse
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from routing_api import ApiRequestError, GraphCache, GraphUnavailableError, RoutingApi
 
 PORT = int(os.environ.get('PORT', 8000))
+ROUTING_API = RoutingApi(GraphCache())
 
 # Ensure correct MIME types
 mimetypes.add_type('application/manifest+json', '.webmanifest')
@@ -67,6 +76,64 @@ class LocalhostRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/Open Street Map (Bellmans - Ford)/service-worker.js'
 
         return super().do_GET()
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path != '/api/route':
+            self.send_json(404, {'error': 'Endpoint not found.'})
+            return
+
+        content_length = int(self.headers.get('Content-Length', '0'))
+        if content_length <= 0:
+            self.send_json(400, {'error': 'Missing JSON request body.'})
+            return
+        try:
+            payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            self.send_json(400, {'error': 'Request body must contain valid JSON.'})
+            return
+        if not isinstance(payload, dict):
+            self.send_json(400, {'error': 'Request body must be a JSON object.'})
+            return
+
+        required = (
+            'origin_lat',
+            'origin_lon',
+            'destination_lat',
+            'destination_lon',
+            'algorithm',
+        )
+        missing = [name for name in required if name not in payload]
+        if missing:
+            self.send_json(400, {'error': 'Missing parameters.', 'missing': missing})
+            return
+
+        try:
+            response = ROUTING_API.route(
+                payload['origin_lat'],
+                payload['origin_lon'],
+                payload['destination_lat'],
+                payload['destination_lon'],
+                payload['algorithm'],
+            )
+        except ApiRequestError as error:
+            self.send_json(400, {'error': str(error)})
+            return
+        except GraphUnavailableError as error:
+            self.send_json(502, {'error': str(error)})
+            return
+        except Exception:
+            self.send_json(500, {'error': 'Routing request failed.'})
+            return
+        self.send_json(200, response)
+
+    def send_json(self, status, payload):
+        body = json.dumps(payload).encode('utf-8')
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 def run_server(port=PORT):
     handler = LocalhostRequestHandler

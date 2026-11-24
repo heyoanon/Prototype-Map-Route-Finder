@@ -32,6 +32,32 @@ objects:
 python "Open Street Map (Bellmans - Ford)\benchmark.py"
 ```
 
+The same Python process can also serve the routing API while preserving static
+file serving:
+
+```powershell
+python server.py
+```
+
+Send `POST /api/route` with `Content-Type: application/json`:
+
+```json
+{
+  "origin_lat": 10.715,
+  "origin_lon": 122.551,
+  "destination_lat": 10.696,
+  "destination_lon": 122.570,
+  "algorithm": "bellman_ford"
+}
+```
+
+Use `"spfa"`, `"a_star"`, or `"all"` for the algorithm field. `bellman-ford`,
+`bellman_ford`, `Bellman-Ford`, `a*`, `a_star`, and `astar` are also accepted.
+Successful responses include route node IDs and coordinates, travel time,
+route distance, execution time, peak traced memory, and algorithm counters.
+The API caches one successfully downloaded live graph in memory for 300 seconds
+and reuses that graph for all algorithms in an `"all"` request.
+
 Tests use synthetic data and do not call Overpass. Algorithm and benchmark
 commands require an internet connection to Overpass; the downloader tries a
 second public endpoint if the first fails.
