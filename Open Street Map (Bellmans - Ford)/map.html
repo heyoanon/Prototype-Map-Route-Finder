@@ -8767,8 +8767,7 @@
             actions.push({
               label: '🗺️ Route to #2 ' + (second.name.length > 20 ? second.name.slice(0, 18) + '…' : second.name),
               action: function () {
-                destinationInput.value = second.name;
-                searchDestination(second.name, second.coordinates, { emergencyType: second.facility.type || 'ambulance', facility: second.facility });
+                activateEmergencyRouteFromChat(second.name, second.coordinates, second.facility, second.facility.type || 'ambulance');
               }
             });
           }
@@ -8825,8 +8824,7 @@
             actions.push({
               label: '🗺️ Route to #2 ' + (second.name.length > 20 ? second.name.slice(0, 18) + '…' : second.name),
               action: function () {
-                destinationInput.value = second.name;
-                searchDestination(second.name, second.coordinates, { emergencyType: second.facility.type, facility: second.facility });
+                activateEmergencyRouteFromChat(second.name, second.coordinates, second.facility, second.facility.type || 'ambulance');
               }
             });
           }
@@ -9290,8 +9288,7 @@
               action: function () {
                 const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
                 if (wvmc) {
-                  destinationInput.value = wvmc.name;
-                  searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
+                  activateEmergencyRouteFromChat(wvmc.name, wvmc.coordinates, wvmc, 'ambulance');
                 }
               }
             },
@@ -9392,8 +9389,7 @@
               action: function () {
                 const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
                 if (wvmc) {
-                  destinationInput.value = wvmc.name;
-                  searchDestination(wvmc.name, wvmc.coordinates, { emergencyType: 'ambulance', facility: wvmc });
+                  activateEmergencyRouteFromChat(wvmc.name, wvmc.coordinates, wvmc, 'ambulance');
                 }
               }
             },
@@ -9443,15 +9439,23 @@
             {
               label: '🗺️ Route to WVMC Pharmacy',
               action: function () {
-                destinationInput.value = 'Western Visayas Medical Center';
-                searchDestination('Western Visayas Medical Center', [122.5342, 10.7188]);
+                const wvmc = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('WVMC'); });
+                if (wvmc) {
+                  activateEmergencyRouteFromChat(wvmc.name, wvmc.coordinates, wvmc, 'ambulance');
+                } else {
+                  activateEmergencyRouteFromChat('Western Visayas Medical Center', [122.5342, 10.7188], null, 'ambulance');
+                }
               }
             },
             {
               label: '🗺️ Route to Doctors Hospital',
               action: function () {
-                destinationInput.value = "Iloilo Doctors' Hospital";
-                searchDestination("Iloilo Doctors' Hospital", [122.5489, 10.7001]);
+                const docHosp = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.name.includes('Doctor'); });
+                if (docHosp) {
+                  activateEmergencyRouteFromChat(docHosp.name, docHosp.coordinates, docHosp, 'ambulance');
+                } else {
+                  activateEmergencyRouteFromChat("Iloilo Doctors' Hospital", [122.5489, 10.7001], null, 'ambulance');
+                }
               }
             },
             { label: '🚑 Request Ambulance', action: function () { handleChatIntent('ambulance'); } }
@@ -9988,6 +9992,10 @@
 
     function broadcastUserEmergencyActivity(actionType, extraData) {
       try {
+        // If caller has not confirmed emergency, do not broadcast route preview / facility selection actions to responder
+        if (!isCurrentEmergencyConfirmed && (actionType === 'facility_route_selected' || actionType === 'search' || actionType === 'situation_change')) {
+          return;
+        }
         const userLoc = typeof getDetectedUserLocation === 'function' ? getDetectedUserLocation() : {
           coords: [122.5368, 10.7196],
           lat: 10.7196,

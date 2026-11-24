@@ -2511,8 +2511,8 @@
           }
         }
 
-        // Adapt active station if user specifically selected a facility on map.html
-        if (rawData.targetFacility && Array.isArray(rawData.targetFacility.coordinates)) {
+        // Adapt active station ONLY if caller explicitly confirmed emergency
+        if (currentTrackedUser.isConfirmed && rawData.targetFacility && Array.isArray(rawData.targetFacility.coordinates)) {
           activeResponderStation = {
             name: rawData.targetFacility.name,
             coordinates: rawData.targetFacility.coordinates,
@@ -2659,7 +2659,9 @@
         if (ts > lastSeenSyncTimestamp) {
           lastSeenSyncTimestamp = ts;
           loadTrackedUser(raw);
-          flashSyncBadge();
+          if (raw.isConfirmed === true || raw.lastAction === 'emergency_confirmed' || raw.lastAction === 'emergency_cleared') {
+            flashSyncBadge();
+          }
         } else {
           loadTrackedUser(raw);
         }
