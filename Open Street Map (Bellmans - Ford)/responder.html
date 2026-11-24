@@ -3442,6 +3442,13 @@
         onResponderDeviceLocationFailure(msg, options);
       }
 
+      // Fallback timer: ensure isLocatingDevice is always reset even if browser never fires callbacks
+      setTimeout(function () {
+        if (!resolved) {
+          resolveFailure('Device location request timed out.');
+        }
+      }, 10000);
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           function (pos) {

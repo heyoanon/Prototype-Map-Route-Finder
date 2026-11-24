@@ -2507,20 +2507,7 @@
     }
 
     .emergency-panel-collapse-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #1a73e8;
-      background: rgba(26, 115, 232, 0.1);
-      border: 1px solid rgba(26, 115, 232, 0.25);
-      border-radius: 999px;
-      cursor: pointer;
-      margin-left: auto;
-      margin-right: 6px;
-      transition: background 0.15s ease;
+      display: none !important;
     }
 
     .emergency-panel-collapse-btn:hover {
@@ -4865,9 +4852,9 @@
       }
 
       .emergency-panel-collapse-btn {
-        display: inline-flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
       }
 
       /* Remove the x button in emergency service on mobile (as requested) */
@@ -5432,9 +5419,7 @@
   <section id="emergency-assistance" aria-label="Find emergency service" hidden>
     <div class="emergency-assistance-header">
       <span class="emergency-assistance-header-title">Find a nearby emergency service</span>
-      <button id="emergency-assistance-collapse-btn" class="emergency-panel-collapse-btn" type="button" title="Collapse panel to view map and route">
-        <span>🗺️ View Map & Route</span> ▼
-      </button>
+
       <button id="emergency-assistance-close" class="emergency-assistance-close" type="button" aria-label="Close emergency services" title="Close">&times;</button>
     </div>
     <div id="emergency-status-text" class="emergency-status-text">
