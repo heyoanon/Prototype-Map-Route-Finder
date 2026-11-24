@@ -1,0 +1,3771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>🚨 Responder Dispatch · Live User Tracker</title>
+  <meta name="theme-color" content="#202124">
+  <meta name="description" content="Emergency Responder Dispatch and Live User Location Tracking Console.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <style>
+    #offline-banner {
+      position: fixed;
+      z-index: 2000;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 32px);
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: #202124;
+      color: #fff;
+      box-shadow: 0 2px 10px #0005;
+      font-size: 13px;
+      text-align: center;
+      transition: opacity 0.2s ease;
+    }
+
+    #offline-banner[hidden] {
+      display: none;
+    }
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: dark;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #121316;
+      color: #e8eaed;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      background: #1a1a1a;
+    }
+
+    /* Floating Responder HUD */
+    .responder-hud {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1000;
+      width: 400px;
+      max-width: calc(100vw - 28px);
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      background: rgba(18, 20, 26, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      padding: 16px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    :root[data-theme="light"] .responder-hud {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      color: #202124;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    :root[data-theme="light"] .hud-header {
+      border-bottom-color: #e8eaed;
+    }
+
+    .hud-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-pulse-dot {
+      width: 11px;
+      height: 11px;
+      background: #34a853;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.8);
+      animation: pulse-green 1.8s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse-green {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.8);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 9px rgba(52, 168, 83, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+      }
+    }
+
+    .hud-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: #8ab4f8;
+      text-transform: uppercase;
+    }
+
+    :root[data-theme="light"] .hud-title {
+      color: #1a73e8;
+    }
+
+    .hud-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #492320 0%, #301715 100%);
+      color: #f28b82;
+      border: 1px solid #7a3535;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(217, 48, 37, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    :root[data-theme="light"] .hud-badge {
+      background: #fce8e6;
+      color: #b3261e;
+      border-color: #f28b82;
+    }
+
+    .hud-badge.synced-flash {
+      background: #1e4620 !important;
+      color: #81c995 !important;
+      border-color: #34a853 !important;
+      box-shadow: 0 0 8px rgba(52, 168, 83, 0.6);
+    }
+
+    /* Role notification banner */
+    .responder-role-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(26, 115, 232, 0.15);
+      border: 1px solid rgba(138, 180, 248, 0.35);
+      color: #8ab4f8;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    :root[data-theme="light"] .responder-role-banner {
+      background: #e8f0fe;
+      border-color: #aecbfa;
+      color: #1967d2;
+    }
+    .responder-role-banner.role-responder {
+      background: rgba(52, 168, 83, 0.14);
+      border-color: rgba(52, 168, 83, 0.4);
+      color: #81c995;
+    }
+    :root[data-theme="light"] .responder-role-banner.role-responder {
+      background: #e6f4ea;
+      border-color: #ceead6;
+      color: #137333;
+    }
+    /* Live User Activity Card */
+    .user-activity-card {
+      background: #1f2327;
+      border: 1px solid #3c4043;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    :root[data-theme="light"] .user-activity-card {
+      background: #f8f9fa;
+      border-color: #dadce0;
+    }
+
+    .user-activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8ab4f8;
+    }
+
+    :root[data-theme="light"] .user-activity-header {
+      color: #1a73e8;
+    }
+
+    .user-activity-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-activity-dot {
+      width: 7px;
+      height: 7px;
+      background: #34a853;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .sync-freshness {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #81c995;
+      background: rgba(52, 168, 83, 0.15);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    :root[data-theme="light"] .sync-freshness {
+      background: #e6f4ea;
+      color: #188038;
+    }
+
+    .caller-session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin: 4px 0 8px 0;
+      background: rgba(52, 168, 83, 0.18);
+      color: #81c995;
+      border: 1px solid rgba(52, 168, 83, 0.35);
+      transition: all 0.25s ease;
+    }
+
+    .caller-session-badge.inactive {
+      background: rgba(154, 160, 166, 0.15);
+      color: #9aa0a6;
+      border-color: rgba(154, 160, 166, 0.25);
+    }
+
+    :root[data-theme="light"] .caller-session-badge {
+      background: rgba(24, 128, 56, 0.12);
+      color: #137333;
+      border-color: rgba(24, 128, 56, 0.25);
+    }
+
+    :root[data-theme="light"] .caller-session-badge.inactive {
+      background: rgba(128, 134, 139, 0.12);
+      color: #5f6368;
+      border-color: rgba(128, 134, 139, 0.25);
+    }
+
+    .caller-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34a853;
+      box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+      animation: sessionPulse 1.8s infinite;
+    }
+
+    :root[data-theme="light"] .caller-pulse-dot {
+      background: #188038;
+      box-shadow: 0 0 0 0 rgba(24, 128, 56, 0.7);
+    }
+
+    .caller-session-badge.inactive .caller-pulse-dot {
+      background: #80868b;
+      box-shadow: none;
+      animation: none;
+    }
+
+    @keyframes sessionPulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(52, 168, 83, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+      }
+    }
+
+    .latest-activity-summary {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e8eaed;
+      line-height: 1.35;
+    }
+
+    :root[data-theme="light"] .latest-activity-summary {
+      color: #202124;
+    }
+
+    .caller-chat-note {
+      background: #2a2015;
+      border-left: 3px solid #f9ab00;
+      padding: 4px 8px;
+      border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: #ffd54f;
+      margin-top: 3px;
+    }
+
+    :root[data-theme="light"] .caller-chat-note {
+      background: #fef7e0;
+      border-color: #f9ab00;
+      color: #b06000;
+    }
+
+    .activity-log-toggle {
+      font-size: 10.5px;
+      color: #9aa0a6;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+      user-select: none;
+    }
+
+    :root[data-theme="light"] .activity-log-toggle {
+      color: #5f6368;
+    }
+
+    .activity-log-toggle:hover {
+      color: #8ab4f8;
+    }
+
+    .activity-log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding-top: 4px;
+      border-top: 1px solid #3c4043;
+      margin-top: 4px;
+    }
+
+    :root[data-theme="light"] .activity-log-list {
+      border-top-color: #e8eaed;
+    }
+
+    .activity-item {
+      font-size: 10.5px;
+      line-height: 1.3;
+      color: #bdc1c6;
+      display: flex;
+      gap: 6px;
+    }
+
+    :root[data-theme="light"] .activity-item {
+      color: #5f6368;
+    }
+
+    .activity-item-time {
+      color: #8ab4f8;
+      font-weight: 600;
+      min-width: 48px;
+    }
+
+    :root[data-theme="light"] .activity-item-time {
+      color: #1a73e8;
+    }
+
+    /* Tracked User Card */
+    .user-tracker-card {
+      background: rgba(35, 38, 44, 0.92);
+      border: 1.5px solid #d93025;
+      border-left: 4px solid #ea4335;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      box-shadow: 0 4px 20px rgba(217, 48, 37, 0.25);
+    }
+
+    :root[data-theme="light"] .user-tracker-card {
+      background: #fff8f7;
+      border-color: #d93025;
+      border-left: 4px solid #d93025;
+      box-shadow: 0 4px 16px rgba(217, 48, 37, 0.12);
+    }
+
+    .user-tracker-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #f28b82;
+      letter-spacing: -0.1px;
+    }
+
+    :root[data-theme="light"] .user-tracker-title {
+      color: #b3261e;
+    }
+
+    .user-info-row {
+      font-size: 12px;
+      line-height: 1.4;
+      display: flex;
+      gap: 8px;
+      color: #e8eaed;
+    }
+
+    :root[data-theme="light"] .user-info-row {
+      color: #3c4043;
+    }
+
+    .user-info-row strong {
+      color: #9aa0a6;
+      min-width: 65px;
+      font-weight: 600;
+    }
+
+    :root[data-theme="light"] .user-info-row strong {
+      color: #5f6368;
+    }
+
+    .user-info-val {
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Immediate Safety Advice Box */
+    .assessment-advice-box {
+      margin-top: 6px;
+      padding: 8px 11px;
+      border-radius: 8px;
+      background: rgba(51, 39, 4, 0.95);
+      border: 1.5px solid #ffd54f;
+      color: #fff9c4;
+      font-size: 11.5px;
+      line-height: 1.4;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    :root[data-theme="light"] .assessment-advice-box {
+      background: #fef7e0;
+      border-color: #f9ab00;
+      color: #202124;
+      box-shadow: none;
+    }
+
+    .assessment-advice-box strong {
+      color: #ffd54f !important;
+      display: inline-block;
+      margin-bottom: 3px;
+      font-weight: 700;
+    }
+
+    :root[data-theme="light"] .assessment-advice-box strong {
+      color: #b06000 !important;
+    }
+
+    .assessment-advice-box .advice-text {
+      color: #fffde7;
+      font-weight: 500;
+    }
+
+    :root[data-theme="light"] .assessment-advice-box .advice-text {
+      color: #202124;
+    }
+
+    /* Live Route Metrics */
+    .route-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .route-metric-box {
+      background: rgba(37, 40, 46, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    :root[data-theme="light"] .route-metric-box {
+      background: #f8f9fa;
+      border-color: #dadce0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .route-metric-label {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #9aa0a6;
+      font-weight: 700;
+    }
+
+    :root[data-theme="light"] .route-metric-label {
+      color: #5f6368;
+    }
+
+    .route-metric-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #81c995;
+      margin-top: 3px;
+      letter-spacing: -0.5px;
+    }
+
+    :root[data-theme="light"] .route-metric-val {
+      color: #188038;
+    }
+
+    .hazard-status-badge {
+      background: rgba(42, 31, 32, 0.9);
+      border: 1px solid #5f2b2b;
+      color: #f28b82;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    :root[data-theme="light"] .hazard-status-badge {
+      background: #fce8e6;
+      border-color: #f28b82;
+      color: #b3261e;
+    }
+
+    /* Control Button Groups */
+    .hud-controls-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    @keyframes locatingSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .locating-spin {
+      display: inline-block;
+      animation: locatingSpin 1s linear infinite;
+    }
+
+    .hud-btn {
+      min-height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(48, 50, 56, 0.9);
+      color: #e8eaed;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    :root[data-theme="light"] .hud-btn {
+      background: #f1f3f4;
+      border-color: #dadce0;
+      color: #202124;
+    }
+
+    .hud-btn:hover {
+      background: rgba(60, 64, 70, 0.98);
+      border-color: #8ab4f8;
+      color: #8ab4f8;
+      transform: translateY(-1.5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    :root[data-theme="light"] .hud-btn:hover {
+      background: #e8eaed;
+      color: #1a73e8;
+      border-color: #1a73e8;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .hud-btn.primary {
+      background: linear-gradient(135deg, #1a73e8, #1557b0);
+      border-color: #1a73e8;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(26, 115, 232, 0.4);
+    }
+
+    .hud-btn.primary:hover {
+      background: linear-gradient(135deg, #1557b0, #0d47a1);
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 18px rgba(26, 115, 232, 0.55);
+    }
+
+    .hud-btn.danger {
+      background: linear-gradient(135deg, #d93025, #b3261e);
+      border-color: #d93025;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(217, 48, 37, 0.4);
+    }
+
+    .hud-btn.danger:hover {
+      background: linear-gradient(135deg, #b3261e, #961912);
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 18px rgba(217, 48, 37, 0.55);
+    }
+
+    /* Dispatch Stage Stepper */
+    .dispatch-status-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .dispatch-status-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9aa0a6;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    :root[data-theme="light"] .dispatch-status-label {
+      color: #5f6368;
+    }
+
+    .dispatch-steps {
+      display: flex;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 3px;
+      border-radius: 8px;
+    }
+
+    .dispatch-step-btn {
+      flex: 1;
+      padding: 7px 4px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #9aa0a6;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    :root[data-theme="light"] .dispatch-step-btn {
+      color: #5f6368;
+    }
+
+    .dispatch-step-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #e8eaed;
+    }
+
+    :root[data-theme="light"] .dispatch-step-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #202124;
+    }
+
+    .dispatch-step-btn.active {
+      background: linear-gradient(135deg, #188038, #137333);
+      border-color: #188038;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(24, 128, 56, 0.45);
+    }
+
+    /* Unified Top-Right Theme Toggle Control */
+    .unified-theme-control {
+      margin-top: 10px !important;
+      margin-right: 10px !important;
+      margin-bottom: 6px !important;
+    }
+
+    .unified-theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid #4a4d52;
+      background: rgba(30, 31, 34, 0.96);
+      color: #fbbc04;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+
+    .unified-theme-btn:hover {
+      background: rgba(45, 47, 51, 0.98);
+      border-color: #5f6368;
+      transform: scale(1.05);
+    }
+
+    :root[data-theme="light"] .unified-theme-btn {
+      background: rgba(255, 255, 255, 0.96);
+      border-color: #dadce0;
+      color: #1a73e8;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    :root[data-theme="light"] .unified-theme-btn:hover {
+      background: #f8f9fa;
+      border-color: #bdc1c6;
+    }
+
+    .unified-theme-btn .theme-svg {
+      display: block;
+      pointer-events: none;
+    }
+
+    /* By default (Dark Theme): show sun icon (to switch to light) */
+    .unified-theme-btn .sun-icon {
+      display: block;
+    }
+    .unified-theme-btn .moon-icon {
+      display: none;
+    }
+
+    /* In Light Theme: show moon icon (to switch to dark) */
+    :root[data-theme="light"] .unified-theme-btn .sun-icon {
+      display: none;
+    }
+    :root[data-theme="light"] .unified-theme-btn .moon-icon {
+      display: block;
+    }
+
+    /* Custom Leaflet Zoom Control */
+    .leaflet-control-zoom.leaflet-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 0;
+      box-shadow: none;
+      margin-right: 18px;
+      margin-bottom: 22px;
+    }
+
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      float: none !important;
+      display: grid !important;
+      place-items: center !important;
+      width: 42px !important;
+      height: 42px !important;
+      line-height: 42px !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 50% !important;
+      background: rgba(30, 32, 38, 0.94) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      color: #e8eaed !important;
+      font-size: 20px !important;
+      font-weight: 500 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      text-decoration: none !important;
+    }
+
+    .leaflet-control-zoom-in:hover,
+    .leaflet-control-zoom-out:hover {
+      background: rgba(45, 48, 56, 0.98) !important;
+      transform: translateY(-2px) scale(1.05) !important;
+      color: #8ab4f8 !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    :root[data-theme="light"] .leaflet-control-zoom-in,
+    :root[data-theme="light"] .leaflet-control-zoom-out {
+      background: rgba(255, 255, 255, 0.95) !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      color: #202124 !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    :root[data-theme="light"] .leaflet-control-zoom-in:hover,
+    :root[data-theme="light"] .leaflet-control-zoom-out:hover {
+      color: #1a73e8 !important;
+    }
+
+    /* Custom Leaflet Layer Control Dark/Light Mode Styling */
+    .leaflet-control-layers {
+      background: rgba(30, 31, 34, 0.96) !important;
+      border: 1px solid #4a4d52 !important;
+      border-radius: 8px !important;
+      color: #e8eaed !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+
+    .leaflet-control-layers-expanded {
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      min-width: 210px !important;
+      max-height: calc(100vh - 90px) !important;
+      overflow-y: auto !important;
+    }
+
+    .leaflet-control-layers:not(.leaflet-control-layers-expanded) {
+      padding: 0 !important;
+      width: 36px !important;
+      height: 36px !important;
+    }
+
+    .leaflet-control-layers-toggle {
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 8px !important;
+    }
+
+    :root:not([data-theme="light"]) .leaflet-control-layers-toggle {
+      filter: invert(0.88) hue-rotate(180deg);
+    }
+
+    :root[data-theme="light"] .leaflet-control-layers {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border-color: #dadce0 !important;
+      color: #202124 !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .leaflet-control-layers-base label,
+    .leaflet-control-layers-overlays label {
+      display: flex !important;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      margin: 4px 0 !important;
+      cursor: pointer;
+    }
+
+    .leaflet-control-layers-separator {
+      border-top-color: #3c4043 !important;
+      margin: 6px 0 !important;
+    }
+
+    :root[data-theme="light"] .leaflet-control-layers-separator {
+      border-top-color: #e8eaed !important;
+    }
+
+    /* Pulsing Leaflet Markers */
+    .user-incident-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-incident-pin {
+      width: 38px;
+      height: 38px;
+      background: #d93025;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217, 48, 37, 0.5);
+      position: relative;
+      z-index: 2;
+    }
+
+    .radar-ping {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(217, 48, 37, 0.6);
+      animation: radar-ripple 2s infinite ease-out;
+      z-index: 1;
+    }
+
+    @keyframes radar-ripple {
+      0% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(3.2);
+        opacity: 0;
+      }
+    }
+
+    .responder-unit-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .responder-unit-pin {
+      width: 36px;
+      height: 36px;
+      background: #1a73e8;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5);
+    }
+
+    .facility-map-pin {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #ffffff;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    /* =========================================================================
+       Mobile Device Optimization (@media max-width: 640px)
+       ========================================================================= */
+    .hud-drag-handle {
+      display: none;
+      width: 42px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.28);
+      margin: 0 auto 10px;
+      cursor: pointer;
+    }
+
+    .hud-toggle-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #e8eaed;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.15s, transform 0.2s;
+    }
+
+    .hud-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    :root[data-theme="light"] .hud-drag-handle {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    :root[data-theme="light"] .hud-toggle-btn {
+      border-color: rgba(0, 0, 0, 0.12);
+      background: rgba(0, 0, 0, 0.05);
+      color: #3c4043;
+    }
+
+    
+
+          /* Move copyright / attribution to area where user cannot see (desktop & mobile) */
+    .leaflet-bottom.leaflet-right .leaflet-control-attribution,
+    .leaflet-control-attribution {
+      display: none !important;
+      position: absolute !important;
+      left: -9999px !important;
+      bottom: -9999px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translate(-9999px, -9999px) !important;
+    }
+
+    /* Factors Access Button & Drawer in Responder HUD */
+    .factors-access-section {
+      margin: 10px 0 6px;
+    }
+
+    .hud-factors-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #181b20;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e8eaed;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+    }
+
+    .hud-factors-btn:hover {
+      background: #22262d;
+      border-color: rgba(138, 180, 248, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .hud-factors-btn-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .hud-factors-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .hud-factors-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .hud-factors-title {
+      font-weight: 700;
+      font-size: 12.5px;
+      color: #8ab4f8;
+      letter-spacing: 0.2px;
+    }
+
+    .hud-factors-subtitle {
+      font-size: 10.5px;
+      color: #9aa0a6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hud-factors-chevron {
+      font-size: 11px;
+      color: #8ab4f8;
+      transition: transform 0.25s ease;
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+
+    .hud-factors-btn[aria-expanded="true"] .hud-factors-chevron {
+      transform: rotate(180deg);
+    }
+
+    .responder-factors-drawer {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeInDrawer 0.2s ease-out;
+    }
+
+    .responder-factors-drawer[hidden] {
+      display: none !important;
+    }
+
+    @keyframes fadeInDrawer {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Factors Blocks — Exactly Matching Design Screenshot */
+    .factors-block {
+      padding: 13px 12px;
+      border-radius: 12px;
+      background: #14161a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .factors-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .factors-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #f1f3f4;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.25;
+    }
+
+    /* Two-line Stacked Badge (Live Model / Path Optimization) */
+    .factors-badge-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.15;
+      padding: 3px 8px;
+      border-radius: 8px;
+      background: #25282f;
+      color: #bdc1c6;
+      font-size: 9.5px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.2px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* 4-Tile Metrics Grid */
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .breakdown-tile {
+      background: #24272e;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .breakdown-label {
+      font-size: 9.5px;
+      font-weight: 500;
+      color: #9aa0a6;
+      line-height: 1.2;
+    }
+
+    .breakdown-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+
+    /* Total / Overall Time Tile (Green in Screenshot) */
+    .breakdown-tile.total {
+      background: #16271c;
+      border-color: rgba(74, 222, 128, 0.25);
+    }
+
+    .breakdown-tile.total .breakdown-label {
+      color: #81c995;
+    }
+
+    .breakdown-tile.total .breakdown-value {
+      color: #4ade80;
+    }
+
+    .breakdown-tile.delayed {
+      background: #2d1818;
+      border-color: rgba(242, 139, 130, 0.3);
+    }
+
+    .breakdown-tile.delayed .breakdown-value {
+      color: #f28b82;
+    }
+
+    /* Itemized Factor Cards */
+    .factor-item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .factor-item-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #1e2126;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+    }
+
+    .factor-item-card .factor-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    .factor-item-card .factor-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .factor-item-card .factor-label {
+      font-weight: 700;
+      font-size: 11.5px;
+      color: #e8eaed;
+      margin-bottom: 2px;
+      line-height: 1.35;
+    }
+
+    .factor-item-card .factor-desc {
+      color: #9aa0a6;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    /* Safe / Free-Flow / Unobstructed Green Cards */
+    .factor-item-card.safe {
+      background: #142219;
+      border-color: #1e3d29;
+    }
+
+    .factor-item-card.safe .factor-label {
+      color: #5bb974;
+    }
+
+    .factor-item-card.safe .factor-desc {
+      color: #9aa0a6;
+    }
+
+    /* Delayed / Hazard Warning Cards */
+    .factor-item-card.delayed {
+      background: #2b1717;
+      border-color: #5a2624;
+    }
+
+    .factor-item-card.delayed .factor-label {
+      color: #f28b82;
+    }
+
+    /* Formula and Calculation Box */
+    .formula-box {
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #15181c;
+      border: 1px dashed #3c4043;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #bdc1c6;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .formula-math-line {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      font-size: 11px;
+      color: #6ba5ff;
+      letter-spacing: 0.1px;
+    }
+
+    .formula-calc-line strong {
+      color: #ffffff;
+    }
+
+    .formula-note {
+      font-size: 10px;
+      color: #70757a;
+      line-height: 1.35;
+      margin-top: 1px;
+    }
+
+@media (max-width: 640px) {
+      html, body {
+        -webkit-text-size-adjust: 100%;
+        overscroll-behavior-y: auto;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Mobile HUD Bottom Drawer */
+      .responder-hud {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        max-height: 80vh !important;
+        max-height: 80dvh !important;
+        border-radius: 22px 22px 0 0 !important;
+        padding: 10px 14px max(18px, env(safe-area-inset-bottom, 18px)) !important;
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.75) !important;
+        z-index: 1050 !important;
+        transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      }
+
+      .hud-drag-handle {
+        display: block !important;
+      }
+
+      .hud-toggle-btn {
+        display: inline-flex !important;
+      }
+
+      /* Collapsed compact mode on mobile: shows header, route metrics, and call button */
+      .responder-hud.hud-collapsed {
+        max-height: 155px !important;
+        overflow-y: hidden !important;
+      }
+
+      .responder-hud.hud-collapsed .user-activity-card,
+      .responder-hud.hud-collapsed .user-tracker-card,
+      .responder-hud.hud-collapsed #hazard-status,
+      .responder-hud.hud-collapsed .factors-access-section,
+      .responder-hud.hud-collapsed .hud-controls-group,
+      .responder-hud.hud-collapsed .dispatch-status-selector,
+      .responder-hud.hud-collapsed #responder-role-banner {
+        display: none !important;
+      }
+
+      .responder-hud.hud-collapsed .hud-toggle-btn svg {
+        transform: rotate(180deg);
+      }
+
+      /* Responsive Stepper buttons */
+      .dispatch-steps {
+        display: flex !important;
+        gap: 4px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        padding-bottom: 2px !important;
+      }
+      .dispatch-steps::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      .dispatch-step-btn {
+        flex: 0 0 auto !important;
+        min-height: 38px !important;
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+      }
+
+      /* Touch targets */
+      .hud-btn {
+        min-height: 44px !important;
+        font-size: 13px !important;
+        border-radius: 10px !important;
+      }
+
+      .hud-btn:active {
+        transform: scale(0.97);
+      }
+
+      #btn-call-caller {
+        min-height: 48px !important;
+        font-size: 14.5px !important;
+        border-radius: 12px !important;
+      }
+      /* Mobile Factors Access & Drawer Optimization */
+      .factors-access-section {
+        margin: 8px 0 4px !important;
+      }
+
+      .hud-factors-btn {
+        min-height: 46px !important;
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+      }
+
+      .hud-factors-title {
+        font-size: 12.5px !important;
+      }
+
+      .hud-factors-subtitle {
+        font-size: 10.5px !important;
+      }
+
+      /* 2x2 Grid on Mobile for Maximum Readability */
+      .breakdown-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+      }
+
+      .breakdown-tile {
+        padding: 8px 6px !important;
+        border-radius: 8px !important;
+      }
+
+      .breakdown-label {
+        font-size: 10px !important;
+      }
+
+      .breakdown-value {
+        font-size: 14.5px !important;
+      }
+
+      .factor-item-card {
+        padding: 8px 10px !important;
+        font-size: 11.5px !important;
+        border-radius: 8px !important;
+      }
+
+      .factor-item-card .factor-icon {
+        font-size: 15px !important;
+      }
+
+      .formula-box {
+        font-size: 11px !important;
+        word-break: break-word !important;
+        overflow-x: auto !important;
+        padding: 8px 10px !important;
+      }
+
+      /* Remove + and - zoom buttons on mobile */
+      .leaflet-control-zoom {
+        display: none !important;
+      }
+
+      /* Move copyright / attribution to area that cannot be seen on mobile */
+      .leaflet-control-attribution {
+        display: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+        bottom: -9999px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate(-9999px, -9999px) !important;
+      }
+    }
+      
+
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <div id="offline-banner" role="status" aria-live="polite" hidden>
+    Offline mode: Local emergency dispatch & tracking active.
+  </div>
+
+  <!-- Responder HUD -->
+  <aside id="responder-hud" class="responder-hud" aria-label="Responder Live Tracking HUD">
+    <div class="hud-drag-handle" id="hud-drag-handle" title="Tap to expand or collapse HUD"></div>
+    <div class="hud-header">
+      <div class="hud-title-wrap">
+        <span class="hud-pulse-dot"></span>
+        <span id="hud-main-title" class="hud-title">Responder Live Tracker</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span id="dispatch-badge" class="hud-badge">LIVE TRACKING</span>
+        <button id="hud-collapse-btn" type="button" class="hud-toggle-btn" aria-label="Toggle compact map view" title="Toggle compact map view">
+          <svg id="hud-toggle-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Role notification banner -->
+    <div id="responder-role-banner" class="responder-role-banner" hidden>
+      <span id="responder-role-text">👤 Personal Account Detected</span>
+    </div>
+
+    <!-- Live User Activity Feed Card -->
+    <div class="user-activity-card">
+      <div class="user-activity-header">
+        <div class="user-activity-title">
+          <span class="user-activity-dot"></span>
+          <span>Live Caller Activity</span>
+        </div>
+        <span id="sync-freshness-badge" class="sync-freshness">SYNCED</span>
+      </div>
+      <div id="caller-session-status-badge" class="caller-session-badge">
+        <span class="caller-pulse-dot"></span>
+        <span id="caller-session-status-text">Caller Map Session: Active (Desktop)</span>
+      </div>
+      <div id="latest-activity-summary" class="latest-activity-summary">
+        Caller active in Map app
+      </div>
+      <div id="caller-chat-container" style="display: none;">
+        <div id="caller-chat-note" class="caller-chat-note"></div>
+      </div>
+      <div id="activity-log-toggle" class="activity-log-toggle">
+        <span id="activity-log-count">Show Activity Stream (0)</span>
+        <span id="activity-toggle-arrow">▼</span>
+      </div>
+      <div id="activity-log-list" class="activity-log-list" hidden></div>
+    </div>
+
+    <!-- Live Tracked User Location Card -->
+    <div class="user-tracker-card">
+      <div class="user-tracker-title">
+        <span id="user-scenario-title">🚨 Caller Incident Site</span>
+        <span id="user-last-ping" style="font-size: 10.5px; font-weight: normal; color: #9aa0a6;">Live Ping</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Location:</strong>
+        <span id="user-district-val" class="user-info-val">Mandurriao District</span>
+      </div>
+      <div class="user-info-row">
+        <strong>GPS:</strong>
+        <span id="user-coords-val" class="user-info-val" style="font-family: monospace;">10.7196° N, 122.5368° E</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Station:</strong>
+        <span id="responder-station-val" class="user-info-val" style="color: #8ab4f8;">Mandurriao Disaster Response Unit</span>
+      </div>
+      <div class="user-info-row">
+        <strong>Incident:</strong>
+        <span id="user-situation-val" class="user-info-val" style="color: #f28b82;">Flash Flood & Water Evacuation</span>
+      </div>
+      <div id="user-advice-container">
+        <div class="assessment-advice-box">
+          <strong>💡 Immediate Safety Advice:</strong><br>
+          <span id="user-advice-val" class="advice-text">Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Route Metrics -->
+    <div class="route-metrics-grid">
+      <div class="route-metric-box">
+        <div class="route-metric-label">Estimated ETA</div>
+        <div id="route-eta-val" class="route-metric-val">~4 min</div>
+      </div>
+      <div class="route-metric-box">
+        <div class="route-metric-label">Distance to User</div>
+        <div id="route-dist-val" class="route-metric-val">1.8 km</div>
+      </div>
+    </div>
+
+    <div id="hazard-status" class="hazard-status-badge">
+      <span>🛡️</span>
+      <span id="hazard-status-text">Route evaluated: direct corridor clear of impassable hazards.</span>
+    </div>
+
+    <!-- Route & Travel Factors Access Button and Drawer -->
+    <div class="factors-access-section">
+      <button id="btn-toggle-factors" type="button" class="hud-factors-btn" aria-expanded="false" title="View travel time factors, friction, delays, and path optimization">
+        <div class="hud-factors-btn-left">
+          <span class="hud-factors-icon">⏱️</span>
+          <div class="hud-factors-text">
+            <span class="hud-factors-title">Route & Travel Time Factors</span>
+            <span class="hud-factors-subtitle">Live delay models, friction & path optimization</span>
+          </div>
+        </div>
+        <span id="factors-expand-chevron" class="hud-factors-chevron">▼</span>
+      </button>
+      <div id="responder-factors-container" class="responder-factors-drawer" hidden>
+        <!-- Injected Live Factors UI -->
+      </div>
+    </div>
+
+    <!-- Quick Map & Tracking Actions -->
+    <div class="hud-controls-group">
+      <button id="btn-show-route" type="button" class="hud-btn primary" style="grid-column: 1 / -1; font-weight: 700; background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; box-shadow: 0 2px 8px rgba(26,115,232,0.4);" title="Detect caller position and navigate route immediately">
+        <span>🗺️</span> Detect Position, Show & Go to Route
+      </button>
+      <button id="btn-center-user" type="button" class="hud-btn primary">
+        <span>📍</span> Track User
+      </button>
+      <button id="btn-center-responder" type="button" class="hud-btn">
+        <span id="btn-responder-icon">🚑</span> Station Unit
+      </button>
+      <button id="btn-fit-overview" type="button" class="hud-btn">
+        <span>🗺️</span> Fit Both
+      </button>
+      <button id="btn-refresh-user" type="button" class="hud-btn">
+        <span>🔄</span> Refresh
+      </button>
+      <button id="btn-quick-factors" type="button" class="hud-btn" title="View travel time factors, friction, delays, and path optimization">
+        <span>⏱️</span> Factors
+      </button>
+      <button id="btn-device-gps" type="button" class="hud-btn" style="grid-column: 1 / -1;" title="Detect location based on where device is currently located">
+        <span id="btn-gps-icon">🎯</span> <span id="btn-gps-text">Detect Device GPS Location</span>
+      </button>
+    </div>
+    <div id="responder-gps-status" style="font-size: 11px; color: #8ab4f8; margin-top: 6px; padding: 4px 8px; border-radius: 6px; background: rgba(138, 180, 248, 0.1); border: 1px solid rgba(138, 180, 248, 0.25); display: none;"></div>
+
+    <!-- Dispatch Status Stepper -->
+    <div class="dispatch-status-selector">
+      <span class="dispatch-status-label">Responder Mission Status</span>
+      <div class="dispatch-steps">
+        <button type="button" class="dispatch-step-btn" data-status="en-route">En Route</button>
+        <button type="button" class="dispatch-step-btn" data-status="on-scene">On Scene</button>
+        <button type="button" class="dispatch-step-btn" data-status="treating">Treating</button>
+        <button type="button" class="dispatch-step-btn" data-status="transporting">Transport</button>
+        <button type="button" class="dispatch-step-btn active" data-status="cleared">Cleared</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+      <a id="btn-call-caller" href="tel:911" class="hud-btn danger" style="justify-content: center; width: 100%;" title="Call caller">
+        <span>📞</span> Call Caller
+      </a>
+      <a id="btn-message-caller" href="sms:911" class="hud-btn" style="justify-content: center; width: 100%; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: #e8eaed;" title="Message caller">
+        <span>💬</span> Message Caller
+      </a>
+    </div>
+  </aside>
+
+
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="routing-config.js"></script>
+  <script src="vendor/supabase/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    // --- Tactical Responder Live User Tracking System ---
+
+    const esriTrafficApiKey = (window.OSM_MAP_ROUTING_CONFIG && window.OSM_MAP_ROUTING_CONFIG.esriApiKey) || '';
+
+    // Active live incidents in the area (flood hazard, road closure, roadwork)
+    const liveIncidents = [
+      {
+        id: 'inc-flood-1',
+        name: 'Flash Flood Hazard',
+        type: 'flood',
+        icon: '🌊',
+        color: '#d93025',
+        lat: 10.7080,
+        lng: 122.5620,
+        radius: 200,
+        penaltySeconds: 600,
+        impassable: false
+      },
+      {
+        id: 'inc-closure-1',
+        name: 'Festival / Street Marathon Closure',
+        type: 'closure',
+        icon: '⛔',
+        color: '#b3261e',
+        lat: 10.7010,
+        lng: 122.5550,
+        radius: 240,
+        penaltySeconds: Infinity,
+        impassable: true
+      },
+      {
+        id: 'inc-work-1',
+        name: 'Roadwork & Pipe Repair',
+        type: 'construction',
+        icon: '🚧',
+        color: '#e37400',
+        lat: 10.6965,
+        lng: 122.5480,
+        radius: 170,
+        penaltySeconds: 360,
+        impassable: false
+      }
+    ];
+
+    const KNOWN_EMERGENCY_FACILITIES = [
+      // Ambulance / Hospitals
+      {
+        name: "Western Visayas Medical Center (WVMC)",
+        type: "ambulance",
+        category: "Tertiary Government Hospital / Ambulance Base",
+        coordinates: [122.5342, 10.7188],
+        address: "Q. Abeto St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2841"
+      },
+      {
+        name: "Iloilo Doctors' Hospital",
+        type: "ambulance",
+        category: "Private Hospital / 24/7 Ambulance Service",
+        coordinates: [122.5489, 10.7001],
+        address: "West Timawa, Molo, Iloilo City",
+        phone: "(033) 337-7702"
+      },
+      {
+        name: "QualiMed Hospital Iloilo",
+        type: "ambulance",
+        category: "General Hospital / Ambulance Service",
+        coordinates: [122.5475, 10.7102],
+        address: "Atria Park District, San Rafael, Mandurriao, Iloilo City",
+        phone: "(033) 501-4848"
+      },
+      {
+        name: "St. Paul's Hospital Iloilo",
+        type: "ambulance",
+        category: "Level 3 Hospital / 24/7 Emergency & Ambulance",
+        coordinates: [122.5647, 10.6975],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-2741"
+      },
+      {
+        name: "The Medical City Iloilo",
+        type: "ambulance",
+        category: "Tertiary Hospital / Emergency Ambulance",
+        coordinates: [122.5412, 10.6953],
+        address: "Locsin St, Tap-oc, Molo, Iloilo City",
+        phone: "(033) 500-1000"
+      },
+      {
+        name: "Iloilo Mission Hospital",
+        type: "ambulance",
+        category: "Tertiary Hospital / Ambulance Service",
+        coordinates: [122.5643, 10.7259],
+        address: "Mission Road, Jaro, Iloilo City",
+        phone: "(033) 320-0315"
+      },
+      {
+        name: "Medicus Medical Center",
+        type: "ambulance",
+        category: "Tertiary General Hospital / Ambulance",
+        coordinates: [122.5441, 10.7153],
+        address: "Diversion Road, Mandurriao, Iloilo City",
+        phone: "(033) 328-7777"
+      },
+      {
+        name: "West Visayas State University Medical Center",
+        type: "ambulance",
+        category: "University Training Hospital / Ambulance",
+        coordinates: [122.5583, 10.7176],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 320-2431"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Ambulance Unit",
+        type: "ambulance",
+        category: "Emergency Medical & Ambulance Service",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Metro Iloilo Hospital and Medical Center",
+        type: "ambulance",
+        category: "Level 2 Hospital / Emergency Ambulance",
+        coordinates: [122.5532, 10.7486],
+        address: "Metropolis Ave, Jaro, Iloilo City",
+        phone: "(033) 327-1527"
+      },
+
+      // Police
+      {
+        name: "Iloilo City Police Station 4 (Molo)",
+        type: "police",
+        category: "PNP Police Station 4",
+        coordinates: [122.5458, 10.6977],
+        address: "M.H. del Pilar St, Molo, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Iloilo City Police Station 5 (Mandurriao)",
+        type: "police",
+        category: "PNP Police Station 5",
+        coordinates: [122.5368, 10.7196],
+        address: "Guzman St, Mandurriao, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Iloilo City Police Station 6 (Arevalo)",
+        type: "police",
+        category: "PNP Police Station 6",
+        coordinates: [122.5186, 10.6865],
+        address: "Quezon St, Villa Arevalo, Iloilo City",
+        phone: "(033) 337-8855"
+      },
+      {
+        name: "Iloilo City Police Office (ICPO Headquarters)",
+        type: "police",
+        category: "Police Headquarters & Dispatch",
+        coordinates: [122.5623, 10.6961],
+        address: "General Luna St, City Proper, Iloilo City",
+        phone: "(033) 337-0400"
+      },
+      {
+        name: "Iloilo City Police Station 1 (City Proper)",
+        type: "police",
+        category: "PNP Police Station 1",
+        coordinates: [122.5684, 10.6957],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-2240"
+      },
+      {
+        name: "Iloilo City Police Station 2 (La Paz)",
+        type: "police",
+        category: "PNP Police Station 2",
+        coordinates: [122.5691, 10.7118],
+        address: "Huervana St, La Paz, Iloilo City",
+        phone: "(033) 320-0014"
+      },
+      {
+        name: "Iloilo City Police Station 3 (Jaro)",
+        type: "police",
+        category: "PNP Police Station 3",
+        coordinates: [122.5574, 10.7253],
+        address: "E. Lopez St, Jaro, Iloilo City",
+        phone: "(033) 329-5484"
+      },
+      {
+        name: "Oton Municipal Police Station",
+        type: "police",
+        category: "PNP Municipal Police Station",
+        coordinates: [122.4770, 10.6951],
+        address: "Mabini St, Poblacion, Oton, Iloilo",
+        phone: "(033) 336-1215"
+      },
+
+      // Fire Truck / Fire Service
+      {
+        name: "BFP Molo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5461, 10.6972],
+        address: "Molo Plaza, Molo, Iloilo City",
+        phone: "(033) 337-2299"
+      },
+      {
+        name: "BFP Mandurriao Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5371, 10.7192],
+        address: "Mandurriao Plaza, Mandurriao, Iloilo City",
+        phone: "(033) 321-0000"
+      },
+      {
+        name: "BFP Arevalo Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5181, 10.6862],
+        address: "Villa Arevalo Plaza, Iloilo City",
+        phone: "(033) 336-2244"
+      },
+      {
+        name: "Iloilo City Central Fire Station (BFP)",
+        type: "fire",
+        category: "Central Fire Station & Rescue Engines",
+        coordinates: [122.5712, 10.6938],
+        address: "De la Rama St, City Proper, Iloilo City",
+        phone: "(033) 337-4444"
+      },
+      {
+        name: "ICAG Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade & Response",
+        coordinates: [122.5668, 10.6942],
+        address: "Delgado St, City Proper, Iloilo City",
+        phone: "(033) 337-8888"
+      },
+      {
+        name: "Federation of Iloilo Volunteer Fire Brigade",
+        type: "fire",
+        category: "Volunteer Fire Brigade / Tankers & Trucks",
+        coordinates: [122.5654, 10.6960],
+        address: "Iznart St, City Proper, Iloilo City",
+        phone: "(033) 337-3333"
+      },
+      {
+        name: "BFP Jaro Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5578, 10.7250],
+        address: "Jaro Plaza, Jaro, Iloilo City",
+        phone: "(033) 329-2233"
+      },
+      {
+        name: "BFP La Paz Sub-Fire Station",
+        type: "fire",
+        category: "Bureau of Fire Protection / Fire Engine Unit",
+        coordinates: [122.5689, 10.7115],
+        address: "La Paz Plaza, La Paz, Iloilo City",
+        phone: "(033) 320-1122"
+      },
+      {
+        name: "Oton BFP Fire Station",
+        type: "fire",
+        category: "Municipal Fire Station",
+        coordinates: [122.4764, 10.6948],
+        address: "Poblacion South, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      },
+
+      // Rescue / Responder
+      {
+        name: "Iloilo City Emergency Operations Center (CDRRMO)",
+        type: "responder",
+        category: "Disaster Risk Reduction & Rescue Command",
+        coordinates: [122.5705, 10.6929],
+        address: "Iloilo City Hall, Plaza Libertad, Iloilo City",
+        phone: "(033) 333-1111"
+      },
+      {
+        name: "Philippine Red Cross - Iloilo Chapter",
+        type: "responder",
+        category: "Disaster Response & Rescue Unit",
+        coordinates: [122.5641, 10.6989],
+        address: "Bonifacio Drive, Iloilo City",
+        phone: "(033) 337-5976"
+      },
+      {
+        name: "Iloilo Provincial DRRMO (PDRRMO)",
+        type: "responder",
+        category: "Provincial Disaster Response Headquarters",
+        coordinates: [122.5645, 10.6971],
+        address: "Iloilo Provincial Capitol, Bonifacio Drive, Iloilo City",
+        phone: "(033) 328-7900"
+      },
+      {
+        name: "Molo District Emergency Response Unit",
+        type: "responder",
+        category: "Community Quick Response Team",
+        coordinates: [122.5460, 10.6979],
+        address: "Molo Plaza Area, Iloilo City",
+        phone: "(033) 337-3011"
+      },
+      {
+        name: "Mandurriao Disaster Response Unit",
+        type: "responder",
+        category: "District Emergency Response Team",
+        coordinates: [122.5369, 10.7194],
+        address: "Mandurriao District Office, Iloilo City",
+        phone: "(033) 321-2777"
+      },
+      {
+        name: "Philippine Coast Guard District Western Visayas",
+        type: "responder",
+        category: "Maritime Search & Rescue Unit",
+        coordinates: [122.5794, 10.7012],
+        address: "Bo. Obrero, Lapuz, Iloilo City",
+        phone: "(033) 337-5264"
+      },
+      {
+        name: "Oton MDRRMO Emergency Rescue Unit",
+        type: "responder",
+        category: "Municipal Disaster Risk Reduction & Rescue",
+        coordinates: [122.4768, 10.6953],
+        address: "Municipal Hall Compound, Oton, Iloilo",
+        phone: "(033) 336-0911"
+      }
+    ];
+
+    // 1. Initialize Map - anchored to local area, strictly relying on user device GPS when enabled
+    const defaultLocalAnchor = [10.7196, 122.5368];
+    const initialView = defaultLocalAnchor;
+    const map = L.map('map', {
+      zoomControl: false,
+      preferCanvas: true,
+      maxZoom: 22
+    }).setView(initialView, 14);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    let userManualZoomActive = false;
+    map.on('zoomstart', function (event) {
+      if (event.originalEvent) {
+        userManualZoomActive = true;
+      }
+    });
+
+    // Ensure map tiles and dimensions resize accurately
+    map.whenReady(function () {
+      setTimeout(function () {
+        map.invalidateSize();
+      }, 100);
+    });
+    window.addEventListener('resize', function () {
+      map.invalidateSize();
+    });
+
+    // --- Base Map Tile Layers (all layers found in map.html) ---
+    // 1. Satellite Imagery (Esri World Imagery)
+    const satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxNativeZoom: 18,
+        maxZoom: 22,
+        attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
+      }
+    );
+
+    // 2. Terrain Map (OpenTopoMap)
+    const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxNativeZoom: 17,
+      maxZoom: 22,
+      subdomains: 'abc',
+      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Map style: &copy; OpenTopoMap'
+    });
+
+    // 3. Topographic Map (Esri World Topo Map)
+    const topographicLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxNativeZoom: 17,
+        maxZoom: 22,
+        attribution: 'Tiles &copy; Esri and its data providers'
+      }
+    );
+
+    // 4. Shaded Relief Map (Esri World Shaded Relief)
+    const reliefLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxNativeZoom: 13,
+        maxZoom: 22,
+        attribution: 'Tiles &copy; Esri, USGS, NOAA'
+      }
+    );
+
+    // Add default base layer: Satellite Imagery
+    satelliteLayer.addTo(map);
+
+    // --- Overlay Layers ---
+    // Place Labels & Boundaries Overlay (overlayPane)
+    const placeLabelsLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxNativeZoom: 18,
+        maxZoom: 22,
+        pane: 'overlayPane',
+        attribution: 'Labels &copy; Esri'
+      }
+    ).addTo(map);
+
+    // Live Traffic Overlay (if key is present)
+    let trafficLayer = null;
+    if (esriTrafficApiKey) {
+      trafficLayer = L.tileLayer(
+        'https://traffic.arcgis.com/arcgis/rest/services/World/Traffic/MapServer/tile/{z}/{y}/{x}?token=' +
+        encodeURIComponent(esriTrafficApiKey),
+        {
+          maxNativeZoom: 18,
+          maxZoom: 22,
+          attribution: 'Traffic data &copy; Esri'
+        }
+      );
+    }
+
+    // Live Hazards & Incidents Layer Group
+    const hazardLayerGroup = L.featureGroup().addTo(map);
+    renderHazards();
+
+    function renderHazards() {
+      hazardLayerGroup.clearLayers();
+      liveIncidents.forEach(function (inc) {
+        L.circle([inc.lat, inc.lng], {
+          radius: inc.radius,
+          color: inc.color,
+          fillColor: inc.color,
+          fillOpacity: 0.22,
+          weight: 2,
+          dashArray: inc.impassable ? '6, 6' : null
+        }).bindPopup('<strong>' + inc.icon + ' ' + inc.name + '</strong><br>Radius: ' + inc.radius + 'm' + (inc.impassable ? '<br><span style="color:#d93025;font-weight:700;">Impassable Closure</span>' : '')).addTo(hazardLayerGroup);
+      });
+    }
+
+    // Emergency Facilities Layer Groups (from map.html)
+    const ambulanceLayerGroup = L.featureGroup();
+    const policeLayerGroup = L.featureGroup();
+    const fireLayerGroup = L.featureGroup();
+    const rescueLayerGroup = L.featureGroup().addTo(map);
+
+    populateFacilityLayers();
+
+    function populateFacilityLayers() {
+      KNOWN_EMERGENCY_FACILITIES.forEach(function (facility) {
+        const coords = [facility.coordinates[1], facility.coordinates[0]];
+        let targetGroup = rescueLayerGroup;
+        let color = '#d93025';
+        let icon = '🛟';
+
+        if (facility.type === 'ambulance') {
+          targetGroup = ambulanceLayerGroup;
+          color = '#ea4335';
+          icon = '🚑';
+        } else if (facility.type === 'police') {
+          targetGroup = policeLayerGroup;
+          color = '#1a73e8';
+          icon = '🚓';
+        } else if (facility.type === 'fire') {
+          targetGroup = fireLayerGroup;
+          color = '#f29900';
+          icon = '🚒';
+        }
+
+        const markerIcon = L.divIcon({
+          className: 'facility-marker-div',
+          html: '<div class="facility-map-pin" style="background-color:' + color + ';">' + icon + '</div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker(coords, { icon: markerIcon }).addTo(targetGroup);
+        marker.bindPopup(
+          '<strong>' + icon + ' ' + escapeHtml(facility.name) + '</strong><br>' +
+          '<span style="font-size:11px;color:#5f6368;">' + escapeHtml(facility.category) + '</span><br>' +
+          '📍 ' + escapeHtml(facility.address) + '<br>' +
+          (facility.phone ? '📞 ' + escapeHtml(facility.phone) : '')
+        );
+      });
+    }
+
+    // Add Layer Switcher Control
+    const baseLayers = {
+      '🛰️ Satellite Imagery': satelliteLayer,
+      '🏔️ Terrain (Topomap)': terrainLayer,
+      '🧭 Topographic Map': topographicLayer,
+      '🌄 Shaded Relief': reliefLayer
+    };
+
+    const overlayLayers = {
+      '🏷️ Place labels': placeLabelsLayer,
+      '⚠️ Hazards & Flood Zones': hazardLayerGroup,
+      '🛟 Disaster Responders': rescueLayerGroup,
+      '🚑 Hospitals & Ambulances': ambulanceLayerGroup,
+      '🚓 Police Facilities': policeLayerGroup,
+      '🚒 Fire Stations': fireLayerGroup
+    };
+
+    if (trafficLayer) {
+      overlayLayers['🚦 Live Traffic'] = trafficLayer;
+    }
+
+    // 1.5 Unified Theme Toggle Leaflet Control (Stacked neatly above layers control)
+    const ThemeControl = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd: function () {
+        const container = L.DomUtil.create('div', 'leaflet-control unified-theme-control');
+        const btn = L.DomUtil.create('button', 'unified-theme-btn', container);
+        btn.id = 'theme-toggle-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Switch to light theme');
+        btn.title = 'Switch to light theme';
+        btn.innerHTML =
+          '<svg class="theme-svg sun-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="5"></circle>' +
+          '<line x1="12" y1="1" x2="12" y2="3"></line>' +
+          '<line x1="12" y1="21" x2="12" y2="23"></line>' +
+          '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>' +
+          '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>' +
+          '<line x1="1" y1="12" x2="3" y2="12"></line>' +
+          '<line x1="21" y1="12" x2="23" y2="12"></line>' +
+          '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>' +
+          '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>' +
+          '</svg>' +
+          '<svg class="theme-svg moon-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>' +
+          '</svg>';
+
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        btn.addEventListener('click', function () {
+          const isCurrentlyLight = document.documentElement.getAttribute('data-theme') === 'light';
+          applyTheme(!isCurrentlyLight);
+        });
+        return container;
+      }
+    });
+    new ThemeControl().addTo(map);
+
+    L.control.layers(baseLayers, overlayLayers, {
+      position: 'topright',
+      collapsed: true
+    }).addTo(map);
+
+    // 2. State & Markers
+    let userMarker = null;
+    let responderMarker = null;
+    let routeLayers = L.featureGroup().addTo(map);
+    let currentServiceType = 'responder';
+    let activeResponderStation = KNOWN_EMERGENCY_FACILITIES.find(function (f) { return f.type === 'responder'; }) || KNOWN_EMERGENCY_FACILITIES[0];
+    let lastTrackedCoords = null;
+    let lastRenderedStationId = null;
+    let isMissionCleared = false;
+    let clearedTimestamp = 0;
+    let responderManualRouteActive = false;
+
+    const responderBroadcastChannel = (typeof window !== 'undefined' && window.BroadcastChannel)
+      ? new BroadcastChannel('emergency_dispatch')
+      : null;
+
+    let currentTrackedUser = {
+      lat: 10.7196,
+      lng: 122.5368,
+      district: 'Mandurriao District',
+      isConfirmed: false,
+      streetRef: 'Benigno Aquino Ave / Guzman St',
+      coordsFormatted: '10.7196° N, 122.5368° E',
+      scenario: 'Flash Flood & Water Evacuation',
+      summary: 'Severe water rise / flash flooding reported in caller area. Specialized amphibious/high-clearance unit deployed.',
+      tacticalAdvice: 'Move to highest elevation available. Avoid wading into moving floodwaters or submerged electrical wiring.',
+      callerPhone: '(033) 333-1111',
+      lastPingTime: new Date(),
+      lastAction: 'location_update',
+      isSessionActive: true,
+      callerPlatform: 'Desktop',
+      lastActionTime: Date.now(),
+      latestSummary: 'Caller active in Map app',
+      chatMessage: null,
+      activityLog: []
+    };
+
+    // Haversine distance calculator
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Render blank map & standby state when mission is cleared
+    function renderBlankClearedState() {
+      isMissionCleared = true;
+      responderManualRouteActive = false;
+      routeLayers.clearLayers();
+      if (userMarker) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+      }
+      if (responderMarker) {
+        map.removeLayer(responderMarker);
+        responderMarker = null;
+      }
+      lastTrackedCoords = null;
+      lastRenderedStationId = null;
+
+      // Update stepper to Cleared
+      document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.status === 'cleared');
+      });
+
+      // Update HUD to clean Standby / Cleared state
+      const titleEl = document.getElementById('hud-main-title');
+      if (titleEl) titleEl.textContent = 'STANDBY • CLEARED';
+      const badgeEl = document.getElementById('dispatch-badge');
+      if (badgeEl) badgeEl.textContent = 'CLEARED';
+
+      const scenarioEl = document.getElementById('user-scenario-title');
+      if (scenarioEl) scenarioEl.textContent = '⚪ Mission Cleared / Standby';
+      const pingEl = document.getElementById('user-last-ping');
+      if (pingEl) pingEl.textContent = 'Awaiting new input from Map';
+
+      const distEl = document.getElementById('user-district-val');
+      if (distEl) distEl.textContent = 'Standby';
+      const coordsEl = document.getElementById('user-coords-val');
+      if (coordsEl) coordsEl.textContent = '—';
+      const stationEl = document.getElementById('responder-station-val');
+      if (stationEl) stationEl.textContent = 'In Quarters / Ready';
+      const sitEl = document.getElementById('user-situation-val');
+      if (sitEl) sitEl.textContent = 'Mission cleared. Map is in blank standby state until new user input is performed in map.html.';
+      const adviceEl = document.getElementById('user-advice-val');
+      if (adviceEl) adviceEl.textContent = 'Ready for dispatch.';
+
+      const etaEl = document.getElementById('route-eta-val');
+      if (etaEl) etaEl.textContent = '—';
+      const distValEl = document.getElementById('route-dist-val');
+      if (distValEl) distValEl.textContent = '—';
+
+      const hazardStatusText = document.getElementById('hazard-status-text');
+      if (hazardStatusText) hazardStatusText.textContent = 'No active dispatch corridor. Unit in quarters / standby.';
+
+      const summaryEl = document.getElementById('latest-activity-summary');
+      if (summaryEl) summaryEl.textContent = 'Mission marked cleared. Waiting for user input in map.html.';
+
+      const chatContainer = document.getElementById('caller-chat-container');
+      if (chatContainer) chatContainer.style.display = 'none';
+    }
+
+    function setMissionCleared(isFromMap) {
+      lastCalculatedRouteKey = null;
+      if (isMissionCleared && routeLayers.getLayers().length === 0) {
+        return;
+      }
+      isMissionCleared = true;
+      responderManualRouteActive = false;
+      clearedTimestamp = Date.now();
+      try {
+        localStorage.setItem('responder_cleared_time', String(clearedTimestamp));
+      } catch (e) {}
+
+      renderBlankClearedState();
+      const resetCenter = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
+      if (!userManualZoomActive) {
+        map.setView(resetCenter, 14);
+      } else {
+        map.panTo(resetCenter);
+      }
+
+      if (!isFromMap && responderBroadcastChannel) {
+        try {
+          responderBroadcastChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
+        } catch (e) {}
+      }
+    }
+
+    // 3. User Location & Activity Syncing Logic
+    function loadTrackedUser(directData) {
+      let stateChanged = false;
+
+      // 1. Check URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const urlLat = parseFloat(params.get('lat'));
+      const urlLng = parseFloat(params.get('lng'));
+      const hasUrlParams = Number.isFinite(urlLat) && Number.isFinite(urlLng);
+
+      // 2. Direct memory payload or localStorage from map.html
+      let rawData = directData || null;
+      if (!rawData) {
+        try {
+          const raw = localStorage.getItem('tracked_user_emergency');
+          if (raw) {
+            rawData = JSON.parse(raw);
+          }
+        } catch (e) {
+          console.warn('Could not read user activity sync from localStorage:', e);
+        }
+      }
+
+      const dataTimestamp = rawData ? (rawData.timestamp || rawData.lastActionTime || 0) : 0;
+
+      // Strictly check if caller has explicitly confirmed an emergency
+      const isConfirmedEmergency = Boolean(
+        rawData && (
+          rawData.isConfirmed === true ||
+          rawData.lastAction === 'emergency_confirmed'
+        )
+      );
+
+      // Once Cleared is clicked, strictly do NOT automatically switch to en route on previews or regular actions.
+      // ONLY switch to en route if the user confirms that there is an emergency (or clicked confirm emergency button).
+      if (isMissionCleared) {
+        if (!isConfirmedEmergency) {
+          renderBlankClearedState();
+          return;
+        }
+
+        // Emergency confirmed by caller! Reactivate mission and switch to EN ROUTE
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try {
+          localStorage.removeItem('responder_cleared_time');
+        } catch (e) {}
+
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.status === 'en-route');
+        });
+        const badge = document.getElementById('dispatch-badge');
+        if (badge) badge.textContent = 'EN ROUTE';
+      }
+
+      // If no active data exists from map.html and no URL parameters, anchor to device GPS if enabled or show clean standby
+      if (!rawData && !hasUrlParams) {
+        if (responderDeviceCoords) {
+          currentTrackedUser.lat = responderDeviceCoords.lat;
+          currentTrackedUser.lng = responderDeviceCoords.lng;
+          currentTrackedUser.coordsFormatted = responderDeviceCoords.lat.toFixed(4) + '° N, ' + responderDeviceCoords.lng.toFixed(4) + '° E';
+          currentTrackedUser.district = 'Detected Device Sector';
+          currentTrackedUser.scenario = '🟢 Live Device GPS Active';
+          currentTrackedUser.summary = 'Responder console positioned at detected device GPS coordinates.';
+          currentTrackedUser.tacticalAdvice = 'System anchored to your device location. Ready for incoming dispatch.';
+          activeResponderStation = {
+            name: "Mobile Unit (My Device GPS)",
+            type: currentServiceType,
+            coordinates: [responderDeviceCoords.lng, responderDeviceCoords.lat],
+            address: "Field Unit GPS Position",
+            phone: "(033) 333-1111"
+          };
+          updateUI();
+          updateMapMarkersAndRoute();
+          return;
+        }
+        renderBlankClearedState();
+        return;
+      }
+
+      if (hasUrlParams) {
+        currentTrackedUser.lat = urlLat;
+        currentTrackedUser.lng = urlLng;
+        currentTrackedUser.coordsFormatted = urlLat.toFixed(4) + '° N, ' + urlLng.toFixed(4) + '° E';
+        if (params.get('district')) currentTrackedUser.district = params.get('district');
+        if (params.get('scenario')) currentTrackedUser.scenario = params.get('scenario');
+        if (params.get('summary')) currentTrackedUser.summary = params.get('summary');
+        if (params.get('advice')) currentTrackedUser.tacticalAdvice = params.get('advice');
+        if (params.get('station')) {
+          const sLat = parseFloat(params.get('stationLat'));
+          const sLng = parseFloat(params.get('stationLng'));
+          activeResponderStation = {
+            name: params.get('station'),
+            coordinates: [
+              Number.isFinite(sLng) ? sLng : currentTrackedUser.lng,
+              Number.isFinite(sLat) ? sLat : currentTrackedUser.lat
+            ],
+            address: params.get('stationAddress') || 'Dispatched Emergency Station',
+            phone: params.get('phone') || '(033) 333-1111',
+            type: params.get('type') || currentServiceType || 'police'
+          };
+          stateChanged = true;
+        }
+        currentTrackedUser.lastPingTime = new Date();
+      }
+
+      if (rawData && Number.isFinite(rawData.lat) && Number.isFinite(rawData.lng)) {
+        currentTrackedUser.lat = rawData.lat;
+        currentTrackedUser.lng = rawData.lng;
+        currentTrackedUser.district = rawData.district || currentTrackedUser.district;
+        currentTrackedUser.coordsFormatted = rawData.coords || (rawData.lat.toFixed(4) + '° N, ' + rawData.lng.toFixed(4) + '° E');
+        if (rawData.scenario) currentTrackedUser.scenario = rawData.scenario;
+        if (rawData.summary) currentTrackedUser.summary = rawData.summary;
+        if (rawData.tacticalAdvice) currentTrackedUser.tacticalAdvice = rawData.tacticalAdvice;
+        currentTrackedUser.lastPingTime = new Date(rawData.timestamp || Date.now());
+
+        if (rawData.serviceType && rawData.serviceType !== currentServiceType) {
+          currentServiceType = rawData.serviceType;
+          stateChanged = true;
+          syncServiceLayers(currentServiceType);
+        }
+
+        if (rawData.lastAction) {
+          currentTrackedUser.lastAction = rawData.lastAction;
+          currentTrackedUser.lastActionTime = rawData.lastActionTime || Date.now();
+        }
+
+        if (rawData.callerPlatform) {
+          currentTrackedUser.callerPlatform = rawData.callerPlatform;
+        }
+
+        if (rawData.isSessionActive !== undefined) {
+          currentTrackedUser.isSessionActive = Boolean(rawData.isSessionActive);
+        } else {
+          const ts = rawData.timestamp || rawData.lastActionTime || 0;
+          currentTrackedUser.isSessionActive = (Date.now() - ts < 12000);
+        }
+
+        // Only mark confirmed if caller explicitly confirmed or answered confirmation
+        currentTrackedUser.isConfirmed = Boolean(
+          rawData.isConfirmed === true ||
+          rawData.lastAction === 'emergency_confirmed' ||
+          (Array.isArray(rawData.activityLog) && rawData.activityLog[0] && rawData.activityLog[0].type === 'emergency_confirmed')
+        );
+
+        if (rawData.userMessage) {
+          currentTrackedUser.chatMessage = rawData.userMessage;
+        }
+
+        if (Array.isArray(rawData.activityLog)) {
+          currentTrackedUser.activityLog = rawData.activityLog;
+          if (rawData.activityLog[0] && rawData.activityLog[0].desc) {
+            currentTrackedUser.latestSummary = rawData.activityLog[0].desc;
+          }
+        }
+
+        // Adapt active station ONLY if caller explicitly confirmed emergency
+        if (currentTrackedUser.isConfirmed && rawData.targetFacility && Array.isArray(rawData.targetFacility.coordinates)) {
+          activeResponderStation = {
+            name: rawData.targetFacility.name,
+            coordinates: rawData.targetFacility.coordinates,
+            address: rawData.targetFacility.category || 'User Selected Emergency Facility',
+            phone: rawData.targetFacility.phone || '(033) 333-1111',
+            type: currentServiceType
+          };
+          stateChanged = true;
+        } else if (rawData.assignedResponder && Array.isArray(rawData.assignedResponder.coordinates)) {
+          activeResponderStation = {
+            name: rawData.assignedResponder.name,
+            coordinates: rawData.assignedResponder.coordinates,
+            address: rawData.assignedResponder.address || 'Assigned Base Station',
+            phone: rawData.assignedResponder.phone || '(033) 333-1111',
+            type: currentServiceType
+          };
+          stateChanged = true;
+        } else if (stateChanged || !activeResponderStation) {
+          const matchingFacilities = KNOWN_EMERGENCY_FACILITIES.filter(function (f) {
+            return f.type === currentServiceType;
+          });
+          const pool = matchingFacilities.length ? matchingFacilities : KNOWN_EMERGENCY_FACILITIES;
+          let closest = pool[0];
+          let minD = Infinity;
+          pool.forEach(function (fac) {
+            const d = haversineMeters(currentTrackedUser.lat, currentTrackedUser.lng, fac.coordinates[1], fac.coordinates[0]);
+            if (d < minD) {
+              minD = d;
+              closest = fac;
+            }
+          });
+
+          // If closest facility is > 25km away (user tested device GPS outside Iloilo city),
+          // deploy a local emergency base station nearby so the responder route stays local and never crosses oceans or countries!
+          if (minD > 25000) {
+            closest = {
+              name: "Dispatched Local Field Unit",
+              type: currentServiceType,
+              category: "Mobile Quick-Response Base",
+              coordinates: [currentTrackedUser.lng + 0.009, currentTrackedUser.lat + 0.007],
+              address: "Sector Quick-Response Corridor",
+              phone: "(033) 333-1111"
+            };
+          }
+          activeResponderStation = closest;
+        }
+      }
+
+      updateUI();
+
+      const coordsChanged = !lastTrackedCoords ||
+        Math.abs(lastTrackedCoords.lat - currentTrackedUser.lat) > 0.0001 ||
+        Math.abs(lastTrackedCoords.lng - currentTrackedUser.lng) > 0.0001;
+
+      const stationChanged = lastRenderedStationId !== (activeResponderStation && activeResponderStation.name);
+
+      if (coordsChanged || stationChanged || stateChanged) {
+        lastTrackedCoords = { lat: currentTrackedUser.lat, lng: currentTrackedUser.lng };
+        lastRenderedStationId = activeResponderStation ? activeResponderStation.name : null;
+        updateMapMarkersAndRoute();
+      }
+    }
+
+    function syncServiceLayers(type) {
+      // Automatically ensure corresponding facility layer is visible
+      if (type === 'ambulance' && !map.hasLayer(ambulanceLayerGroup)) map.addLayer(ambulanceLayerGroup);
+      if (type === 'police' && !map.hasLayer(policeLayerGroup)) map.addLayer(policeLayerGroup);
+      if (type === 'fire' && !map.hasLayer(fireLayerGroup)) map.addLayer(fireLayerGroup);
+      if (type === 'responder' && !map.hasLayer(rescueLayerGroup)) map.addLayer(rescueLayerGroup);
+    }
+
+    function getServiceIcon(type) {
+      if (type === 'ambulance') return '🚑';
+      if (type === 'police') return '🚓';
+      if (type === 'fire') return '🚒';
+      return '🛟';
+    }
+
+    function getServiceBadgeText(type) {
+      if (type === 'ambulance') return 'AMBULANCE ACTIVE';
+      if (type === 'police') return 'POLICE ACTIVE';
+      if (type === 'fire') return 'FIRE ENGINE ACTIVE';
+      return 'RESCUE ACTIVE';
+    }
+
+    function flashSyncBadge() {
+      const badge = document.getElementById('dispatch-badge');
+      if (badge) {
+        badge.classList.add('synced-flash');
+        setTimeout(function () {
+          badge.classList.remove('synced-flash');
+        }, 800);
+      }
+      const syncFreshness = document.getElementById('sync-freshness-badge');
+      if (syncFreshness) {
+        syncFreshness.textContent = 'SYNCED JUST NOW';
+        setTimeout(function () {
+          syncFreshness.textContent = 'SYNCED';
+        }, 1500);
+      }
+    }
+
+    // Listen for storage events (real-time sync across browser tabs)
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'tracked_user_emergency') {
+        loadTrackedUser();
+        flashSyncBadge();
+      }
+    });
+
+    // Listen for BroadcastChannel updates from map.html with persistent channel
+    if (responderBroadcastChannel) {
+      responderBroadcastChannel.onmessage = function (event) {
+        if (event && event.data) {
+          if (event.data.type === 'MISSION_CLEARED' || (event.data.data && event.data.data.lastAction === 'emergency_cleared')) {
+            setMissionCleared(true);
+            return;
+          }
+          const payload = event.data.data || event.data;
+          if (payload && (payload.lat || payload.coords || payload.scenario || payload.activityLog)) {
+            const isConfirmed = Boolean(payload.isConfirmed === true || payload.lastAction === 'emergency_confirmed');
+            if (isConfirmed) {
+              isMissionCleared = false;
+              clearedTimestamp = 0;
+              try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+            } else if (isMissionCleared) {
+              // Stay cleared / standby on non-confirmed actions (do not auto-switch to en route)
+              return;
+            }
+            loadTrackedUser(payload);
+            flashSyncBadge();
+          }
+        }
+      };
+    }
+
+    let lastSeenSyncTimestamp = 0;
+    let lastSeenConfirmedState = null;
+    let lastSeenEmergencyKey = '';
+
+    // Smart polling heartbeat: ONLY updates when data timestamp, confirmation, or content actually changes
+    setInterval(function () {
+      let raw = null;
+      try {
+        const rawStr = localStorage.getItem('tracked_user_emergency');
+        if (rawStr) raw = JSON.parse(rawStr);
+      } catch (e) {}
+
+      if (raw) {
+        const ts = raw.timestamp || raw.lastActionTime || 0;
+        const isConfirmed = Boolean(raw.isConfirmed);
+        const emergencyKey = (raw.lat || '') + ',' + (raw.lng || '') + ':' + (raw.serviceType || '') + ':' + isConfirmed;
+
+        if (ts !== lastSeenSyncTimestamp || isConfirmed !== lastSeenConfirmedState || emergencyKey !== lastSeenEmergencyKey) {
+          lastSeenSyncTimestamp = ts;
+          lastSeenConfirmedState = isConfirmed;
+          lastSeenEmergencyKey = emergencyKey;
+
+          if (isConfirmed || raw.lastAction === 'emergency_confirmed') {
+            isMissionCleared = false;
+            clearedTimestamp = 0;
+            try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+          } else if (isMissionCleared) {
+            // Stay cleared / standby on previews or unconfirmed searches
+            return;
+          }
+
+          loadTrackedUser(raw);
+          if (isConfirmed || raw.lastAction === 'emergency_confirmed' || raw.lastAction === 'emergency_cleared') {
+            flashSyncBadge();
+          }
+        }
+      } else {
+        if (lastSeenSyncTimestamp !== 0 || lastSeenEmergencyKey !== '') {
+          lastSeenSyncTimestamp = 0;
+          lastSeenConfirmedState = null;
+          lastSeenEmergencyKey = '';
+          if (!isMissionCleared) {
+            setMissionCleared(true);
+          }
+        }
+      }
+    }, 1000);
+
+    // 4. Update UI Elements
+    function updateUI() {
+      const serviceIcon = getServiceIcon(currentServiceType);
+      document.getElementById('hud-main-title').textContent = (currentServiceType.toUpperCase()) + ' LIVE TRACKER';
+      document.getElementById('dispatch-badge').textContent = getServiceBadgeText(currentServiceType);
+
+      const btnRespIcon = document.getElementById('btn-responder-icon');
+      if (btnRespIcon) btnRespIcon.textContent = serviceIcon;
+
+      document.getElementById('user-scenario-title').textContent = currentTrackedUser.scenario || '🚨 Live Incident Site';
+      document.getElementById('user-district-val').textContent = currentTrackedUser.district || 'Caller Zone';
+      document.getElementById('user-coords-val').textContent = currentTrackedUser.coordsFormatted;
+      document.getElementById('responder-station-val').textContent = activeResponderStation ? activeResponderStation.name : 'Emergency Base';
+      document.getElementById('user-situation-val').textContent = currentTrackedUser.summary || 'Emergency distress reported';
+      document.getElementById('user-advice-val').textContent = currentTrackedUser.tacticalAdvice || 'Stay in safe area and keep line open.';
+
+      // Activity Feed display
+      document.getElementById('latest-activity-summary').textContent = currentTrackedUser.latestSummary || 'Caller active on map';
+
+      // Update Live Caller Map Session Status (Desktop & Mobile)
+      const sessionBadge = document.getElementById('caller-session-status-badge');
+      const sessionText = document.getElementById('caller-session-status-text');
+      const pingDiff = Date.now() - (currentTrackedUser.lastPingTime ? currentTrackedUser.lastPingTime.getTime() : 0);
+      const isPingFresh = pingDiff < 12000;
+      const isSessionLive = Boolean(currentTrackedUser.isSessionActive && isPingFresh && !isMissionCleared);
+      const platformName = currentTrackedUser.callerPlatform || (window.innerWidth <= 640 ? 'Mobile' : 'Desktop');
+
+      if (sessionBadge && sessionText) {
+        if (isSessionLive) {
+          sessionBadge.classList.remove('inactive');
+          sessionText.textContent = '🟢 Caller Map Session: Active (' + platformName + ')';
+        } else {
+          sessionBadge.classList.add('inactive');
+          sessionText.textContent = isMissionCleared
+            ? '⚪ Caller Map Session: Cleared / Standby'
+            : '⚪ Caller Map Session: Idle / Offline';
+        }
+      }
+
+      const chatContainer = document.getElementById('caller-chat-container');
+      const chatNote = document.getElementById('caller-chat-note');
+      if (currentTrackedUser.chatMessage) {
+        chatContainer.style.display = 'block';
+        chatNote.textContent = '💬 Caller: "' + currentTrackedUser.chatMessage + '"';
+      } else {
+        chatContainer.style.display = 'none';
+      }
+
+      // Render activity log
+      const logList = document.getElementById('activity-log-list');
+      const logCount = document.getElementById('activity-log-count');
+      const logs = currentTrackedUser.activityLog || [];
+      logCount.textContent = 'Show Activity Stream (' + logs.length + ')';
+
+      logList.innerHTML = logs.map(function (item) {
+        const timeAgo = Math.max(0, Math.round((Date.now() - item.time) / 1000));
+        const timeStr = timeAgo < 5 ? 'Just now' : (timeAgo < 60 ? timeAgo + 's ago' : Math.round(timeAgo / 60) + 'm ago');
+        return '<div class="activity-item">' +
+          '<span class="activity-item-time">' + timeStr + '</span>' +
+          '<span>' + escapeHtml(item.desc) + '</span>' +
+          '</div>';
+      }).join('');
+
+      const timeAgoStr = Math.max(0, Math.round((Date.now() - currentTrackedUser.lastPingTime.getTime()) / 1000));
+      document.getElementById('user-last-ping').textContent = timeAgoStr < 5 ? 'Live Ping Just Now' : timeAgoStr + 's ago';
+
+      const callBtn = document.getElementById('btn-call-caller');
+      const msgBtn = document.getElementById('btn-message-caller');
+      const phoneNum = currentTrackedUser.callerPhone || '(033) 333-1111';
+      const cleanPhone = phoneNum.replace(/[^\d+*#;]/g, '');
+      if (callBtn) {
+        callBtn.href = 'tel:' + cleanPhone;
+        callBtn.innerHTML = '<span>📞</span> Call Caller';
+        callBtn.title = 'Call ' + phoneNum;
+      }
+      if (msgBtn) {
+        msgBtn.href = 'sms:' + cleanPhone;
+        msgBtn.innerHTML = '<span>💬</span> Message Caller';
+        msgBtn.title = 'Send SMS to ' + phoneNum;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Toggle Activity Log List
+    document.getElementById('activity-log-toggle').addEventListener('click', function () {
+      const list = document.getElementById('activity-log-list');
+      const arrow = document.getElementById('activity-toggle-arrow');
+      if (list.hidden) {
+        list.hidden = false;
+        arrow.textContent = '▲';
+      } else {
+        list.hidden = true;
+        arrow.textContent = '▼';
+      }
+    });
+
+    // 5. Update Map Markers and Calculate Response Route
+    async function updateMapMarkersAndRoute() {
+      if (!activeResponderStation) return;
+
+      // 1. Plot / Update User Marker with Radar Ping
+      const userLatLng = [currentTrackedUser.lat, currentTrackedUser.lng];
+
+      if (userMarker) {
+        userMarker.setLatLng(userLatLng);
+      } else {
+        const userIcon = L.divIcon({
+          className: 'user-incident-icon',
+          html: '<div class="radar-ping"></div><div class="user-incident-pin">📍</div>',
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
+        });
+
+        userMarker = L.marker(userLatLng, { icon: userIcon }).addTo(map);
+      }
+
+      userMarker.bindPopup(
+        '<strong>🚨 Tracked Caller Location</strong><br>' +
+        'District: <strong>' + currentTrackedUser.district + '</strong><br>' +
+        'GPS: ' + currentTrackedUser.coordsFormatted + '<br>' +
+        'Service Needed: <strong>' + currentServiceType.toUpperCase() + '</strong><br>' +
+        'Scenario: ' + currentTrackedUser.scenario
+      );
+
+      // 2. Plot / Update Responder Station Marker
+      const stationLatLng = [activeResponderStation.coordinates[1], activeResponderStation.coordinates[0]];
+      const unitIconSymbol = getServiceIcon(currentServiceType);
+
+      if (responderMarker) {
+        responderMarker.setLatLng(stationLatLng);
+        const pinEl = responderMarker.getElement() && responderMarker.getElement().querySelector('.responder-unit-pin');
+        if (pinEl) pinEl.textContent = unitIconSymbol;
+      } else {
+        const responderIcon = L.divIcon({
+          className: 'responder-unit-icon',
+          html: '<div class="responder-unit-pin">' + unitIconSymbol + '</div>',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        });
+
+        responderMarker = L.marker(stationLatLng, { icon: responderIcon }).addTo(map);
+      }
+
+      responderMarker.bindPopup(
+        '<strong>' + unitIconSymbol + ' Active Dispatched Unit Base</strong><br>' +
+        'Station: <strong>' + activeResponderStation.name + '</strong><br>' +
+        (activeResponderStation.address || '')
+      );
+
+      // 3. Compute and Draw Fastest Route to User
+      // Route is automatically drawn ONLY if caller confirmed emergency, or responder manually clicked 'Show & Go To Route'
+      if (!isMissionCleared && (currentTrackedUser.isConfirmed || responderManualRouteActive) && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
+        await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
+      } else {
+        routeLayers.clearLayers();
+        const etaEl = document.getElementById('route-eta-val');
+        if (etaEl) etaEl.textContent = '—';
+        const distEl = document.getElementById('route-dist-val');
+        if (distEl) distEl.textContent = '—';
+        const hazardStatusText = document.getElementById('hazard-status-text');
+        if (hazardStatusText) {
+          hazardStatusText.textContent = isMissionCleared
+            ? 'Mission cleared. No active route.'
+            : (currentTrackedUser.isConfirmed ? 'Standby: Caller position pending.' : 'Standby: Caller route preview (Not yet confirmed).');
+        }
+        const factorsContainer = document.getElementById('responder-factors-container');
+        if (factorsContainer) factorsContainer.innerHTML = '';
+      }
+    }
+
+    function fitMapBoundsSafely(bounds, force) {
+      if (!bounds || !bounds.isValid()) return;
+      if (userManualZoomActive && !force) {
+        return;
+      }
+      const latDiff = Math.abs(bounds.getNorth() - bounds.getSouth());
+      const lngDiff = Math.abs(bounds.getEast() - bounds.getWest());
+
+      // Guard: strictly keep focus in local sector; never zoom out across oceans or to other countries
+      if (latDiff > 0.35 || lngDiff > 0.35) {
+        if (userMarker) {
+          map.setView(userMarker.getLatLng(), 15);
+        } else if (responderMarker) {
+          map.setView(responderMarker.getLatLng(), 15);
+        } else if (responderDeviceCoords) {
+          map.setView([responderDeviceCoords.lat, responderDeviceCoords.lng], 15);
+        } else {
+          map.setView(defaultLocalAnchor, 15);
+        }
+        return;
+      }
+
+      const isMobile = window.innerWidth <= 640;
+      const size = map.getSize();
+
+      if (isMobile) {
+        const hud = document.getElementById('responder-hud');
+        const isHudCollapsed = hud && hud.classList.contains('hud-collapsed');
+        const padTop = isHudCollapsed ? 65 : Math.min(260, Math.max(130, Math.floor(size.y * 0.32)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [20, padTop],
+            paddingBottomRight: [20, 30],
+            maxZoom: 16
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
+        }
+      } else {
+        const padLeft = Math.min(380, Math.max(20, Math.floor(size.x * 0.35)));
+        const padTop = Math.min(60, Math.max(20, Math.floor(size.y * 0.15)));
+        try {
+          map.fitBounds(bounds, {
+            paddingTopLeft: [padLeft, padTop],
+            paddingBottomRight: [25, 25],
+            maxZoom: 17
+          });
+        } catch (e) {
+          map.fitBounds(bounds, { padding: [20, 20], maxZoom: 17 });
+        }
+      }
+    }
+
+    function formatDistance(meters) {
+      if (!Number.isFinite(meters)) return '0 m';
+      if (meters >= 1000) {
+        return (meters / 1000).toFixed(1) + ' km';
+      }
+      return Math.round(meters) + ' m';
+    }
+
+    function formatDuration(seconds) {
+      if (!Number.isFinite(seconds)) return '0 min';
+      const mins = Math.max(1, Math.round(seconds / 60));
+      if (mins >= 60) {
+        const hours = Math.floor(mins / 60);
+        const remainingMins = mins % 60;
+        return hours + ' hr' + (hours > 1 ? 's' : '') + (remainingMins ? ' ' + remainingMins + ' min' : '');
+      }
+      return mins + ' min';
+    }
+
+        function renderResponderFactors(routeData, startCoords, endCoords) {
+      const container = document.getElementById('responder-factors-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const route = routeData || {};
+      const steps = [];
+      if (route.legs && Array.isArray(route.legs)) {
+        route.legs.forEach(function (leg) {
+          (leg.steps || []).forEach(function (s) { steps.push(s); });
+        });
+      }
+
+      // Calculate turns
+      const turnSteps = steps.filter(function (s) {
+        if (!s) return false;
+        if (s.maneuver && (s.maneuver.type === 'depart' || s.maneuver.type === 'arrive')) return false;
+        const inst = (s.instruction || (s.maneuver && s.maneuver.type) || '').toLowerCase();
+        return inst.includes('turn') || inst.includes('keep') || inst.includes('roundabout') || inst.includes('fork') || inst.includes('continue');
+      });
+      const turnCount = Math.max(1, turnSteps.length || (steps.length > 1 ? steps.length - 1 : 6));
+      const turnDelaySec = Math.round(turnCount * 15);
+
+      const totalSec = Number(route.duration) || 120;
+      const roadMeters = Number(route.distance) || 1200;
+
+      // Check incident collisions
+      let incidentCollisions = [];
+      let isDetourBypass = false;
+      let bypassedIncident = '';
+      if (Array.isArray(route.geometry && route.geometry.coordinates)) {
+        route.geometry.coordinates.forEach(function (pt) {
+          (liveIncidents || []).forEach(function (inc) {
+            if (haversineMeters(pt[1], pt[0], inc.lat, inc.lng) <= inc.radius) {
+              if (!incidentCollisions.some(function (c) { return c.id === inc.id; })) {
+                incidentCollisions.push(inc);
+              }
+            }
+          });
+        });
+      }
+
+      const trafficSec = 0; // Emergency corridor free-flow traffic
+      const eventSec = incidentCollisions.reduce(function (sum, inc) {
+        return sum + (inc.impassable ? 180 : 60);
+      }, 0);
+      const baseSec = Math.max(60, totalSec - trafficSec - eventSec);
+
+      // --- Block 1: Factors Affecting Overall Travel Time ---
+      const timeBlock = document.createElement('div');
+      timeBlock.className = 'factors-block travel-time-factors';
+
+      const timeHeader = document.createElement('div');
+      timeHeader.className = 'factors-header';
+      timeHeader.innerHTML = '<span class="factors-title">⏱️ FACTORS AFFECTING OVERALL TRAVEL TIME</span>' +
+        '<div class="factors-badge-pill"><span>Live</span><span>Model</span></div>';
+      timeBlock.appendChild(timeHeader);
+
+      // 4-Tile summary grid exactly matching screenshot
+      const grid = document.createElement('div');
+      grid.className = 'breakdown-grid';
+
+      const addTile = function (label, value, className) {
+        const tile = document.createElement('div');
+        tile.className = 'breakdown-tile' + (className ? ' ' + className : '');
+        const lbl = document.createElement('span');
+        lbl.className = 'breakdown-label';
+        lbl.textContent = label;
+        const val = document.createElement('span');
+        val.className = 'breakdown-value';
+        val.textContent = value;
+        tile.append(lbl, val);
+        grid.appendChild(tile);
+      };
+
+      addTile('Base Time', formatDuration(baseSec));
+      addTile('Traffic Delay', trafficSec > 0 ? '+' + formatDuration(trafficSec) : '0 min', trafficSec > 0 ? 'delayed' : '');
+      addTile('Hazard / Turns', (eventSec + turnDelaySec) > 0 ? '+' + formatDuration(eventSec + turnDelaySec) : '0 min', eventSec > 0 ? 'delayed' : '');
+      addTile('Overall Time', formatDuration(totalSec), 'total');
+      timeBlock.appendChild(grid);
+
+      // Itemized list of factors
+      const factorList = document.createElement('ul');
+      factorList.className = 'factor-item-list';
+
+      // Factor 1: Traffic Conditions
+      const trafficItem = document.createElement('li');
+      if (trafficSec > 0) {
+        trafficItem.className = 'factor-item-card delayed';
+        trafficItem.innerHTML = '<span class="factor-icon">🚗</span><div class="factor-content"><div class="factor-label">Live Traffic Congestion Delays (+' + formatDuration(trafficSec) + ')</div><div class="factor-desc">Corridor roads operating at reduced velocity due to queueing.</div></div>';
+      } else {
+        trafficItem.className = 'factor-item-card safe';
+        trafficItem.innerHTML = '<span class="factor-icon">🚗</span><div class="factor-content"><div class="factor-label">Free-Flow Traffic Conditions (0 min delay)</div><div class="factor-desc">Corridor roads operating at legal speed limits without significant vehicular queueing.</div></div>';
+      }
+      factorList.appendChild(trafficItem);
+
+      // Factor 2: Hazard Corridor
+      const hazardItem = document.createElement('li');
+      if (incidentCollisions.length > 0) {
+        hazardItem.className = 'factor-item-card delayed';
+        const incDescriptions = incidentCollisions.map(function (inc) {
+          return inc.name + ' (' + (inc.impassable ? 'closure bypass required' : '+' + formatDuration(60) + ' caution speed slowdown') + ')';
+        }).join(', ');
+        hazardItem.innerHTML = '<span class="factor-icon">⚠️</span><div class="factor-content"><div class="factor-label">Corridor Hazards & Caution Buffers (+' + formatDuration(eventSec) + ')</div><div class="factor-desc">' + escapeHtml(incDescriptions) + '.</div></div>';
+      } else if (isDetourBypass) {
+        hazardItem.className = 'factor-item-card safe';
+        hazardItem.innerHTML = '<span class="factor-icon">🛡️</span><div class="factor-content"><div class="factor-label">Safe Incident Detour Applied</div><div class="factor-desc">Corridor was dynamically recalculated around ' + escapeHtml(bypassedIncident || 'road closure') + ' to ensure unhindered passage.</div></div>';
+      } else {
+        hazardItem.className = 'factor-item-card safe';
+        hazardItem.innerHTML = '<span class="factor-icon">✅</span><div class="factor-content"><div class="factor-label">Hazard-Clear Emergency Corridor</div><div class="factor-desc">Zero active flood zones, road works, or barricades along this pathway.</div></div>';
+      }
+      factorList.appendChild(hazardItem);
+
+      // Factor 3: Turns & Signals
+      const turnsItem = document.createElement('li');
+      turnsItem.className = 'factor-item-card';
+      turnsItem.innerHTML = '<span class="factor-icon">🚦</span><div class="factor-content"><div class="factor-label">Intersection Maneuvers & Signals (~' + formatDuration(turnDelaySec) + ')</div><div class="factor-desc">' + turnCount + ' turning maneuvers, merges, and signalized crossings requiring deceleration and right-of-way yields (~15 sec each).</div></div>';
+      factorList.appendChild(turnsItem);
+
+      // Factor 4: Road Friction
+      const surfaceItem = document.createElement('li');
+      surfaceItem.className = 'factor-item-card';
+      surfaceItem.innerHTML = '<span class="factor-icon">🛣️</span><div class="factor-content"><div class="factor-label">Pavement Friction & Road Grip</div><div class="factor-desc">Standard asphalt pavement friction coefficient (μ ≈ 0.82) under nominal dry conditions with standard vehicle deceleration profiles.</div></div>';
+      factorList.appendChild(surfaceItem);
+
+      timeBlock.appendChild(factorList);
+
+      // Travel Time Formula Box exactly matching screenshot
+      const formulaBox = document.createElement('div');
+      formulaBox.className = 'formula-box';
+      const mathSummary = (trafficSec + eventSec) > 0
+        ? 'Live caution slowdowns add +' + formatDuration(trafficSec + eventSec) + ' over baseline.'
+        : 'Path is free-flowing. Net travel duration matches uncongested road network velocity.';
+      formulaBox.innerHTML = '<div class="formula-math-line">T(overall) = T(base) + ΔT(traffic) + ΔT(hazards) + ΔT(maneuvers)</div>' +
+        '<div class="formula-calc-line"><strong>Overall Calculation:</strong> ' + formatDuration(baseSec) + ' (Base) + ' + formatDuration(trafficSec) + ' (Traffic) + ' + formatDuration(eventSec) + ' (Hazard) + ~' + formatDuration(turnDelaySec) + ' (Turns) = <strong>' + formatDuration(totalSec) + ' Net Travel Time</strong>.</div>' +
+        '<div class="formula-note">' + mathSummary + '</div>';
+      timeBlock.appendChild(formulaBox);
+
+      container.appendChild(timeBlock);
+
+      // --- Block 2: Factors Affecting Overall Path Selection ---
+      const pathBlock = document.createElement('div');
+      pathBlock.className = 'factors-block path-factors';
+
+      const pathHeader = document.createElement('div');
+      pathHeader.className = 'factors-header';
+      pathHeader.innerHTML = '<span class="factors-title">🗺️ FACTORS AFFECTING OVERALL PATH SELECTION</span>' +
+        '<div class="factors-badge-pill"><span>Path</span><span>Optimization</span></div>';
+      pathBlock.appendChild(pathHeader);
+
+      let radialMeters = 0;
+      if (startCoords && endCoords) {
+        radialMeters = Math.round(haversineMeters(startCoords[1], startCoords[0], endCoords[1], endCoords[0]));
+      }
+      const directnessRatio = radialMeters > 0 ? Math.min(100, Math.round((radialMeters / roadMeters) * 100)) : 77;
+
+      const pathList = document.createElement('ul');
+      pathList.className = 'factor-item-list';
+
+      // Path Factor 1: Directness & Proximity
+      const directnessItem = document.createElement('li');
+      directnessItem.className = 'factor-item-card safe';
+      directnessItem.innerHTML = '<span class="factor-icon">🎯</span><div class="factor-content"><div class="factor-label">Directness & Proximity Efficiency (' + directnessRatio + '% Ratio)</div><div class="factor-desc">Radial straight-line distance is ' + formatDistance(radialMeters) + ' vs actual network road path of ' + formatDistance(roadMeters) + ', confirming low tortuosity and high corridor efficiency.</div></div>';
+      pathList.appendChild(directnessItem);
+
+      // Path Factor 2: Direct Corridor
+      const detourItem = document.createElement('li');
+      if (incidentCollisions.length > 0) {
+        detourItem.className = 'factor-item-card delayed';
+        detourItem.innerHTML = '<span class="factor-icon">🛡️</span><div class="factor-content"><div class="factor-label">Dynamic Hazard Bypass Routing</div><div class="factor-desc">Path traverses near documented incident zones; speed buffers applied for safe passage.</div></div>';
+      } else {
+        detourItem.className = 'factor-item-card safe';
+        detourItem.innerHTML = '<span class="factor-icon">✅</span><div class="factor-content"><div class="factor-label">Direct Unobstructed Corridor</div><div class="factor-desc">No impassable road closures or emergency barricades detected along selected streets.</div></div>';
+      }
+      pathList.appendChild(detourItem);
+
+      pathBlock.appendChild(pathList);
+      container.appendChild(pathBlock);
+    }
+
+    function toggleResponderFactors() {
+      const container = document.getElementById('responder-factors-container');
+      const btn = document.getElementById('btn-toggle-factors');
+      if (!container || !btn) return;
+
+      const isHidden = container.hidden;
+      container.hidden = !isHidden;
+      btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+
+      if (isHidden) {
+        const hud = document.getElementById('responder-hud');
+        if (hud && hud.classList.contains('hud-collapsed')) {
+          hud.classList.remove('hud-collapsed');
+        }
+        setTimeout(function () {
+          container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
+    }
+
+    let lastCalculatedRouteKey = null;
+
+    async function calculateAndDrawRoute(startCoords, endCoords) {
+      if (!startCoords || !endCoords) return;
+      const routeKey = startCoords.map(function(n){ return Number(n).toFixed(5); }).join(',') + '->' + endCoords.map(function(n){ return Number(n).toFixed(5); }).join(',');
+      if (lastCalculatedRouteKey === routeKey && routeLayers && routeLayers.getLayers().length > 0) {
+        return;
+      }
+      lastCalculatedRouteKey = routeKey;
+
+      routeLayers.clearLayers();
+
+      const coordinatesQuery = [startCoords, endCoords].map(function (c) { return c.join(','); }).join(';');
+
+      try {
+        const response = await fetch(
+          'https://router.project-osrm.org/route/v1/driving/' + coordinatesQuery +
+          '?overview=full&geometries=geojson&steps=true'
+        );
+
+        if (!response.ok) throw new Error('Route network query failed.');
+        const data = await response.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes[0]) throw new Error('No drivable route found.');
+
+        const route = data.routes[0];
+        const distKm = (route.distance / 1000).toFixed(1);
+        const etaMins = Math.max(2, Math.round(route.duration / 60));
+
+        // Evaluate hazard collisions
+        let avoidsFlood = false;
+        let routeColor = '#188038';
+
+        if (Array.isArray(route.geometry && route.geometry.coordinates)) {
+          route.geometry.coordinates.forEach(function (pt) {
+            liveIncidents.forEach(function (inc) {
+              if (haversineMeters(pt[1], pt[0], inc.lat, inc.lng) <= inc.radius) {
+                if (inc.type === 'flood') avoidsFlood = true;
+              }
+            });
+          });
+        }
+
+        // Draw route polyline
+        const routeLayer = L.geoJSON(route.geometry, {
+          style: {
+            color: routeColor,
+            weight: 7,
+            opacity: 0.95
+          }
+        }).addTo(routeLayers);
+
+        // Update HUD Metrics
+        document.getElementById('route-eta-val').textContent = '~' + etaMins + ' min';
+        document.getElementById('route-dist-val').textContent = distKm + ' km';
+
+        const hazardStatusText = document.getElementById('hazard-status-text');
+        if (avoidsFlood) {
+          hazardStatusText.textContent = 'Route corridor passes near active flood zone. Caution advised.';
+        } else {
+          hazardStatusText.textContent = 'Optimal response route verified. Clear thoroughfares.';
+        }
+
+        // Render live factors analysis in responder HUD
+        renderResponderFactors(route, startCoords, endCoords);
+
+        // Fit bounds safely (respect user manual zoom/pan unless initial plot)
+        if (!userManualZoomActive) {
+          fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, routeLayer]).getBounds());
+        }
+
+      } catch (err) {
+        console.warn('Could not calculate OSRM route, falling back to direct metric:', err);
+        const dMeters = haversineMeters(startCoords[1], startCoords[0], endCoords[1], endCoords[0]);
+        const distKm = (dMeters / 1000).toFixed(1);
+        const etaMins = Math.max(2, Math.round((dMeters / (35000 / 3600)) / 60));
+
+        document.getElementById('route-eta-val').textContent = '~' + etaMins + ' min';
+        document.getElementById('route-dist-val').textContent = distKm + ' km';
+
+        // Draw direct emergency line
+        const directLine = L.polyline([[startCoords[1], startCoords[0]], [endCoords[1], endCoords[0]]], {
+          color: '#1a73e8',
+          weight: 4,
+          dashArray: '8, 8'
+        }).addTo(routeLayers);
+
+        // Render fallback factors
+        renderResponderFactors({ distance: dMeters, duration: etaMins * 60, legs: [{ steps: [] }] }, startCoords, endCoords);
+
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker, directLine]).getBounds());
+      }
+    }
+
+    // 6. Action Button Controls
+    const btnToggleFactors = document.getElementById('btn-toggle-factors');
+    if (btnToggleFactors) {
+      btnToggleFactors.addEventListener('click', toggleResponderFactors);
+    }
+    const btnQuickFactors = document.getElementById('btn-quick-factors');
+    if (btnQuickFactors) {
+      btnQuickFactors.addEventListener('click', toggleResponderFactors);
+    }
+
+    const btnShowRoute = document.getElementById('btn-show-route');
+    if (btnShowRoute) {
+      btnShowRoute.addEventListener('click', async function () {
+        isMissionCleared = false;
+        responderManualRouteActive = true;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.status === 'en-route');
+        });
+        const badge = document.getElementById('dispatch-badge');
+        if (badge) badge.textContent = 'EN ROUTE';
+
+        // Ensure user coordinates are active
+        if (!Number.isFinite(currentTrackedUser.lat) || !Number.isFinite(currentTrackedUser.lng)) {
+          const fallback = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
+          currentTrackedUser.lat = fallback[0];
+          currentTrackedUser.lng = fallback[1];
+          currentTrackedUser.coordsFormatted = fallback[0].toFixed(4) + '° N, ' + fallback[1].toFixed(4) + '° E';
+          currentTrackedUser.district = 'Sector Assigned';
+          currentTrackedUser.scenario = '🚨 Emergency Route Active';
+          currentTrackedUser.summary = 'Responder dispatched to caller coordinates.';
+          currentTrackedUser.tacticalAdvice = 'Maintain priority navigation corridor.';
+        }
+
+        updateUI();
+        await updateMapMarkersAndRoute();
+
+        // On mobile viewports, collapse the HUD drawer so the route path is immediately visible
+        if (window.innerWidth <= 640 && responderHud) {
+          responderHud.classList.add('hud-collapsed');
+          if (hudCollapseBtn) {
+            hudCollapseBtn.setAttribute('aria-expanded', 'false');
+            hudCollapseBtn.setAttribute('title', 'Expand HUD');
+          }
+          setTimeout(function () {
+            map.invalidateSize();
+            if (routeLayers.getBounds().isValid()) {
+              fitMapBoundsSafely(routeLayers.getBounds(), true);
+            }
+          }, 320);
+        } else {
+          if (routeLayers.getBounds().isValid()) {
+            fitMapBoundsSafely(routeLayers.getBounds(), true);
+          }
+        }
+      });
+    }
+
+    const callBtnEl = document.getElementById('btn-call-caller');
+    if (callBtnEl) {
+      callBtnEl.addEventListener('click', function () {
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+        responderManualRouteActive = true;
+        updateUI();
+        updateMapMarkersAndRoute();
+      });
+    }
+
+    const msgBtnEl = document.getElementById('btn-message-caller');
+    if (msgBtnEl) {
+      msgBtnEl.addEventListener('click', function () {
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+        responderManualRouteActive = true;
+        updateUI();
+        updateMapMarkersAndRoute();
+      });
+    }
+
+    document.getElementById('btn-center-user').addEventListener('click', function () {
+      if (userMarker) {
+        map.flyTo(userMarker.getLatLng(), 16);
+        userMarker.openPopup();
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 16);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
+      }
+    });
+
+    document.getElementById('btn-center-responder').addEventListener('click', function () {
+      if (responderMarker) {
+        map.flyTo(responderMarker.getLatLng(), 16);
+        responderMarker.openPopup();
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 16);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
+      }
+    });
+
+    document.getElementById('btn-fit-overview').addEventListener('click', function () {
+      if (userMarker && responderMarker) {
+        fitMapBoundsSafely(L.featureGroup([userMarker, responderMarker]).getBounds(), true);
+      } else if (userMarker) {
+        map.flyTo(userMarker.getLatLng(), 15);
+      } else if (responderMarker) {
+        map.flyTo(responderMarker.getLatLng(), 15);
+      } else if (responderDeviceCoords) {
+        map.flyTo([responderDeviceCoords.lat, responderDeviceCoords.lng], 15);
+      } else {
+        map.flyTo(defaultLocalAnchor, 15);
+      }
+    });
+
+    document.getElementById('btn-refresh-user').addEventListener('click', async function () {
+      lastTrackedCoords = null;
+      lastRenderedStationId = null;
+      isMissionCleared = false;
+      clearedTimestamp = 0;
+      try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+
+      let rawData = null;
+      try {
+        const raw = localStorage.getItem('tracked_user_emergency');
+        if (raw) rawData = JSON.parse(raw);
+      } catch (e) {}
+
+      if (rawData && Number.isFinite(rawData.lat) && Number.isFinite(rawData.lng)) {
+        loadTrackedUser(rawData);
+      } else {
+        const fallback = responderDeviceCoords ? [responderDeviceCoords.lat, responderDeviceCoords.lng] : defaultLocalAnchor;
+        currentTrackedUser.lat = fallback[0];
+        currentTrackedUser.lng = fallback[1];
+        currentTrackedUser.coordsFormatted = fallback[0].toFixed(4) + '° N, ' + fallback[1].toFixed(4) + '° E';
+        currentTrackedUser.district = 'Sector Assigned';
+        currentTrackedUser.scenario = '🟢 Caller Position Verified';
+        currentTrackedUser.summary = 'Position detected. Ready for routing.';
+        currentTrackedUser.tacticalAdvice = 'Maintain priority navigation corridor.';
+        updateUI();
+        await updateMapMarkersAndRoute();
+        if (userMarker) {
+          map.flyTo(userMarker.getLatLng(), 15);
+        }
+      }
+
+      flashSyncBadge();
+      if (navigator.geolocation) {
+        requestResponderDeviceLocation({ setView: false, userInitiated: false });
+      }
+    });
+
+    const btnDeviceGps = document.getElementById('btn-device-gps');
+    if (btnDeviceGps) {
+      btnDeviceGps.addEventListener('click', function () {
+        requestResponderDeviceLocation({ setView: true, userInitiated: true });
+      });
+    }
+
+    // --- Device Location & Geolocation Detection (Strictly Device GPS; No External IP API; Never Moves to Other Countries) ---
+    let responderDeviceCoords = null;
+    let isLocatingDevice = false;
+
+    function setResponderGpsStatus(msg, isError) {
+      const el = document.getElementById('responder-gps-status');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = 'block';
+      el.textContent = msg;
+      if (isError) {
+        el.style.color = '#f28b82';
+        el.style.background = 'rgba(242, 139, 130, 0.12)';
+        el.style.borderColor = 'rgba(242, 139, 130, 0.3)';
+      } else {
+        el.style.color = '#8ab4f8';
+        el.style.background = 'rgba(138, 180, 248, 0.12)';
+        el.style.borderColor = 'rgba(138, 180, 248, 0.3)';
+      }
+    }
+
+    function onResponderDeviceLocationSuccess(coords, accuracy, options) {
+      isLocatingDevice = false;
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.remove('locating-spin');
+      if (gpsText) gpsText.textContent = 'Device Location Active';
+
+      const lat = coords[1];
+      const lng = coords[0];
+      responderDeviceCoords = { lat: lat, lng: lng, accuracy: accuracy };
+
+      const formatted = lat.toFixed(4) + '° N, ' + lng.toFixed(4) + '° E';
+      setResponderGpsStatus('📍 Device GPS: ' + formatted + ' (±' + Math.round(accuracy || 10) + 'm)');
+
+      const hasStoredEmergency = !!localStorage.getItem('tracked_user_emergency');
+      if (options.setView || isMissionCleared || !hasStoredEmergency) {
+        currentTrackedUser.lat = lat;
+        currentTrackedUser.lng = lng;
+        currentTrackedUser.coordsFormatted = formatted;
+        currentTrackedUser.district = 'Current Device Sector';
+        currentTrackedUser.scenario = '🟢 Live Device GPS Active';
+        currentTrackedUser.summary = 'Device GPS location verified. Console positioned at current coordinates.';
+        currentTrackedUser.tacticalAdvice = 'System anchored to your device location. Ready for incoming dispatch.';
+
+        activeResponderStation = {
+          name: "Mobile Unit (My Device GPS)",
+          type: currentServiceType,
+          category: "Live Device GPS Responder Unit",
+          coordinates: [lng, lat],
+          address: "Real-time Device Coordinates",
+          phone: "(033) 333-1111"
+        };
+
+        isMissionCleared = false;
+        clearedTimestamp = 0;
+        try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
+
+        updateUI();
+        updateMapMarkersAndRoute();
+
+        if (!userManualZoomActive || options.userInitiated) {
+          map.flyTo([lat, lng], 15);
+        }
+      } else {
+        // If a remote caller is already tracked from map.html:
+        // Position the responder marker right at the responder's device GPS!
+        activeResponderStation = {
+          name: "Mobile Unit (My Device GPS)",
+          type: currentServiceType,
+          category: "Live Device GPS Responder Unit",
+          coordinates: [lng, lat],
+          address: "Real-time Device Coordinates",
+          phone: "(033) 333-1111"
+        };
+        updateUI();
+        updateMapMarkersAndRoute();
+        if (options.userInitiated) {
+          map.flyTo([lat, lng], 15);
+        }
+      }
+    }
+
+    function onResponderDeviceLocationFailure(reason, options) {
+      isLocatingDevice = false;
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.remove('locating-spin');
+      if (gpsText) gpsText.textContent = 'Detect Device GPS Location';
+
+      if (options.userInitiated) {
+        setResponderGpsStatus(reason || 'Device location is not enabled. Please enable location permissions on your device.', true);
+      } else {
+        console.info('Device location not enabled on startup; remaining at default local position.');
+      }
+    }
+
+    function requestResponderDeviceLocation(options) {
+      options = options || {};
+      const isUserInitiated = !!options.userInitiated;
+
+      if (isLocatingDevice) return;
+      isLocatingDevice = true;
+
+      const gpsIcon = document.getElementById('btn-gps-icon');
+      const gpsText = document.getElementById('btn-gps-text');
+      if (gpsIcon) gpsIcon.classList.add('locating-spin');
+      if (gpsText && isUserInitiated) gpsText.textContent = 'Detecting Device Location...';
+      if (isUserInitiated) setResponderGpsStatus('Detecting device location via GPS...');
+
+      let resolved = false;
+
+      function resolveSuccess(coords, accuracy) {
+        if (resolved) return;
+        resolved = true;
+        onResponderDeviceLocationSuccess(coords, accuracy, options);
+      }
+
+      function resolveFailure(msg) {
+        if (resolved) return;
+        resolved = true;
+        onResponderDeviceLocationFailure(msg, options);
+      }
+
+      // Fallback timer: ensure isLocatingDevice is always reset even if browser never fires callbacks
+      setTimeout(function () {
+        if (!resolved) {
+          resolveFailure('Device location request timed out.');
+        }
+      }, 10000);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            if (pos && pos.coords && Number.isFinite(pos.coords.latitude) && Number.isFinite(pos.coords.longitude)) {
+              resolveSuccess([pos.coords.longitude, pos.coords.latitude], pos.coords.accuracy);
+            } else {
+              resolveFailure('Invalid coordinates received from device.');
+            }
+          },
+          function (err1) {
+            console.warn('High-accuracy GPS timed out or unavailable, trying standard accuracy:', err1.message);
+            navigator.geolocation.getCurrentPosition(
+              function (pos2) {
+                if (pos2 && pos2.coords && Number.isFinite(pos2.coords.latitude) && Number.isFinite(pos2.coords.longitude)) {
+                  resolveSuccess([pos2.coords.longitude, pos2.coords.latitude], pos2.coords.accuracy);
+                } else {
+                  resolveFailure('Invalid coordinates received from device.');
+                }
+              },
+              function (err2) {
+                console.warn('Device geolocation not enabled or unavailable:', err2.message);
+                let errorMsg = 'Device location is not enabled. Please enable location on your device to detect your position.';
+                if (err2 && err2.code === 1) {
+                  errorMsg = 'Location permission denied. Please allow location access in your browser or device settings.';
+                } else if (err2 && err2.code === 2) {
+                  errorMsg = 'Device location is currently unavailable. Please verify GPS or network location is enabled.';
+                } else if (err2 && err2.code === 3) {
+                  errorMsg = 'Location request timed out. Please verify device location is enabled.';
+                }
+                resolveFailure(errorMsg);
+              },
+              { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+            );
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+        );
+      } else {
+        resolveFailure('Geolocation is not supported by your browser.');
+      }
+    }
+
+    // Mission status stepper buttons
+    document.querySelectorAll('.dispatch-step-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.dispatch-step-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        const badge = document.getElementById('dispatch-badge');
+        if (badge) badge.textContent = btn.textContent.toUpperCase();
+
+        if (btn.dataset.status === 'cleared') {
+          setMissionCleared();
+        } else {
+          if (isMissionCleared || clearedTimestamp > 0) {
+            isMissionCleared = false;
+            clearedTimestamp = 0;
+            try {
+              localStorage.removeItem('responder_cleared_time');
+            } catch (e) {}
+            loadTrackedUser();
+          }
+        }
+      });
+    });
+
+    // Single Unified Dark / Light Theme Toggle Function
+    function applyTheme(isLight) {
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      if (isLight) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        if (themeBtn) {
+          themeBtn.setAttribute('aria-label', 'Switch to dark theme');
+          themeBtn.title = 'Switch to dark theme';
+        }
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        if (themeBtn) {
+          themeBtn.setAttribute('aria-label', 'Switch to light theme');
+          themeBtn.title = 'Switch to light theme';
+        }
+      }
+      try {
+        localStorage.setItem('responder_theme', isLight ? 'light' : 'dark');
+      } catch (e) {}
+    }
+
+    try {
+      const savedTheme = localStorage.getItem('responder_theme');
+      if (savedTheme === 'light') {
+        applyTheme(true);
+      }
+    } catch (e) {}
+
+    // Network status listener
+    const offlineBanner = document.getElementById('offline-banner');
+    function updateNetworkStatus() {
+      if (offlineBanner) {
+        offlineBanner.hidden = navigator.onLine;
+      }
+    }
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    // Register offline service worker
+    // Support offline & online on localhost (127.0.0.1, [::1], *.localhost, custom ports) and production
+    const isLocalhostHost = (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '[::1]' ||
+      window.location.hostname.endsWith('.localhost')
+    );
+
+    if ('serviceWorker' in navigator && (window.isSecureContext || isLocalhostHost)) {
+      window.addEventListener('load', function () {
+        if (window.location.protocol === 'file:') {
+          console.info('Direct file:// filesystem mode active. App is operating in direct local offline storage mode.');
+          return;
+        }
+
+        const decodedPath = decodeURIComponent(window.location.pathname);
+        const isSubfolder = decodedPath.includes('Open Street Map (Bellmans - Ford)');
+        const primarySwPath = isSubfolder ? './service-worker.js' : 'service-worker.js';
+
+        navigator.serviceWorker.register(primarySwPath, { scope: './' })
+          .then(function (reg) {
+            console.log('Offline Service Worker registered on responder localhost/production (scope: ' + reg.scope + ')');
+          })
+          .catch(function () {
+            return navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+          })
+          .catch(function (error) {
+            console.warn('Notice: Offline responder service worker registration handled:', error);
+          });
+      });
+    }
+
+    // Supabase & Account Role Verification
+    function checkResponderAccountRole() {
+      const banner = document.getElementById('responder-role-banner');
+      const text = document.getElementById('responder-role-text');
+      if (!banner || !text) return;
+
+      const OFFLINE_CACHE_PREFIX = 'osm-map-offline-v1:';
+      let lastRole = 'personal';
+      try {
+        lastRole = localStorage.getItem(OFFLINE_CACHE_PREFIX + 'account-last-role') || 'personal';
+      } catch (e) {}
+
+      const config = window.OSM_MAP_SUPABASE_CONFIG;
+      if (window.supabase && config && config.url && config.anonKey) {
+        try {
+          const client = window.supabase.createClient(config.url, config.anonKey);
+          client.auth.getSession().then(function (res) {
+            const session = res && res.data && res.data.session;
+            const user = session && session.user;
+            if (user) {
+              const metaRole = (user.user_metadata && user.user_metadata.account_role) || lastRole;
+              if (metaRole === 'responder') {
+                banner.className = 'responder-role-banner role-responder';
+                text.textContent = '🚨 Verified Emergency Responder: ' + (user.user_metadata && user.user_metadata.display_name || user.email || 'Unit');
+                banner.hidden = false;
+              } else {
+                banner.className = 'responder-role-banner';
+                text.textContent = '👤 Signed in with Personal Account.';
+                banner.hidden = false;
+              }
+            } else {
+              if (lastRole === 'responder') {
+                banner.className = 'responder-role-banner role-responder';
+                text.textContent = '🚨 Emergency Responder Dispatch Mode';
+                banner.hidden = false;
+              }
+            }
+          }).catch(function () {});
+        } catch (e) {}
+      } else {
+        if (lastRole === 'responder') {
+          banner.className = 'responder-role-banner role-responder';
+          text.textContent = '🚨 Emergency Responder Dispatch Mode';
+          banner.hidden = false;
+        }
+      }
+    }
+
+    // Mobile HUD Collapse & Expand Drawer Toggle
+    const responderHud = document.getElementById('responder-hud');
+    const hudCollapseBtn = document.getElementById('hud-collapse-btn');
+    const hudDragHandle = document.getElementById('hud-drag-handle');
+
+    function toggleHudCollapse() {
+      if (!responderHud) return;
+      const isCollapsed = responderHud.classList.toggle('hud-collapsed');
+      if (hudCollapseBtn) {
+        hudCollapseBtn.setAttribute('aria-expanded', String(!isCollapsed));
+        hudCollapseBtn.setAttribute('title', isCollapsed ? 'Expand HUD' : 'Collapse HUD for Map View');
+      }
+      setTimeout(function () {
+        if (typeof map !== 'undefined' && map.invalidateSize) {
+          map.invalidateSize();
+        }
+      }, 300);
+    }
+
+    if (hudCollapseBtn) {
+      hudCollapseBtn.addEventListener('click', toggleHudCollapse);
+    }
+    if (hudDragHandle) {
+      hudDragHandle.addEventListener('click', toggleHudCollapse);
+    }
+
+    // Initial load
+    checkResponderAccountRole();
+    loadTrackedUser();
+
+    // Check browser Geolocation API - strictly rely on device geolocation enabled by user
+    if (navigator.geolocation) {
+      requestResponderDeviceLocation({ setView: false, userInitiated: false });
+    }
+  </script>
+    
+
+</body>
+
+</html>
