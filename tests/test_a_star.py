@@ -1,13 +1,5 @@
-from pathlib import Path
 import math
-import sys
 import unittest
-
-_project_root = Path(__file__).resolve().parents[1]
-_algorithm_dir = Path(__file__).resolve().parent
-for _path in (_project_root, _algorithm_dir):
-    if str(_path) not in sys.path:
-        sys.path.insert(0, str(_path))
 
 from road_network import (
     DEFAULT_SPEED_MPS,
@@ -18,7 +10,7 @@ from road_network import (
     build_graph,
     haversine_meters,
 )
-from a_star import astar, time_heuristic
+from routing.a_star import astar, time_heuristic
 
 
 def travel_time(nodes: dict[int, Node], u: int, v: int, penalty: float = 0.0) -> float:

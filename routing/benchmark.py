@@ -1,14 +1,7 @@
 from dataclasses import dataclass
-import importlib.util
 import math
-from pathlib import Path
-import sys
 import time
 import tracemalloc
-
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
 
 from road_network import (
     HAZARD_ZONES,
@@ -22,6 +15,9 @@ from road_network import (
     fetch_overpass_roads,
     find_nearest_node,
 )
+from routing.a_star import astar
+from routing.bellman_ford import bellman_ford
+from routing.spfa import spfa
 
 @dataclass
 class AlgorithmBenchmark:
@@ -35,16 +31,6 @@ class AlgorithmBenchmark:
     edge_checks: int
     successful_relaxations: int
     iterations: int | None
-
-
-def _load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Unable to load algorithm module from {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def _validate_route(
@@ -94,15 +80,16 @@ def _measure(
         raise RuntimeError("Benchmark requires tracemalloc to be stopped.")
 
     metrics: dict[str, int | None] = {}
+    started = time.perf_counter()
+    route, cost = runner(nodes, edges, source, target, metrics=metrics)
+    elapsed = time.perf_counter() - started
+
     tracemalloc.start()
     try:
-        started = time.perf_counter()
-        route, cost = runner(nodes, edges, source, target, metrics=metrics)
-        elapsed = time.perf_counter() - started
+        runner(nodes, edges, source, target, metrics={})
         _, peak_memory = tracemalloc.get_traced_memory()
     finally:
         tracemalloc.stop()
-
     _validate_route(nodes, edges, source, target, route, cost)
     return AlgorithmBenchmark(
         name=name,
@@ -121,27 +108,12 @@ def _measure(
 def run_benchmark(
     nodes: dict[int, Node], edges: list[Edge], source: int, target: int
 ) -> list[AlgorithmBenchmark]:
-    bellman_ford = _load_module(
-        "_iloilo_bellman_ford",
-        _PROJECT_ROOT / "Open Street Map (Bellmans - Ford)" / "bellman_ford.py",
-    )
-    spfa = _load_module(
-        "_iloilo_spfa", _PROJECT_ROOT / "Open Street Map (SPFA)" / "spfa.py"
-    )
-    astar = _load_module(
-        "_iloilo_astar", _PROJECT_ROOT / "Open Street Map - A Star" / "a_star.py"
-    )
-
     def run_bellman_ford(nodes, edges, source, target, *, metrics):
-        route, cost, *_ = bellman_ford.bellman_ford(
-            nodes, edges, source, target, metrics=metrics
-        )
+        route, cost, *_ = bellman_ford(nodes, edges, source, target, metrics=metrics)
         return route or None, cost
 
     def run_spfa(nodes, edges, source, target, *, metrics):
-        route, cost, _, _ = spfa.spfa(
-            nodes, edges, source, target, metrics=metrics
-        )
+        route, cost, _, _ = spfa(nodes, edges, source, target, metrics=metrics)
         return route, cost
 
     results = [
@@ -154,7 +126,7 @@ def run_benchmark(
             target,
         ),
         _measure("SPFA", run_spfa, nodes, edges, source, target),
-        _measure("A*", astar.astar, nodes, edges, source, target),
+        _measure("A*", astar, nodes, edges, source, target),
     ]
     expected_cost = results[0].route_cost_seconds
     for result in results[1:]:

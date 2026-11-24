@@ -1,9 +1,8 @@
-import importlib.util
 import math
-from pathlib import Path
-import sys
+import threading
 import time
 import tracemalloc
+from dataclasses import dataclass
 from typing import Callable
 
 from road_network import (
@@ -17,33 +16,100 @@ from road_network import (
     find_nearest_node,
     haversine_meters,
 )
+from routing.a_star import astar
+from routing.bellman_ford import bellman_ford
+from routing.spfa import spfa
 
 
-ROOT = Path(__file__).resolve().parent
 ALGORITHM_NAMES = ("bellman_ford", "spfa", "a_star")
+ALGORITHM_LABELS = {
+    "bellman_ford": "Bellman-Ford",
+    "spfa": "SPFA",
+    "a_star": "A*",
+}
+_METRICS_LOCK = threading.Lock()
+
+
+@dataclass
+class AlgorithmOutput:
+    route: list[int] | None
+    cost: float
+    unique_explored_nodes: int
+    nodes_processed: int
+    edge_checks: int
+    successful_relaxations: int
+    iterations: int | None = None
 
 
 class ApiRequestError(ValueError):
-    pass
+    def __init__(self, message: str, *, missing: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.missing = missing
 
 
 class GraphUnavailableError(RuntimeError):
     pass
 
 
-def _load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Unable to load module from {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+def route_payload(api: "RoutingApi", payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise ApiRequestError("Request body must be a JSON object.")
+    required = (
+        "origin_lat",
+        "origin_lon",
+        "destination_lat",
+        "destination_lon",
+        "algorithm",
+    )
+    missing = [name for name in required if name not in payload]
+    if missing:
+        raise ApiRequestError("Missing parameters.", missing=missing)
+    return api.route(*(payload[name] for name in required))
 
 
 def load_live_graph() -> tuple[dict[int, Node], list[Edge]]:
     osm_data = fetch_overpass_roads(*ILOILO_BOUNDS)
     return build_graph(osm_data, ROAD_HINDRANCES, HAZARD_ZONES)
+
+
+def _run_bellman_ford(nodes, edges, source, target, metrics):
+    route, cost, unique, checks, relaxations, iterations = bellman_ford(
+        nodes, edges, source, target, metrics=metrics
+    )
+    return AlgorithmOutput(
+        route, cost, unique, metrics["nodes_processed"], checks, relaxations, iterations
+    )
+
+
+def _run_spfa(nodes, edges, source, target, metrics):
+    route, cost, processed, unique = spfa(nodes, edges, source, target, metrics=metrics)
+    return AlgorithmOutput(
+        route,
+        cost,
+        unique,
+        processed,
+        metrics["edge_checks"],
+        metrics["successful_relaxations"],
+    )
+
+
+def _run_a_star(nodes, edges, source, target, metrics):
+    route, cost = astar(nodes, edges, source, target, metrics=metrics)
+    return AlgorithmOutput(
+        route,
+        cost,
+        metrics["unique_explored_nodes"],
+        metrics["nodes_processed"],
+        metrics["edge_checks"],
+        metrics["successful_relaxations"],
+    )
+
+
+ALGORITHM_RUNNERS = {
+    "bellman_ford": _run_bellman_ford,
+    "spfa": _run_spfa,
+    "a_star": _run_a_star,
+}
 
 
 class GraphCache:
@@ -56,54 +122,34 @@ class GraphCache:
         self.ttl_seconds = ttl_seconds
         self.graph = None
         self.loaded_at = 0.0
+        self._lock = threading.Lock()
 
     def get(self) -> tuple[dict[int, Node], list[Edge], bool]:
-        now = time.monotonic()
-        if self.graph is not None and now - self.loaded_at < self.ttl_seconds:
-            return self.graph[0], self.graph[1], True
-        try:
-            nodes, edges = self.loader()
-        except Exception as error:
-            raise GraphUnavailableError(
-                "Unable to download or construct the live Iloilo road graph."
-            ) from error
-        if not isinstance(nodes, dict) or not isinstance(edges, list):
-            raise GraphUnavailableError("The road graph loader returned invalid data.")
-        self.graph = (nodes, edges)
-        self.loaded_at = now
-        return nodes, edges, False
+        with self._lock:
+            now = time.monotonic()
+            if self.graph is not None and now - self.loaded_at < self.ttl_seconds:
+                return self.graph[0], self.graph[1], True
+            try:
+                nodes, edges = self.loader()
+            except Exception as error:
+                raise GraphUnavailableError(
+                    "Unable to download or construct the live Iloilo road graph."
+                ) from error
+            if not isinstance(nodes, dict) or not isinstance(edges, list):
+                raise GraphUnavailableError("The road graph loader returned invalid data.")
+            self.graph = (nodes, edges)
+            self.loaded_at = time.monotonic()
+            return nodes, edges, False
 
     def clear(self) -> None:
-        self.graph = None
-        self.loaded_at = 0.0
+        with self._lock:
+            self.graph = None
+            self.loaded_at = 0.0
 
 
 class RoutingApi:
     def __init__(self, graph_cache: GraphCache | None = None) -> None:
         self.graph_cache = graph_cache or GraphCache()
-        self._algorithm_modules = {}
-
-    def _algorithm_module(self, name: str):
-        if name in self._algorithm_modules:
-            return self._algorithm_modules[name]
-        locations = {
-            "bellman_ford": (
-                ROOT / "Open Street Map (Bellmans - Ford)" / "bellman_ford.py",
-                "bellman_ford",
-            ),
-            "spfa": (
-                ROOT / "Open Street Map (SPFA)" / "spfa.py",
-                "spfa",
-            ),
-            "a_star": (
-                ROOT / "Open Street Map - A Star" / "a_star.py",
-                "astar",
-            ),
-        }
-        path, function_name = locations[name]
-        module = _load_module(f"_routing_api_{name}", path)
-        self._algorithm_modules[name] = (module, function_name)
-        return module, function_name
 
     def _validate_coordinates(
         self, origin_lat, origin_lon, destination_lat, destination_lon
@@ -181,6 +227,13 @@ class RoutingApi:
             )
             for name in selected
         ]
+        graph_info = {
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "cached": graph_cached,
+        }
+        for result in results:
+            result["graph"] = graph_info
 
         if len(results) == 1:
             response = results[0]
@@ -199,11 +252,7 @@ class RoutingApi:
                 raise RuntimeError("Algorithms disagreed on the shortest route cost.")
             response = {
                 "algorithm": "all",
-                "graph": {
-                    "node_count": len(nodes),
-                    "edge_count": len(edges),
-                    "cached": graph_cached,
-                },
+                "graph": graph_info,
                 "results": results,
             }
         return response
@@ -216,42 +265,22 @@ class RoutingApi:
         source: int,
         target: int,
     ) -> dict:
-        module, function_name = self._algorithm_module(name)
-        function = getattr(module, function_name)
+        runner = ALGORITHM_RUNNERS[name]
         metrics = {}
 
-        tracemalloc.start()
-        started = time.perf_counter()
-        try:
-            if name == "bellman_ford":
-                route, cost, unique, checks, relaxations, iterations = function(
-                    nodes, edges, source, target, metrics=metrics
-                )
-            elif name == "spfa":
-                route, cost, processed, unique = function(
-                    nodes, edges, source, target, metrics=metrics
-                )
-                iterations = None
-                checks = metrics["edge_checks"]
-                relaxations = metrics["successful_relaxations"]
-            else:
-                route, cost = function(
-                    nodes, edges, source, target, metrics=metrics
-                )
-                unique = metrics["unique_explored_nodes"]
-                processed = metrics["nodes_processed"]
-                iterations = None
-                checks = metrics["edge_checks"]
-                relaxations = metrics["successful_relaxations"]
-        finally:
+        with _METRICS_LOCK:
+            started = time.perf_counter()
+            result = runner(nodes, edges, source, target, metrics)
             execution_time = time.perf_counter() - started
-            _, peak_memory = tracemalloc.get_traced_memory()
-            tracemalloc.stop()
 
-        if name == "bellman_ford":
-            processed = metrics["nodes_processed"]
-        if route is None:
-            route = []
+            tracemalloc.start()
+            try:
+                runner(nodes, edges, source, target, {})
+            finally:
+                _, peak_memory = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+
+        route = result.route or []
 
         distance_meters = None
         coordinates = []
@@ -265,25 +294,20 @@ class RoutingApi:
                 haversine_meters(nodes[u], nodes[v])
                 for u, v in zip(route, route[1:])
             )
-            if math.isfinite(cost) and cost >= 0:
-                travel_time = cost
+            if math.isfinite(result.cost) and result.cost >= 0:
+                travel_time = result.cost
 
-        display_name = {
-            "bellman_ford": "Bellman-Ford",
-            "spfa": "SPFA",
-            "a_star": "A*",
-        }[name]
         return {
-            "algorithm": display_name,
+            "algorithm": ALGORITHM_LABELS[name],
             "route_node_ids": route,
             "route_coordinates": coordinates,
             "travel_time_seconds": travel_time,
             "route_distance_meters": distance_meters,
             "execution_time_seconds": execution_time,
             "peak_traced_memory_bytes": peak_memory,
-            "unique_explored_nodes": unique,
-            "nodes_processed": processed,
-            "edge_checks": checks,
-            "successful_relaxations": relaxations,
-            "iterations": iterations,
+            "unique_explored_nodes": result.unique_explored_nodes,
+            "nodes_processed": result.nodes_processed,
+            "edge_checks": result.edge_checks,
+            "successful_relaxations": result.successful_relaxations,
+            "iterations": result.iterations,
         }

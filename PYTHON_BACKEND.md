@@ -14,26 +14,24 @@ python -m unittest discover -s tests -v
 Each algorithm command fetches the configured Iloilo graph from Overpass:
 
 ```powershell
-python "Open Street Map (Bellmans - Ford)\bellman_ford.py"
-python "Open Street Map (SPFA)\spfa.py"
-python "Open Street Map - A Star\a_star.py"
+python -m routing.bellman_ford
+python -m routing.spfa
+python -m routing.a_star
 ```
 
-Each `network.py` module is a compatibility facade for the shared graph API;
-running one delegates to the corresponding algorithm entry point. Tests are
-separate from algorithm implementations and are included in the unified test
-command above.
+The algorithms and benchmark live together in the root `routing/` package.
+Tests are in the root `tests/` directory and run with the unified test command
+above.
 
 The unified benchmark downloads and constructs the graph once, snaps the same
 endpoints once, and runs all three algorithms on those same node and edge
 objects:
 
 ```powershell
-python "Open Street Map (Bellmans - Ford)\benchmark.py"
+python -m routing.benchmark
 ```
 
-The same Python process can also serve the routing API while preserving static
-file serving:
+The threaded local server serves the static app and routing API on loopback:
 
 ```powershell
 python server.py
@@ -56,7 +54,21 @@ Use `"spfa"`, `"a_star"`, or `"all"` for the algorithm field. `bellman-ford`,
 Successful responses include route node IDs and coordinates, travel time,
 route distance, execution time, peak traced memory, and algorithm counters.
 The API caches one successfully downloaded live graph in memory for 300 seconds
-and reuses that graph for all algorithms in an `"all"` request.
+and reuses that graph for all algorithms in an `"all"` request. `GET /api/route`
+is not supported; send a JSON `POST`. Local request bodies are capped at 16 KiB.
+
+Vercel deploys [`api/route.py`](api/route.py) as the Python Function for the
+same endpoint. Its warm function instance holds the in-memory graph cache. It
+has a 60-second configured function duration and each Overpass endpoint request
+times out after 20 seconds; graph downloads and Bellman-Ford runs can still be
+limited by the hosting plan's execution ceiling.
+
+The map's **Routing engine** selector sends coordinates to this endpoint for
+Bellman-Ford, SPFA, A*, or an all-algorithm comparison. OSRM remains the default
+for road-shaped routes and turn-by-turn directions. The Python algorithms return
+graph routes and work counters; they do not provide street names or turn
+instructions. Each algorithm card displays its execution time, peak traced
+memory, explored nodes, and edge checks.
 
 Tests use synthetic data and do not call Overpass. Algorithm and benchmark
 commands require an internet connection to Overpass; the downloader tries a
@@ -105,18 +117,17 @@ All three accept the same directed node/edge graph and return travel time in
 seconds. SPFA and A* reject negative weights; the common road builder produces
 nonnegative weights.
 
-The implementations live in `Open Street Map (Bellmans - Ford)\bellman_ford.py`,
-`Open Street Map (SPFA)\spfa.py`, and `Open Street Map - A Star\a_star.py`.
-Their adjacent `network.py` files re-export graph construction utilities from
-`road_network.py`; they do not contain duplicate algorithm implementations.
+The implementations live in `routing/bellman_ford.py`, `routing/spfa.py`, and
+`routing/a_star.py`. The shared graph data model and graph builder live in
+`road_network.py`.
 
 ## Benchmark metrics
 
-Download, graph construction, and endpoint snapping are outside the execution
-timers and memory measurements. The same graph and endpoints are passed to
-each algorithm; algorithm-local edge validation and adjacency construction
-are measured as part of the call. Peak memory is measured with `tracemalloc`
-for each call separately. The benchmark validates every returned route against
+Download, graph construction, and endpoint snapping are outside measurements.
+The benchmark runs one timed pass without `tracemalloc`, then a separate memory
+pass with `tracemalloc`. Both passes use the same graph and endpoints.
+Algorithm-local edge validation and adjacency construction are included in the
+respective measurement. The benchmark validates every returned route against
 directed edges and confirms that all reported route costs agree.
 
 Counters are algorithm-specific and should not be read as equivalent work:

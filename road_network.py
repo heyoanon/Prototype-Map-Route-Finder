@@ -57,7 +57,7 @@ def fetch_overpass_roads(
         try:
             print(f"Trying Overpass server {url}")
             response = requests.post(
-                url, data={"data": query}, headers=headers, timeout=60
+                url, data={"data": query}, headers=headers, timeout=20
             )
             response.raise_for_status()
             data = response.json()

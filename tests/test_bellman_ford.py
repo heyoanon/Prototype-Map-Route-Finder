@@ -1,15 +1,7 @@
-from pathlib import Path
-import sys
 import unittest
 
-_project_root = Path(__file__).resolve().parents[1]
-_algorithm_dir = Path(__file__).resolve().parent
-for _path in (_project_root, _algorithm_dir):
-    if str(_path) not in sys.path:
-        sys.path.insert(0, str(_path))
-
 from road_network import Edge, Node
-from bellman_ford import bellman_ford
+from routing.bellman_ford import bellman_ford
 
 
 class BellmanFordTests(unittest.TestCase):

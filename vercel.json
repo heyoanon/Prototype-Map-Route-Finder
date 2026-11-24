@@ -1,5 +1,11 @@
 {
-  "cleanUrls": true,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/**/*.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{tests/**,vendor/**,icons/**,*.html,*.js,*.webmanifest,**/*.test.py,**/test_*.py}"
+    }
+  },
   "headers": [
     {
       "source": "/service-worker.js",
@@ -16,20 +22,10 @@
     }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
-    { "source": "/map", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
-    { "source": "/map.html", "destination": "/Open Street Map (Bellmans - Ford)/map.html" },
-    { "source": "/dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
-    { "source": "/responder", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
-    { "source": "/responder-dispatch", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
-    { "source": "/responder.html", "destination": "/Open Street Map (Bellmans - Ford)/responder.html" },
-    { "source": "/Open Street Map (Bellmans - Ford)/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/$1" },
-    { "source": "/Open%20Street%20Map%20(Bellmans%20-%20Ford)/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/$1" },
-    { "source": "/service-worker.js", "destination": "/Open Street Map (Bellmans - Ford)/service-worker.js" },
-    { "source": "/manifest.webmanifest", "destination": "/Open Street Map (Bellmans - Ford)/manifest.webmanifest" },
-    { "source": "/supabase-config.js", "destination": "/Open Street Map (Bellmans - Ford)/supabase-config.js" },
-    { "source": "/routing-config.js", "destination": "/Open Street Map (Bellmans - Ford)/routing-config.js" },
-    { "source": "/icons/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/icons/$1" },
-    { "source": "/vendor/(.*)", "destination": "/Open Street Map (Bellmans - Ford)/vendor/$1" }
+    { "source": "/", "destination": "/map.html" },
+    { "source": "/map", "destination": "/map.html" },
+    { "source": "/dispatch", "destination": "/responder.html" },
+    { "source": "/responder", "destination": "/responder.html" },
+    { "source": "/responder-dispatch", "destination": "/responder.html" }
   ]
 }

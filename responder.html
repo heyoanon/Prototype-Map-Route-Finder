@@ -31,6 +31,36 @@
     #offline-banner[hidden] {
       display: none;
     }
+    #responder-auth-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(12, 14, 18, .94);
+      color: #e8eaed;
+    }
+    #responder-auth-gate[hidden] { display: none; }
+    #responder-auth-gate form {
+      width: min(100%, 380px);
+      display: grid;
+      gap: 12px;
+      padding: 24px;
+      border: 1px solid #39404b;
+      border-radius: 12px;
+      background: #20242b;
+    }
+    #responder-auth-gate input,
+    #responder-auth-gate button {
+      min-height: 42px;
+      padding: 9px 11px;
+      border: 1px solid #4a5260;
+      border-radius: 7px;
+      font: inherit;
+    }
+    #responder-auth-gate button { cursor: pointer; background: #1967d2; color: white; }
+    #responder-auth-status { min-height: 1.4em; color: #fbbc04; }
     * {
       box-sizing: border-box;
     }
@@ -1509,6 +1539,16 @@
 </head>
 
 <body>
+  <section id="responder-auth-gate" aria-label="Responder account sign in">
+    <form id="responder-auth-form">
+      <h1>Responder sign in</h1>
+      <p>Sign in with an approved responder account to receive secure live alerts.</p>
+      <label>Email<input id="responder-auth-email" type="email" autocomplete="username" required></label>
+      <label>Password<input id="responder-auth-password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Sign in</button>
+      <div id="responder-auth-status" role="status" aria-live="polite"></div>
+    </form>
+  </section>
   <div id="map"></div>
   <div id="offline-banner" role="status" aria-live="polite" hidden>
     Offline mode: Local emergency dispatch & tracking active.
@@ -1677,7 +1717,6 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="routing-config.js"></script>
-  <script src="vendor/supabase/supabase.min.js"></script>
   <script src="supabase-config.js"></script>
   <script>
     // --- Tactical Responder Live User Tracking System ---
@@ -2244,6 +2283,9 @@
     const responderBroadcastChannel = (typeof window !== 'undefined' && window.BroadcastChannel)
       ? new BroadcastChannel('emergency_dispatch')
       : null;
+    let responderSupabaseClient = null;
+    let responderAlertChannel = null;
+    let activeAlertUserId = null;
 
     let currentTrackedUser = {
       lat: 10.7196,
@@ -2360,7 +2402,132 @@
           responderBroadcastChannel.postMessage({ type: 'MISSION_CLEARED', timestamp: clearedTimestamp });
         } catch (e) {}
       }
+      if (!isFromMap && responderSupabaseClient && activeAlertUserId) {
+        responderSupabaseClient.rpc('clear_alert', {
+          p_alert_user_id: activeAlertUserId
+        }).then(function (result) {
+          if (result.error) console.error('Could not clear the cloud alert:', result.error);
+        });
+      }
     }
+
+    async function loadResponderSupabase() {
+      const config = window.OSM_MAP_SUPABASE_CONFIG;
+      if (!config || !config.url || !config.anonKey) throw new Error('Supabase is not configured.');
+      if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        await new Promise(function (resolve, reject) {
+          const script = document.createElement('script');
+          script.src = 'vendor/supabase/supabase.min.js';
+          script.async = true;
+          script.onload = resolve;
+          script.onerror = function () { reject(new Error('Could not load Supabase.')); };
+          document.head.appendChild(script);
+        });
+      }
+      if (!responderSupabaseClient) {
+        responderSupabaseClient = window.supabase.createClient(config.url, config.anonKey);
+      }
+      return responderSupabaseClient;
+    }
+
+    async function startResponderAlertFeed() {
+      if (!responderSupabaseClient || !responderSupabaseClient.channel) return;
+      if (responderAlertChannel) responderSupabaseClient.removeChannel(responderAlertChannel);
+      responderAlertChannel = responderSupabaseClient
+        .channel('responder-live-alerts')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'alerts'
+        }, function (change) {
+          const row = change.new;
+          if (!row || !row.user_id) return;
+          activeAlertUserId = row.user_id;
+          if (row.status === 'cleared') {
+            setMissionCleared(true);
+          } else if (row.payload) {
+            isMissionCleared = false;
+            clearedTimestamp = 0;
+            loadTrackedUser(Object.assign({}, row.payload, { user_id: row.user_id }));
+            flashSyncBadge();
+          }
+        })
+        .subscribe(async function (status) {
+          if (status !== 'SUBSCRIBED') return;
+          const result = await responderSupabaseClient
+            .from('alerts')
+            .select('user_id,payload,status')
+            .eq('status', 'active')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (result.error) {
+            console.error('Could not load active cloud alerts:', result.error);
+            return;
+          }
+          if (result.data && result.data.payload) {
+            activeAlertUserId = result.data.user_id;
+            loadTrackedUser(Object.assign({}, result.data.payload, { user_id: result.data.user_id }));
+            flashSyncBadge();
+          }
+        });
+    }
+
+    async function authorizeResponder(user) {
+      const status = document.getElementById('responder-auth-status');
+      const result = await responderSupabaseClient
+        .from('emergency_responders')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) {
+        await responderSupabaseClient.auth.signOut();
+        throw new Error('This account has not been approved for responder access.');
+      }
+      document.getElementById('responder-auth-gate').hidden = true;
+      if (status) status.textContent = '';
+      await startResponderAlertFeed();
+    }
+
+    document.getElementById('responder-auth-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const status = document.getElementById('responder-auth-status');
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      button.disabled = true;
+      if (status) status.textContent = 'Signing in…';
+      try {
+        await loadResponderSupabase();
+        const result = await responderSupabaseClient.auth.signInWithPassword({
+          email: document.getElementById('responder-auth-email').value.trim(),
+          password: document.getElementById('responder-auth-password').value
+        });
+        if (result.error) throw result.error;
+        await authorizeResponder(result.data.user);
+      } catch (error) {
+        if (status) status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    (async function resumeResponderSession() {
+      try {
+        await loadResponderSupabase();
+        const result = await responderSupabaseClient.auth.getSession();
+        if (result.error) throw result.error;
+        if (result.data.session) await authorizeResponder(result.data.session.user);
+      } catch (error) {
+        const config = window.OSM_MAP_SUPABASE_CONFIG;
+        if (!config || !config.url || !config.anonKey) {
+          document.getElementById('responder-auth-gate').hidden = true;
+          console.info('Supabase is not configured; responder sync is limited to this browser.');
+          return;
+        }
+        const status = document.getElementById('responder-auth-status');
+        if (status) status.textContent = error.message;
+      }
+    })();
 
     // 3. User Location & Activity Syncing Logic
     function loadTrackedUser(directData) {
@@ -3664,11 +3831,7 @@
           return;
         }
 
-        const decodedPath = decodeURIComponent(window.location.pathname);
-        const isSubfolder = decodedPath.includes('Open Street Map (Bellmans - Ford)');
-        const primarySwPath = isSubfolder ? './service-worker.js' : 'service-worker.js';
-
-        navigator.serviceWorker.register(primarySwPath, { scope: './' })
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
           .then(function (reg) {
             console.log('Offline Service Worker registered on responder localhost/production (scope: ' + reg.scope + ')');
           })

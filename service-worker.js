@@ -1,11 +1,12 @@
-const CACHE_NAME = 'map-search-shell-v70';
+const CACHE_NAME = 'map-search-shell-v71';
 const TILE_CACHE = 'map-search-tiles-v4';
 const DATA_CACHE = 'map-search-data-v3';
 
 const APP_SHELL = [
-  './',
   './map.html',
   './responder.html',
+  './map.css',
+  './map.js',
   './manifest.webmanifest',
   './supabase-config.js',
   './routing-config.js',
@@ -18,20 +19,7 @@ const APP_SHELL = [
   './vendor/leaflet/images/layers-2x.png',
   './vendor/leaflet/images/marker-icon.png',
   './vendor/leaflet/images/marker-icon-2x.png',
-  './vendor/leaflet/images/marker-shadow.png',
-  './vendor/opening-hours/opening_hours+deps.min.js',
-  './vendor/supabase/supabase.min.js',
-  '/',
-  '/map',
-  '/map.html',
-  '/responder',
-  '/responder.html',
-  '/dispatch',
-  '/manifest.webmanifest',
-  '/icons/app-icon.svg',
-  '/icons/app-icon-192.png',
-  '/vendor/leaflet/leaflet.css',
-  '/vendor/leaflet/leaflet.js'
+  './vendor/leaflet/images/marker-shadow.png'
 ];
 
 // Pre-cache core regional base tiles for Iloilo City / Oton corridor (zoom 12 & 13)

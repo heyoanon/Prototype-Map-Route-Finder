@@ -1,40 +1,14 @@
-import importlib
-import importlib.util
 import math
-from pathlib import Path
-import sys
 import unittest
 from unittest.mock import Mock, patch
 
 import requests
 
-ROOT = Path(__file__).resolve().parents[1]
-ALGORITHM_DIRS = (
-    ROOT / "Open Street Map (Bellmans - Ford)",
-    ROOT / "Open Street Map (SPFA)",
-    ROOT / "Open Street Map - A Star",
-)
-for directory in (ROOT, *ALGORITHM_DIRS):
-    if str(directory) not in sys.path:
-        sys.path.insert(0, str(directory))
-
 import road_network
 from road_network import DEFAULT_SPEED_MPS, Edge, Node, haversine_meters
 
 
-def load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Unable to load module from {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-benchmark = load_module(
-    "_test_benchmark", ALGORITHM_DIRS[0] / "benchmark.py"
-)
+from routing import benchmark
 
 
 def travel_time(nodes: dict[int, Node], u: int, v: int, penalty: float = 0.0) -> float:
@@ -205,39 +179,6 @@ class BenchmarkTests(unittest.TestCase):
             )
         )
         self.assertTrue(all(result.peak_memory_bytes >= 0 for result in results))
-
-
-class ImportLayoutTests(unittest.TestCase):
-    def test_network_facades_delegate_without_embedding_algorithms(self):
-        modules = (
-            (ALGORITHM_DIRS[0], "bellman_ford", "bellman_ford"),
-            (ALGORITHM_DIRS[1], "spfa", "spfa"),
-            (ALGORITHM_DIRS[2], "a_star", "astar"),
-        )
-        for index, (directory, module_name, function_name) in enumerate(modules):
-            with self.subTest(algorithm=module_name):
-                facade = load_module(
-                    f"_test_network_facade_{index}", directory / "network.py"
-                )
-                algorithm = importlib.import_module(module_name)
-                self.assertTrue(callable(facade.build_graph))
-                self.assertFalse(hasattr(facade, function_name))
-                with patch.object(algorithm, "main") as run:
-                    facade.main()
-                run.assert_called_once_with()
-
-
-def load_tests(loader, standard_tests, pattern):
-    suite = unittest.TestSuite()
-    suite.addTests(standard_tests)
-    for name, path in (
-        ("_test_bellman_ford_cases", ALGORITHM_DIRS[0] / "test_bellman_ford.py"),
-        ("_test_spfa_cases", ALGORITHM_DIRS[1] / "test_spfa.py"),
-        ("_test_astar_cases", ALGORITHM_DIRS[2] / "test_a_star.py"),
-    ):
-        module = load_module(name, path)
-        suite.addTests(loader.loadTestsFromModule(module))
-    return suite
 
 
 if __name__ == "__main__":
