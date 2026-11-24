@@ -6933,9 +6933,9 @@
         coordinates: nearest.coordinates,
         phone: nearest.phone,
         type: 'ambulance'
-      }, true);
+      }, false);
 
-      setStatus('🚨 Emergency Route Active: Viewing route to nearest ' + specLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
+      setStatus('🧭 Route Preview: Viewing route to nearest ' + specLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
     }
 
     function findFastestCategoryService(categoryId) {
@@ -7026,9 +7026,9 @@
         coordinates: nearest.coordinates,
         phone: nearest.phone,
         type: 'ambulance'
-      }, true);
+      }, false);
 
-      setStatus('🚨 Emergency Route Active: Viewing route to nearest ' + catLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
+      setStatus('🧭 Route Preview: Viewing route to nearest ' + catLabel + ': ' + nearest.name + ' (~' + estMins + ' min).');
     }
 
     const baseLayers = {
@@ -8312,7 +8312,7 @@
         coordinates: coordinates,
         phone: (fData && fData.phone) || '',
         type: fType
-      }, true);
+      }, false);
 
       // On mobile viewports, close chat sheet so the route path on the map is immediately visible
       if (window.innerWidth <= 640) {
@@ -8414,7 +8414,7 @@
         coordinates: destCoords,
         phone: facilityPhone,
         type: facilityType
-      }, true);
+      }, false);
 
       // 5. Construct rich HTML response with factors, metrics, and actions
       const fTypeIcon = (facilityType === 'police') ? '🚓' : (facilityType === 'fire' ? '🚒' : (facilityType === 'responder' ? '🛟' : '🏥'));
@@ -10450,7 +10450,7 @@
               phone: data.responder.phone,
               dispatchData: data,
               type: 'responder'
-            }, true);
+            }, false);
           }
         });
       });
@@ -13009,9 +13009,9 @@
               coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
               phone: candidate.phone || '',
               type: type
-            }, true);
+            }, false);
 
-            setStatus('🚨 Emergency Route Active: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
+            setStatus('🧭 Route Preview: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
           });
 
           listEl.appendChild(card);
@@ -13068,9 +13068,9 @@
               coordinates: candidate.coordinates || (candidate.geometry && candidate.geometry.coordinates),
               phone: candidate.phone || '',
               type: type
-            }, true);
+            }, false);
 
-            setStatus('🚨 Emergency Route Active: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
+            setStatus('🧭 Route Preview: Routing to ' + candidate.name + ' (~' + estMins + ' min).');
           });
 
           sList.appendChild(card);
@@ -13269,8 +13269,8 @@
           phone: dispatchData.responder.phone,
           dispatchData: dispatchData,
           type: 'responder'
-        }, true);
-        setStatus('🚨 Emergency Route Active: Viewing nearest responder route to ' + dispatchData.responder.name + ' (~' + dispatchData.metrics.durationMins + ' min).');
+        }, false);
+        setStatus('🧭 Route Preview: Viewing nearest responder route to ' + dispatchData.responder.name + ' (~' + dispatchData.metrics.durationMins + ' min).');
       } else {
         // Immediately compute fastest route to the nearest known facility for police, fire, ambulance
         const originPoint = L.latLng(origin[1], origin[0]);
@@ -13369,9 +13369,9 @@
             coordinates: nearest.coordinates,
             phone: nearest.phone,
             type: type
-          }, true);
+          }, false);
 
-          setStatus('🚨 Emergency Route Active: Viewing nearest route to ' + (labels[type] || type) + ': ' + nearest.name + ' (~' + estMins + ' min).');
+          setStatus('🧭 Route Preview: Viewing nearest route to ' + (labels[type] || type) + ': ' + nearest.name + ' (~' + estMins + ' min).');
         }
       }
 

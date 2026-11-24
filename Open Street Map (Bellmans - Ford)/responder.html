@@ -2239,6 +2239,7 @@
     let lastRenderedStationId = null;
     let isMissionCleared = false;
     let clearedTimestamp = 0;
+    let responderManualRouteActive = false;
 
     const responderBroadcastChannel = (typeof window !== 'undefined' && window.BroadcastChannel)
       ? new BroadcastChannel('emergency_dispatch')
@@ -2279,6 +2280,7 @@
     // Render blank map & standby state when mission is cleared
     function renderBlankClearedState() {
       isMissionCleared = true;
+      responderManualRouteActive = false;
       routeLayers.clearLayers();
       if (userMarker) {
         map.removeLayer(userMarker);
@@ -2384,13 +2386,7 @@
       const isNewEmergencyAction = Boolean(
         rawData && (
           rawData.isConfirmed === true ||
-          rawData.lastAction === 'emergency_confirmed' ||
-          rawData.lastAction === 'facility_route_selected' ||
-          rawData.lastAction === 'service_change' ||
-          rawData.lastAction === 'situation_change' ||
-          rawData.lastAction === 'search' ||
-          rawData.lastAction === 'chat_message' ||
-          (rawData.targetFacility && rawData.lastAction !== 'emergency_cleared')
+          rawData.lastAction === 'emergency_confirmed'
         )
       );
 
@@ -2637,7 +2633,7 @@
           }
           const payload = event.data.data || event.data;
           if (payload && (payload.lat || payload.coords || payload.scenario || payload.activityLog)) {
-            if (payload.isConfirmed === true || payload.lastAction === 'emergency_confirmed' || payload.lastAction === 'facility_route_selected') {
+            if (payload.isConfirmed === true || payload.lastAction === 'emergency_confirmed') {
               isMissionCleared = false;
               clearedTimestamp = 0;
               try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
@@ -2831,8 +2827,8 @@
       );
 
       // 3. Compute and Draw Fastest Route to User
-      // Responders can detect user's current position, show and go to route regardless of confirm/call/message state
-      if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
+      // Route is automatically drawn ONLY if caller confirmed emergency, or responder manually clicked 'Show & Go To Route'
+      if (!isMissionCleared && (currentTrackedUser.isConfirmed || responderManualRouteActive) && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
         await calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
       } else {
         routeLayers.clearLayers();
@@ -2844,7 +2840,7 @@
         if (hazardStatusText) {
           hazardStatusText.textContent = isMissionCleared
             ? 'Mission cleared. No active route.'
-            : 'Standby: Caller position pending.';
+            : (currentTrackedUser.isConfirmed ? 'Standby: Caller position pending.' : 'Standby: Caller route preview (Not yet confirmed).');
         }
         const factorsContainer = document.getElementById('responder-factors-container');
         if (factorsContainer) factorsContainer.innerHTML = '';
@@ -3219,6 +3215,7 @@
     if (btnShowRoute) {
       btnShowRoute.addEventListener('click', async function () {
         isMissionCleared = false;
+        responderManualRouteActive = true;
         clearedTimestamp = 0;
         try { localStorage.removeItem('responder_cleared_time'); } catch (e) {}
         document.querySelectorAll('.dispatch-step-btn').forEach(function (b) {
@@ -3239,6 +3236,7 @@
     const callBtnEl = document.getElementById('btn-call-caller');
     if (callBtnEl) {
       callBtnEl.addEventListener('click', function () {
+        responderManualRouteActive = true;
         if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
           calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
         }
@@ -3248,6 +3246,7 @@
     const msgBtnEl = document.getElementById('btn-message-caller');
     if (msgBtnEl) {
       msgBtnEl.addEventListener('click', function () {
+        responderManualRouteActive = true;
         if (!isMissionCleared && Number.isFinite(currentTrackedUser.lat) && Number.isFinite(currentTrackedUser.lng)) {
           calculateAndDrawRoute(activeResponderStation.coordinates, [currentTrackedUser.lng, currentTrackedUser.lat]);
         }
