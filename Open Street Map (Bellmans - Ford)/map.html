@@ -2501,35 +2501,9 @@
       color: #202124;
     }
 
-    .route-confirm-btn-options {
-      flex: 1;
-      padding: 10px 12px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #1a73e8;
-      background: rgba(26, 115, 232, 0.1);
-      border: 1px solid rgba(26, 115, 232, 0.28);
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: background 0.15s ease;
-    }
-
-    .route-confirm-btn-options:hover {
-      background: rgba(26, 115, 232, 0.18);
-    }
-
-    :root[data-theme="dark"] .route-confirm-btn-options {
-      background: rgba(138, 180, 248, 0.15);
-      border-color: rgba(138, 180, 248, 0.35);
-      color: #8ab4f8;
-    }
-
-    :root[data-theme="dark"] .route-confirm-btn-options:hover {
-      background: rgba(138, 180, 248, 0.25);
+    .route-confirm-btn-options,
+    #route-toggle-options-btn {
+      display: none !important;
     }
 
     .emergency-panel-collapse-btn {
@@ -5282,9 +5256,6 @@
     <div class="route-confirm-bar-actions">
       <button type="button" id="route-confirm-emergency-btn" class="route-confirm-btn-primary">
         🚨 Confirm Emergency
-      </button>
-      <button type="button" id="route-toggle-options-btn" class="route-confirm-btn-options" title="View emergency options and facilities">
-        📋 Options
       </button>
       <button type="button" id="route-cancel-preview-btn" class="route-confirm-btn-cancel">
         Cancel Route
