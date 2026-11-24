@@ -2691,18 +2691,6 @@
       // Activity Feed display
       document.getElementById('latest-activity-summary').textContent = currentTrackedUser.latestSummary || 'Caller active on map';
 
-      const callBtn = document.getElementById('btn-call-caller');
-      const msgBtn = document.getElementById('btn-message-caller');
-      const phoneNum = currentTrackedUser.callerPhone || '(033) 333-1111';
-      if (callBtn) {
-        callBtn.href = 'tel:' + phoneNum.replace(/[^\d+*#;]/g, '');
-        callBtn.title = 'Call ' + phoneNum;
-      }
-      if (msgBtn) {
-        msgBtn.href = 'sms:' + phoneNum.replace(/[^\d+*#;]/g, '');
-        msgBtn.title = 'Send SMS to ' + phoneNum;
-      }
-
       // Update Live Caller Map Session Status (Desktop & Mobile)
       const sessionBadge = document.getElementById('caller-session-status-badge');
       const sessionText = document.getElementById('caller-session-status-text');
